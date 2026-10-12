@@ -1,56 +1,73 @@
-# Welcome to your Expo app 👋
+# DiaFacil móvil
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Expo SDK 57, React Native, TypeScript y Expo Router. El alcance actual es la
+bienvenida de Android/iOS; no se desarrolla ni valida Web.
 
-## Get started
+## Ejecutar
 
-1. Install dependencies
+1. Instalar las dependencias con npm install.
+2. Ejecutar npm start y abrir el proyecto en Expo Go del teléfono.
+3. Para Android físico, usar la misma red que el computador.
 
-   ```bash
-   npm install
-   ```
+La bienvenida no requiere que el backend esté arrancado ni que exista una URL
+de API. Solo mantiene la selección de rol en memoria, muestra su estado y la
+anuncia para lectores de pantalla. No navega, guarda sesiones ni solicita OTP.
+La ayuda explica brevemente ambos roles mediante un aviso nativo.
 
-2. Start the app
+## Organización
 
-   ```bash
-   npx expo start
-   ```
+- src/app: rutas y layout raíz de Expo Router. La única ruta de producto es index.
+- src/theme: tokens de DiaFacil y resolución del tema del sistema.
+- src/components/welcome: tarjeta de rol, compartida por las dos opciones.
+- src/config/env.ts: lectura y validación diferida de la URL pública del backend.
+- src/services/http.ts: cliente Axios diferido, sin llamadas de autenticación.
+- assets/illustrations: recursos originales de bienvenida y tarjetas.
+- docs/design-system.md: fuente de verdad visual y extensión semántica de temas.
 
-In the output, you'll find options to open the app in a
+Nunito se carga en el layout raíz con los archivos estáticos 400, 500, 600 y
+700. El splash se mantiene mientras cargan; un error muestra un mensaje
+legible en lugar de dejar una pantalla bloqueada. No se añaden variantes.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+El tema sigue light/dark del sistema, con fallback a light. El fondo principal
+es blanco; amarillo y morado tienen roles alternativos propios. La bienvenida
+combina encabezado lavanda, cuerpo amarillo y superficies blancas en light.
+En dark consume los equivalentes documentados, conservando la identidad morada.
+Los textos respetan la escala del sistema y las tarjetas se apilan cuando
+el ancho o el tamaño de texto requieren más espacio.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+Los módulos y variantes Web heredados no fueron limpiados. La ruta demo Explore
+se retiró al sustituir la entrada porque dependía de assets previamente
+eliminados. La configuración nativa dejó de referenciar esos assets ausentes;
+los iconos de marca definitivos se definirán cuando exista su recurso original.
 
-## Get a fresh project
+## URL del backend para el siguiente alcance
 
-When you're ready, run:
+Copiar .env.example a .env.local y ajustar EXPO_PUBLIC_API_URL:
 
-```bash
-npm run reset-project
-```
+- Android/iPhone físico: dirección LAN del computador, por ejemplo
+  http://192.168.1.10:8080.
+- Emulador Android estándar: http://10.0.2.2:8080.
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+En el teléfono, localhost representa el propio dispositivo. Comprobar que
+el backend es accesible por la red y el firewall permite el puerto de desarrollo.
+Reabrir la app tras cambiar la variable para cargar su valor actualizado.
 
-### Other setup steps
+EXPO_PUBLIC_API_URL se incluye en el bundle y no es secreta. Nunca colocar
+contraseñas SMTP, secretos HMAC ni credenciales de base de datos en el frontend.
+Los design tokens no son variables de entorno.
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+getHttpClient crea el cliente solo cuando un consumidor lo solicita: timeout
+de 20 segundos, JSON y sin reintentos automáticos. Esta pantalla no lo utiliza
+y no necesita CORS para Android/iOS. No se interpreta un ID de cuidador como
+sesión ni se implementan aún los flujos HTTP posteriores.
 
-## Learn more
+## Validar
 
-To learn more about developing your project with Expo, look at the following resources:
+- npm run lint: código móvil y compartido; excluye variantes .web y .cache.
+- npx tsc --noEmit: comprobación de tipos.
+- Exportación Android con Expo CLI para verificar Metro, módulos y assets.
+- Revisión en teléfono de ambos temas, TalkBack/VoiceOver, safe areas,
+  selección de rol, ayuda y texto ampliado. No validar Web en este alcance.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Las únicas nuevas dependencias son de desarrollo: ESLint y eslint-config-expo.
+No hay nuevas dependencias de ejecución ni se generaron proyectos nativos.
