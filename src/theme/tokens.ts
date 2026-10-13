@@ -34,8 +34,12 @@ export const radii = { control: 16, card: 20 } as const;
 export const sizes = { touchTarget: 48, icon: 24, iconSmall: 20, stroke: 2 } as const;
 export const borders = { default: 1, selected: 2 } as const;
 export const shadows = { card: { offsetY: 3, opacity: 0.12, radius: 3, elevation: 3 } } as const;
+export const motion = { carerSuccessDuration: 700, carerTiltDuration: 175, carerTiltDegrees: 4 } as const;
 export const layout = {
   contentMaxWidth: 480,
+  carer: { accountHeroHeight: 314, codeHeroHeight: 396, illustrationWidth: 248,
+    accountIllustrationRatio: 250 / 183, codeIllustrationRatio: 240 / 190,
+    curveHeight: 32, stepDot: 12, stepGap: 28, codeCellHeight: 60 },
   welcome: { heroHeight: 280, illustrationWidth: 248, illustrationRatio: 234 / 197, curveHeight: 32,
     roleIllustrationHeight: 96, roleMinHeight: 216, stackBelowWidth: 340, stackAboveFontScale: 1.35 },
 } as const;
@@ -49,6 +53,7 @@ export type SemanticColors = {
   status: { error: string; errorSurface: string; success: string; successSurface: string };
   welcome: { hero: string; body: string; intro: string; iconSurface: string; userAction: string; carerAction: string };
   shadow: string;
+  overlay: { scrim: string };
 };
 export type AppTheme = { scheme: 'light' | 'dark'; colors: SemanticColors };
 const d = derivedColors.dark;
@@ -65,6 +70,7 @@ export const themes: Record<'light' | 'dark', AppTheme> = {
       welcome: { hero: colors.purple.light, body: colors.background.yellow, intro: colors.purple.light,
         iconSurface: colors.background.purple, userAction: colors.purple.light, carerAction: colors.orange.light },
       shadow: colors.text.primary,
+      overlay: { scrim: 'rgba(10, 11, 10, 0.55)' },
     },
   },
   dark: {
@@ -79,6 +85,7 @@ export const themes: Record<'light' | 'dark', AppTheme> = {
       welcome: { hero: d.surface, body: d.background, intro: d.elevated, iconSurface: d.surface,
         userAction: d.elevated, carerAction: d.elevated },
       shadow: d.background,
+      overlay: { scrim: 'rgba(10, 11, 10, 0.75)' },
     },
   },
 };

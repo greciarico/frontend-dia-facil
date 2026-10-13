@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { AccessibilityInfo, Alert, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -59,7 +60,8 @@ export default function WelcomeScreen() {
             selected={selected === 'user'} onSelect={() => select('user')} />
           <RoleCard title="Soy cuidador" description="Quiero configurar, personalizar y acompañar la agenda"
             variant="carer" illustration={require('@/assets/illustrations/im-carer.png')}
-            selected={selected === 'carer'} onSelect={() => select('carer')} />
+            selected={selected === 'carer'} onSelect={() => select('carer')}
+            onContinue={() => router.navigate('/cuidador/paso-1')} />
         </View>
         <View style={styles.footer}>
           <Pressable accessibilityRole="button" accessibilityLabel="¿Necesitas ayuda?"

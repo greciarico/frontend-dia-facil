@@ -162,6 +162,27 @@ Estas dimensiones de composición no sustituyen las escalas de espaciado.
 El encabezado adapta su altura en pantallas pequeñas y el contenido admite
 desplazamiento; no se truncan textos para conservar una altura fija.
 
+### Composición de cuenta del cuidador
+
+`layout.carer` centraliza las dimensiones de los pasos actuales: encabezado del
+Paso 1 de 314 y Paso 2 de 396, ilustración de ancho 248, proporciones 250/183
+y 240/190, curva de 32, puntos de progreso de 12 con separación 28 y casillas
+de código de altura mínima 60. Son mínimos de composición: el contenido
+crece con texto ampliado y admite desplazamiento y teclado.
+
+Los pasos consumen `welcome.hero`, `welcome.body`, superficies, acciones,
+bordes y estados semánticos existentes en ambos temas. El sobre SVG local es
+una aproximación ilustrativa con colores de marca, no un recorte del diseño.
+El OTP usa seis campos numéricos que crecen y se reacomodan con texto ampliado.
+El contador representa la respuesta del backend y su instante objetivo local;
+no es un token visual ni una duración fija del frontend.
+
+El sobre se compone de tres capas SVG locales, reutilizadas en la pantalla y el
+modal. `motion` centraliza transición de éxito de 700 ms, balanceo de 175 ms y
+ángulo de 4 grados. La tarjeta sube spacing.2xl. Movimiento reducido omite la
+transición. El modal usa surface.elevated y overlay.scrim (light rgba(10,11,10,.55),
+dark rgba(10,11,10,.75)), foco accesible y una salida explícita “Entendido”.
+
 ### Espaciado
 
 La misma escala debe utilizarse para `padding`, `margin`, `gap` y separación entre elementos.

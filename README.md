@@ -1,7 +1,7 @@
 # DiaFacil móvil
 
 Expo SDK 57, React Native, TypeScript y Expo Router. El alcance actual es la
-bienvenida de Android/iOS; no se desarrolla ni valida Web.
+bienvenida, solicitud y verificación OTP del cuidador en Android/iOS; no se desarrolla ni valida Web.
 
 ## Ejecutar
 
@@ -11,17 +11,20 @@ bienvenida de Android/iOS; no se desarrolla ni valida Web.
 
 La bienvenida no requiere que el backend esté arrancado ni que exista una URL
 de API. Solo mantiene la selección de rol en memoria, muestra su estado y la
-anuncia para lectores de pantalla. No navega, guarda sesiones ni solicita OTP.
+anuncia para lectores de pantalla. Seleccionar “Soy cuidador” y pulsar su flecha
+abre el Paso 1. “Soy usuario” no tiene navegación en este alcance.
 La ayuda explica brevemente ambos roles mediante un aviso nativo.
 
 ## Organización
 
-- src/app: rutas y layout raíz de Expo Router. La única ruta de producto es index.
+- src/app: bienvenida y rutas cuidador/paso-1 y cuidador/paso-2, con Expo Router.
 - src/theme: tokens de DiaFacil y resolución del tema del sistema.
 - src/components/welcome: tarjeta de rol, compartida por las dos opciones.
 - src/config/env.ts: lectura y validación diferida de la URL pública del backend.
-- src/services/http.ts: cliente Axios diferido, sin llamadas de autenticación.
-- assets/illustrations: recursos originales de bienvenida y tarjetas.
+- src/services/http.ts: cliente Axios diferido; carer-auth.ts solicita/verifica códigos y traduce errores seguros.
+- src/components/carer: composición de autenticación e indicador de pasos, y botón con carga.
+- src/utils/carer-email.ts: validación del correo en Paso 1.
+- assets/illustrations: recursos locales; carer-code-back/card/front.svg son las capas del sobre del Paso 2.
 - docs/design-system.md: fuente de verdad visual y extensión semántica de temas.
 
 Nunito se carga en el layout raíz con los archivos estáticos 400, 500, 600 y
@@ -40,7 +43,7 @@ se retiró al sustituir la entrada porque dependía de assets previamente
 eliminados. La configuración nativa dejó de referenciar esos assets ausentes;
 los iconos de marca definitivos se definirán cuando exista su recurso original.
 
-## URL del backend para el siguiente alcance
+## URL del backend
 
 Copiar .env.example a .env.local y ajustar EXPO_PUBLIC_API_URL:
 
@@ -57,17 +60,73 @@ contraseñas SMTP, secretos HMAC ni credenciales de base de datos en el frontend
 Los design tokens no son variables de entorno.
 
 getHttpClient crea el cliente solo cuando un consumidor lo solicita: timeout
-de 20 segundos, JSON y sin reintentos automáticos. Esta pantalla no lo utiliza
-y no necesita CORS para Android/iOS. No se interpreta un ID de cuidador como
-sesión ni se implementan aún los flujos HTTP posteriores.
+de 20 segundos, JSON y sin reintentos automáticos. carer-auth.ts lo utiliza para
+la solicitud; las pantallas no importan Axios. Android/iOS no necesitan CORS.
+El contrato de referencia es backend_dia_facil/docs/auth-http.md. Debe estar
+habilitado diafacil.auth.enabled y configurado SMTP. El cooldown oficial de
+reenvío es de 45 segundos, centralizado en PoliticaCodigoAcceso del backend.
+Reiniciar el backend para cargar esta política si no se ha recargado aún.
+
+## Prueba manual del cuidador
+
+1. Configurar la URL del backend y reiniciar Expo para incorporarla al bundle.
+2. Login → seleccionar “Soy cuidador” → pulsar su flecha → Paso 1.
+3. Ingresar un correo real y pulsar Continuar: solo se envía si es válido y de
+   hasta 150 caracteres, recortando espacios exteriores. Durante el envío se
+   bloquean edición y duplicados y se muestra “Enviando…”.
+4. Tras HTTP 200 con CODIGO_SOLICITADO, Paso 2 muestra el mismo correo.
+5. Confirmar recepción del OTP real en el correo, incluida la carpeta de spam.
+   La respuesta confirma ejecución del envío, no llegada a la bandeja.
+6. Volver al Paso 1 conserva el correo. Paso 2 sin parámetro o con correo vacío
+   redirige al Paso 1 sin petición ni nueva validación de formato.
+7. Ingresar el OTP en las seis casillas, escribir o pegar sus seis dígitos,
+   incluidos ceros iniciales. Verificar solo se habilita con el código completo;
+   la petición muestra “Verificando…” y bloquea duplicados y reenvío simultáneo.
+8. Un código correcto muestra una animación breve del sobre y el modal de éxito.
+   Con movimiento reducido se muestra el modal directamente. “Entendido” deja
+   el Paso 2 confirmado y deshabilita nuevos envíos/verificaciones.
+9. Esperar el contador “Enviar de nuevo (00:45)” → “(00:01)” → “Enviar de nuevo”.
+   Solicitar otro código y comprobar que las casillas se vacían y el contador
+   vuelve a empezar según reenvioEnSegundos recibido, nunca un valor fijo del frontend.
+10. Pasar a segundo plano y volver: se recalcula desde el instante objetivo.
+    El contador es conservador, no tiempo exacto del servidor. REENVIO_PREMATURO
+    prevalece y aplica Retry-After. Sin un header válido se pide volver al Paso 1.
+
+Errores de validación aparecen junto al campo; errores HTTP, conexión y timeout
+se muestran con textos comprensibles y anuncios accesibles. Una salida del
+formulario cancela la espera y evita navegación tardía. No hay logs sensibles.
+El correo solo es un parámetro de presentación: no crea ni persiste una sesión.
+Los resultados AUTENTICADO y REGISTRO_PENDIENTE solo se conservan en memoria
+durante Paso 2. No se persiste autenticación, no se transporta el comprobante en
+la URL y no se registra OTP, correo, cuerpos ni comprobantes. Al salir se descarta
+el resultado. El código se borra al verificar correctamente o confirmar reenvío.
+
+Código incorrecto permite corregirlo; código inexistente, vencido, usado o límite
+de intentos requiere uno nuevo; cuenta inactiva bloquea ambos envíos. Una respuesta
+de verificación perdida puede haber consumido el código: no hay reintento automático.
+La animación bloquea acciones de Paso 2, sin bloquear la navegación nativa; salir
+cancela/ignora peticiones y aperturas tardías del modal.
+
+## Continuación pendiente
+
+No se implementa Paso 3. El prototipo “Personaliza tu perfil” muestra nombre y
+avatar, mientras la documentación sitúa el perfil de la persona usuaria después
+de “Mis perfiles”; debe aclararse antes de conectar esa pantalla.
+AUTENTICADO no entrega sesión: falta acceso autorizado para ir a Mis perfiles.
+REGISTRO_PENDIENTE entrega un comprobante de diez minutos; existe lógica interna
+de registro con comprobante y nombre del cuidador, pero falta endpoint HTTP y el
+avatar no está incluido en ese contrato. idCuidador nunca es una credencial.
 
 ## Validar
 
 - npm run lint: código móvil y compartido; excluye variantes .web y .cache.
 - npx tsc --noEmit: comprobación de tipos.
-- Exportación Android con Expo CLI para verificar Metro, módulos y assets.
+- npm run test:carer-auth: pruebas aisladas de servicio, correo, OTP y contador, sin SMTP.
+- npx expo export --platform android --output-dir .cache/carer-android: Metro, módulos y assets.
 - Revisión en teléfono de ambos temas, TalkBack/VoiceOver, safe areas,
   selección de rol, ayuda y texto ampliado. No validar Web en este alcance.
 
-Las únicas nuevas dependencias son de desarrollo: ESLint y eslint-config-expo.
-No hay nuevas dependencias de ejecución ni se generaron proyectos nativos.
+Al añadir rutas, iniciar Expo para regenerar .expo/types/router.d.ts antes de
+comprobar tipos si la caché todavía contiene únicamente la bienvenida.
+En PowerShell con scripts deshabilitados, usar npm.cmd y npx.cmd.
+No se añadieron dependencias para el flujo del cuidador ni proyectos nativos.
