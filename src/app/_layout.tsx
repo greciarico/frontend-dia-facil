@@ -1,5 +1,5 @@
 import { useFonts } from 'expo-font';
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider, router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
@@ -8,10 +8,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { spacing, typography } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';
+import { SessionProvider, useSession } from '@/context/session';
 
 void SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 export default function RootLayout() {
+  return <SessionProvider><AppLayout /></SessionProvider>;
+}
+function AppLayout() {
+  const session = useSession();
   const theme = useAppTheme();
   // Direct files keep unapproved weights and italic variants out of the mobile bundle.
   const [loaded, error] = useFonts({
@@ -21,8 +26,11 @@ export default function RootLayout() {
     [typography.family.bold]: require('@expo-google-fonts/nunito/700Bold/Nunito_700Bold.ttf'),
   });
   useEffect(() => {
-    if (loaded || error) void SplashScreen.hideAsync().catch(() => undefined);
-  }, [loaded, error]);
+    if ((loaded && session.status !== 'booting') || error) void SplashScreen.hideAsync().catch(() => undefined);
+  }, [loaded, error, session.status]);
+  useEffect(() => {
+    if (loaded && session.status === 'anonymous') router.replace('/');
+  }, [loaded, session.status]);
   if (!loaded && !error) return null;
   if (error) {
     return (
@@ -47,6 +55,12 @@ export default function RootLayout() {
       <StatusBar style={theme.scheme === 'dark' ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.colors.background.primary } }}>
         <Stack.Screen name="index" />
+        <Stack.Protected guard={session.status === 'authenticated' && session.stage === 'ready'}>
+          <Stack.Screen name="(cuidador-autenticado)" />
+        </Stack.Protected>
+        <Stack.Protected guard={session.status === 'anonymous' || session.status === 'authenticated' && session.stage !== 'ready'}>
+          <Stack.Screen name="cuidador" />
+        </Stack.Protected>
       </Stack>
     </ThemeProvider>
   );

@@ -1,10 +1,11 @@
+import type { ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
 
 import { radii, sizes, spacing, typography } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';
 
-export function ContinueButton({ label, onPress, loading = false, disabled = false, loadingLabel = 'Enviando…' }: {
-  label: string; onPress?: () => void; loading?: boolean; disabled?: boolean; loadingLabel?: string;
+export function ContinueButton({ label, onPress, loading = false, disabled = false, loadingLabel = 'Enviando…', leadingIcon }: {
+  label: string; onPress?: () => void; loading?: boolean; disabled?: boolean; loadingLabel?: string; leadingIcon?: ReactNode;
 }) {
   const { colors } = useAppTheme();
   return (
@@ -13,6 +14,7 @@ export function ContinueButton({ label, onPress, loading = false, disabled = fal
       onPress={onPress} style={({ pressed }) => [styles.button, {
         backgroundColor: disabled && !loading ? colors.action.disabled : pressed ? colors.action.pressed : colors.action.primary }]}>
       {loading && <ActivityIndicator color={colors.action.onPrimary} accessible={false} />}
+      {!loading && leadingIcon}
       <Text style={[styles.label, { color: disabled && !loading ? colors.text.secondary : colors.action.onPrimary }]}>
         {loading ? loadingLabel : label}
       </Text>

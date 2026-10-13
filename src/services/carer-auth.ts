@@ -1,6 +1,7 @@
 import { isAxiosError } from 'axios';
 
 import { getHttpClient } from './http';
+import { parseSessionGrant, type SessionGrant } from '@/utils/session-contract';
 
 /** Response defined by backend_dia_facil/docs/auth-http.md. */
 export type RequestedCode = {
@@ -13,7 +14,7 @@ export class CodeRequestError extends Error {
 }
 
 export type VerifiedCode =
-  | { estado: 'AUTENTICADO'; idCuidador: number }
+  | ({ estado: 'AUTENTICADO'; idCuidador: number } & SessionGrant)
   | { estado: 'REGISTRO_PENDIENTE'; comprobanteRegistro: string };
 
 /** Only safe domain metadata crosses into UI; never carry raw Axios errors. */
@@ -69,7 +70,7 @@ function translateError(error: unknown, verification: boolean): never {
   throw new CodeRequestError('El servicio no está disponible en este momento. Inténtalo más tarde.');
 }
 
-export type CompletedRegistration = { estado: 'REGISTRO_COMPLETADO'; idCuidador: number };
+export type CompletedRegistration = { estado: 'REGISTRO_COMPLETADO'; idCuidador: number } & SessionGrant;
 
 export async function completeCarerRegistration(input: {
   comprobanteRegistro: string; nombre: string; avatarId: string | null;
@@ -81,7 +82,9 @@ export async function completeCarerRegistration(input: {
       || !Number.isInteger(data.idCuidador) || data.idCuidador <= 0) {
       throw new CodeRequestError('No pudimos confirmar la creación. Si la cuenta ya existe al reintentar, vuelve a verificar tu correo.');
     }
-    return { estado: 'REGISTRO_COMPLETADO', idCuidador: data.idCuidador };
+    const grant = parseSessionGrant(data);
+    if (grant.cuidador.idCuidador !== data.idCuidador) throw new CodeRequestError('No pudimos confirmar la creación de tu cuenta.');
+    return { estado: 'REGISTRO_COMPLETADO', idCuidador: data.idCuidador, ...grant };
   } catch (error) {
     if (isAxiosError(error) && error.response?.data?.codigo === 'SOLICITUD_INVALIDA') {
       throw new CodeRequestError('Revisa tu nombre y el avatar seleccionado.', true, 'SOLICITUD_INVALIDA');
@@ -119,7 +122,9 @@ export async function verifyCarerCode(email: string, codigo: string, signal?: Ab
     const data = response.data;
     if (response.status === 200 && data?.estado === 'AUTENTICADO'
       && Number.isInteger(data.idCuidador) && data.idCuidador > 0 && data.comprobanteRegistro === undefined) {
-      return { estado: 'AUTENTICADO', idCuidador: data.idCuidador };
+      const grant = parseSessionGrant(data);
+      if (grant.cuidador.idCuidador !== data.idCuidador) throw new CodeRequestError('No pudimos confirmar tu acceso.');
+      return { estado: 'AUTENTICADO', idCuidador: data.idCuidador, ...grant };
     }
     if (response.status === 200 && data?.estado === 'REGISTRO_PENDIENTE'
       && typeof data.comprobanteRegistro === 'string' && data.comprobanteRegistro.trim() && data.idCuidador === undefined) {

@@ -192,10 +192,33 @@ reduciendo el diámetro al ancho disponible. El modal presenta los 20 avatares
 en grid sin nombres visibles; las etiquetas descriptivas y selected/checked
 permanecen para lectores de pantalla. Se permite quitar selección.
 No se usan capturas como assets ni nuevas
-fuentes/colores fuera del sistema. El éxito de registro es solo un texto dentro
-del Paso 3, sin nueva pantalla terminal ni diseño del Paso 4.
+fuentes/colores fuera del sistema. La respuesta de registro alimenta la sesión
+y el Paso 4; no se crea otra pantalla terminal adicional.
+
+El nuevo Paso 4 consume perfil efectivo del contexto de sesión: ¡Cuenta creada!,
+saludo por nombre, avatar local o inicial y filas neutrales de actividades,
+accesibilidad y solicitudes de ayuda. Usa la composición de perfil existente,
+sin nuevos colores ni fuentes. La raíz conserva carga/restauración/error y,
+con sesión ready, dirige al módulo autenticado Mis perfiles.
+
+En Paso 4, la curva ocupa el ancho completo del encabezado en un contenedor
+absoluto sin padding. El contenido superior, el avatar y su check se dibujan por
+encima; el tamaño del avatar se conserva. Esta composición se limita al Paso 4.
+Los roles `onboarding.activities`, `onboarding.accessibility` y `onboarding.help`
+definen pares `icon`/`surface`: en light usan purple.default/hoverLight,
+green.default/hover y yellow.default/hover. En dark usan primary/elevated,
+success/successSurface y el mismo par amarillo de marca. No se agregan colores.
 
 ### Espaciado
+
+Mis perfiles utiliza header y navegación inferior compartidos, con safe areas
+y contenido desplazable. `profiles.information` y `profiles.cards` reutilizan
+purple.light, blue.light y orange.light en light; elevated/surface en dark.
+`layout.profiles` define avatarSize 80 y la proporción original 256/213 del asset
+local thoughtful-carer. Las tarjetas no dibujan progreso sin datos reales.
+Los destinos futuros y acciones de creación/acceso permanecen deshabilitados,
+con estado accesible; Perfiles expone selected. Mi perfil muestra el avatar
+efectivo del cuidador. Texto ampliado permite ajustar altura y envolver etiquetas.
 
 La misma escala debe utilizarse para `padding`, `margin`, `gap` y separación entre elementos.
 

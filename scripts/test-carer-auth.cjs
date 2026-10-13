@@ -16,10 +16,19 @@ function load(relative, dependencies = {}) {
   return exports;
 }
 const { validateCarerEmail } = load('src/utils/carer-email.ts');
+const sessionContract = load('src/utils/session-contract.ts', {
+  '@/constants/carer-avatars': { carerAvatarIds: fs.readdirSync(path.join(__dirname, '..', 'assets', 'avatars')).map(file => file.replace('.svg', '')) },
+});
+const testSession = {
+  cuidador: { idCuidador: 3, nombre: 'Grecia', avatarId: null },
+  sesion: { tokenType: 'Bearer', accessToken: 'a_' + 'A'.repeat(43), refreshToken: 'r_' + 'B'.repeat(43),
+    accessExpiresAt: '2026-10-14T00:15:00Z', refreshExpiresAt: '2026-11-13T00:00:00Z', sessionExpiresAt: '2027-01-12T00:00:00Z' },
+};
 function service(post) {
   return load('src/services/carer-auth.ts', {
     axios: { isAxiosError: error => error?.isAxiosError === true },
     './http': { getHttpClient: () => ({ post }) },
+    '@/utils/session-contract': sessionContract,
   });
 }
 test('email rejects empty/invalid/overlong values and accepts surrounding whitespace', () => {
@@ -85,7 +94,7 @@ test('cancellation is preserved so the screen can suppress errors and navigation
 });
 
 test('verification preserves leading zeroes and distinguishes both documented successes', async () => {
-  for (const response of [{ estado: 'AUTENTICADO', idCuidador: 3 },
+  for (const response of [{ estado: 'AUTENTICADO', idCuidador: 3, ...testSession },
     { estado: 'REGISTRO_PENDIENTE', comprobanteRegistro: 'simulated-temporary-proof' }]) {
     let calls = 0;
     const signal = new AbortController().signal;
@@ -174,9 +183,9 @@ test('registration creates an account with the proof and optional avatar, withou
       assert.equal(url, '/api/auth/cuidadores/completar-registro');
       assert.deepEqual(body, input);
       assert.equal('email' in body, false);
-      return { status: 201, data: { estado: 'REGISTRO_COMPLETADO', idCuidador: 3 } };
+      return { status: 201, data: { estado: 'REGISTRO_COMPLETADO', idCuidador: 3, ...testSession } };
     });
-    assert.deepEqual(await api.completeCarerRegistration(input), { estado: 'REGISTRO_COMPLETADO', idCuidador: 3 });
+    assert.deepEqual(await api.completeCarerRegistration(input), { estado: 'REGISTRO_COMPLETADO', idCuidador: 3, ...testSession });
   }
 });
 test('registration never treats duplicates or expired proofs as success and does not leak error detail', async () => {
@@ -186,7 +195,7 @@ test('registration never treats duplicates or expired proofs as success and does
       assert.equal(error.codigo, codigo); assert.ok(!error.message.includes('private-proof')); return true;
     });
   }
-  const api = service(async () => ({ status: 200, data: { estado: 'REGISTRO_COMPLETADO', idCuidador: 3 } }));
+  const api = service(async () => ({ status: 200, data: { estado: 'REGISTRO_COMPLETADO', idCuidador: 3, ...testSession } }));
   await assert.rejects(api.completeCarerRegistration({ comprobanteRegistro: 'temporary-test-proof', nombre: 'Grecia', avatarId: null }), api.CodeRequestError);
 });
 const { validateCarerName, nameInitial, registrationReducer, registrationInput } = load('src/utils/carer-registration.ts');

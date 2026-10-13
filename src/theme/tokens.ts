@@ -37,6 +37,7 @@ export const shadows = { card: { offsetY: 3, opacity: 0.12, radius: 3, elevation
 export const motion = { carerSuccessDuration: 700, carerTiltDuration: 175, carerTiltDegrees: 4 } as const;
 export const layout = {
   contentMaxWidth: 480,
+  profiles: { avatarSize: 80, emptyIllustrationRatio: 1536 / 1024 },
   carer: { accountHeroHeight: 314, codeHeroHeight: 396, illustrationWidth: 248,
     profileHeroHeight: 336, avatarSize: 152, avatarOptionSize: 56,
     accountIllustrationRatio: 250 / 183, codeIllustrationRatio: 240 / 190,
@@ -52,6 +53,12 @@ export type SemanticColors = {
   action: { primary: string; pressed: string; onPrimary: string; disabled: string };
   border: { decorative: string; control: string; selected: string };
   status: { error: string; errorSurface: string; success: string; successSurface: string };
+  profiles: { information: string; cards: readonly string[] };
+  onboarding: {
+    activities: { icon: string; surface: string };
+    accessibility: { icon: string; surface: string };
+    help: { icon: string; surface: string };
+  };
   welcome: { hero: string; body: string; intro: string; iconSurface: string; userAction: string; carerAction: string };
   shadow: string;
   overlay: { scrim: string };
@@ -68,6 +75,12 @@ export const themes: Record<'light' | 'dark', AppTheme> = {
       action: { primary: colors.purple.default, pressed: colors.purple.dark, onPrimary: colors.background.primary, disabled: colors.purple.stroke },
       border: { decorative: colors.purple.stroke, control: colors.purple.default, selected: colors.purple.default },
       status: { error: colors.bug, errorSurface: colors.orange.light, success: derivedColors.light.successText, successSurface: colors.green.hover },
+      profiles: { information: colors.purple.light, cards: [colors.purple.light, colors.blue.light, colors.orange.light] },
+      onboarding: {
+        activities: { icon: colors.purple.default, surface: colors.purple.hoverLight },
+        accessibility: { icon: colors.green.default, surface: colors.green.hover },
+        help: { icon: colors.yellow.default, surface: colors.yellow.hover },
+      },
       welcome: { hero: colors.purple.light, body: colors.background.yellow, intro: colors.purple.light,
         iconSurface: colors.background.purple, userAction: colors.purple.light, carerAction: colors.orange.light },
       shadow: colors.text.primary,
@@ -83,6 +96,12 @@ export const themes: Record<'light' | 'dark', AppTheme> = {
       action: { primary: d.primary, pressed: d.primaryPressed, onPrimary: d.onPrimary, disabled: d.decorativeBorder },
       border: { decorative: d.decorativeBorder, control: d.controlBorder, selected: d.primary },
       status: { error: d.error, errorSurface: d.errorSurface, success: d.success, successSurface: d.successSurface },
+      profiles: { information: d.elevated, cards: [d.elevated, d.surface, d.elevated] },
+      onboarding: {
+        activities: { icon: d.primary, surface: d.elevated },
+        accessibility: { icon: d.success, surface: d.successSurface },
+        help: { icon: colors.yellow.default, surface: colors.yellow.hover },
+      },
       welcome: { hero: d.surface, body: d.background, intro: d.elevated, iconSurface: d.surface,
         userAction: d.elevated, carerAction: d.elevated },
       shadow: d.background,

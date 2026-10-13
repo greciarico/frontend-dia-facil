@@ -7,6 +7,7 @@ import { AccountLayout, accountStyles } from '@/components/carer/account-layout'
 import { AvatarSelector } from '@/components/carer/avatar-selector';
 import { ContinueButton } from '@/components/carer/continue-button';
 import { useCarerRegistration } from '@/context/carer-registration';
+import { useSession } from '@/context/session';
 import type { CarerAvatarId } from '@/constants/carer-avatars';
 import { CodeRequestError, completeCarerRegistration } from '@/services/carer-auth';
 import { borders, radii, sizes, spacing, typography } from '@/theme/tokens';
@@ -16,6 +17,7 @@ import { registrationInput, validateCarerName } from '@/utils/carer-registration
 export default function CarerPersonalizationScreen() {
   const { colors } = useAppTheme();
   const { pending, clear } = useCarerRegistration();
+  const session = useSession();
   const [name, setName] = useState('');
   const [avatarId, setAvatarId] = useState<CarerAvatarId | null>(null);
   const [fieldError, setFieldError] = useState<string>();
@@ -46,11 +48,13 @@ export default function CarerPersonalizationScreen() {
     const abort = new AbortController(); controller.current = abort;
     setLoading(skipAvatar ? 'skip' : 'continue'); Keyboard.dismiss();
     try {
-      await completeCarerRegistration(request, abort.signal);
+      const grant = await completeCarerRegistration(request, abort.signal);
       if (!active.current || abort.signal.aborted) return;
       completed.current = true; setCreated(true); setSkipped(skipAvatar); setName(request.nombre);
       if (skipAvatar) setAvatarId(null);
       clear();
+      await session.manager.establish(grant, 'onboarding', skipAvatar);
+      router.replace('/cuidador/paso-4');
       AccessibilityInfo.announceForAccessibility('Cuenta creada.');
     } catch (failure) {
       if (!active.current || abort.signal.aborted) return;

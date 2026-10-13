@@ -7,13 +7,16 @@ import Svg, { Path } from 'react-native-svg';
 import { borders, layout, radii, sizes, spacing, typography } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';
 
-export function AccountLayout({ step, hero, children }: { step: 1 | 2 | 3; hero: ReactNode; children: ReactNode }) {
+export function AccountLayout({ step, hero, children, onBack }: {
+  step: 1 | 2 | 3 | 4; hero: ReactNode; children: ReactNode; onBack?: () => void;
+}) {
   const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
   const window = useWindowDimensions();
   const heroHeight = step === 1 ? layout.carer.accountHeroHeight
     : step === 2 ? layout.carer.codeHeroHeight : layout.carer.profileHeroHeight;
   function back() {
+    if (onBack) { onBack(); return; }
     if (router.canGoBack()) router.back();
     else router.replace(step === 1 ? '/' : '/cuidador/paso-1');
   }
@@ -22,7 +25,7 @@ export function AccountLayout({ step, hero, children }: { step: 1 | 2 | 3; hero:
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="never"
         showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1, minHeight: window.height }}>
-        <View style={[styles.hero, { minHeight: heroHeight + insets.top,
+        <View style={[styles.hero, step === 4 && styles.completedHero, { minHeight: heroHeight + insets.top,
           paddingTop: insets.top + spacing['2xl'], paddingLeft: Math.max(insets.left, spacing.lg),
           paddingRight: Math.max(insets.right, spacing.lg), backgroundColor: colors.welcome.hero }]}>
           <View style={styles.navigation}>
@@ -45,11 +48,15 @@ export function AccountLayout({ step, hero, children }: { step: 1 | 2 | 3; hero:
             </View>
             <View style={styles.back} />
           </View>
-          <View style={styles.heroContent}>{hero}</View>
-          <Svg width="100%" height={layout.carer.curveHeight} viewBox="0 0 390 32" preserveAspectRatio="none"
+          <View style={[styles.heroContent, step === 4 && styles.completedHeroContent]}>{hero}</View>
+          {step === 4 ? <View pointerEvents="none" style={styles.completedCurve}>
+            <Svg width="100%" height="100%" viewBox="0 0 390 32" preserveAspectRatio="none" accessible={false}>
+              <Path d="M0 32V26Q195 -26 390 26V32Z" fill={colors.welcome.body} />
+            </Svg>
+          </View> : <Svg width="100%" height={layout.carer.curveHeight} viewBox="0 0 390 32" preserveAspectRatio="none"
             style={styles.curve} accessible={false}>
             <Path d="M0 32V26Q195 -26 390 26V32Z" fill={colors.welcome.body} />
-          </Svg>
+          </Svg>}
         </View>
         <View style={[styles.content, { paddingLeft: Math.max(insets.left, spacing['4xl']),
           paddingRight: Math.max(insets.right, spacing['4xl']), paddingBottom: insets.bottom + spacing['3xl'] }]}>
@@ -69,6 +76,9 @@ export const accountStyles = StyleSheet.create({
 
 const styles = StyleSheet.create({
   hero: { alignItems: 'center', paddingBottom: spacing.xs },
+  completedHero: { zIndex: 1, overflow: 'visible' },
+  completedHeroContent: { zIndex: 1, overflow: 'visible' },
+  completedCurve: { position: 'absolute', bottom: 0, left: 0, right: 0, height: layout.carer.curveHeight, zIndex: 0 },
   navigation: { flexDirection: 'row', alignItems: 'center', width: '100%', maxWidth: layout.contentMaxWidth },
   back: { width: sizes.touchTarget, minHeight: sizes.touchTarget, alignItems: 'center', justifyContent: 'center', borderRadius: radii.control },
   progress: { flex: 1, alignItems: 'center', gap: spacing.sm },

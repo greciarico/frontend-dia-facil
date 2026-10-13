@@ -7,6 +7,7 @@ export function getApiUrl(): string {
     if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.search || url.hash) {
       throw new Error();
     }
+    if (!__DEV__ && url.protocol !== 'https:') throw new Error();
     return value.replace(/\/+$/, '');
   } catch {
     throw new Error('EXPO_PUBLIC_API_URL debe ser una URL HTTP o HTTPS sin credenciales.');

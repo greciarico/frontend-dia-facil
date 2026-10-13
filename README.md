@@ -1,7 +1,7 @@
 # DiaFacil móvil
 
 Expo SDK 57, React Native, TypeScript y Expo Router. El alcance actual es la
-bienvenida, OTP y creación de cuenta del cuidador en Android/iOS; no se desarrolla ni valida Web.
+bienvenida, OTP, sesión persistente y cuenta del cuidador en Android/iOS; no se desarrolla ni valida Web.
 
 ## Ejecutar
 
@@ -17,7 +17,8 @@ La ayuda explica brevemente ambos roles mediante un aviso nativo.
 
 ## Organización
 
-- src/app: bienvenida y rutas cuidador/paso-1, paso-2 y paso-3, con Expo Router.
+- src/app: raíz con Login/estado autenticado y rutas cuidador/paso-1 a paso-4, con Expo Router.
+- src/context/session.tsx y src/services/session-manager.ts: restauración, credenciales y logout.
 - src/context/carer-registration.tsx: comprobante de registro únicamente en memoria del navegador cuidador.
 - src/theme: tokens de DiaFacil y resolución del tema del sistema.
 - src/components/welcome: tarjeta de rol, compartida por las dos opciones.
@@ -85,7 +86,7 @@ Reiniciar el backend para cargar esta política si no se ha recargado aún.
    la petición muestra “Verificando…” y bloquea duplicados y reenvío simultáneo.
 8. Un código correcto muestra una animación breve del sobre y el modal de éxito.
    Con movimiento reducido se muestra el modal directamente. “Entendido” deja
-   el Paso 2 confirmado y deshabilita nuevos envíos/verificaciones.
+   Paso 3 para cuenta nueva o la raíz autenticada para cuidador existente.
 9. Esperar el contador “Enviar de nuevo (00:45)” → “(00:01)” → “Enviar de nuevo”.
    Solicitar otro código y comprobar que las casillas se vacían y el contador
    vuelve a empezar según reenvioEnSegundos recibido, nunca un valor fijo del frontend.
@@ -97,12 +98,13 @@ Reiniciar el backend para cargar esta política si no se ha recargado aún.
     Ver todos abre los 20 originales; Usar la inicial de mi nombre elimina selección.
 13. Continuar envía nombre y avatar opcional. Personalizar más tarde envía el mismo
     nombre con avatarId null. Ambos bloquean duplicados y muestran carga.
-14. HTTP 201 REGISTRO_COMPLETADO muestra Cuenta creada dentro de Paso 3 y bloquea
-    las acciones. Solo la acción Personalizar más tarde muestra:
+14. HTTP 201 REGISTRO_COMPLETADO guarda sesión y abre Paso 4: ¡Cuenta creada!, con
+    nombre y avatar efectivos del backend, sin nueva petición. Solo Personalizar más tarde muestra:
     “Podrás personalizar tu perfil más adelante desde Mi perfil.”
 
 Antes de probar el registro, revisar backend_dia_facil/docs/sql/add-cuidador-avatar.sql
-y confirmar que cuidador.avatar_id existe en la base de prueba. El incremento no
+y docs/sql/add-cuidador-sessions.sql, confirmando columna y dos tablas de sesión.
+El incremento no
 ejecutó SQL ni habilitó Flyway. El entorno local configurado con ddl-auto=update
 puede crear la columna al reiniciar; fuera de él se requiere aplicar el script revisado.
 
@@ -111,8 +113,8 @@ se muestran con textos comprensibles y anuncios accesibles. Una salida del
 formulario cancela la espera y evita navegación tardía. No hay logs sensibles.
 El correo solo es un parámetro de presentación: no crea ni persiste una sesión.
 REGISTRO_PENDIENTE se transfiere del Paso 2 al Paso 3 solo en un contexto en memoria.
-No se persiste autenticación, no se transporta el comprobante en
-la URL y no se registra OTP, correo, cuerpos ni comprobantes. Al salir se descarta
+El comprobante no se transporta en URL y no se registra OTP, correo, cuerpos,
+tokens ni comprobantes. Al salir se descarta
 el resultado; completar el registro también borra el comprobante. El código se
 borra al verificar correctamente o confirmar reenvío. Acceso directo a Paso 3
 sin comprobante vuelve al Paso 1. Comprobante vencido o cuenta existente permite
@@ -129,15 +131,43 @@ cancela/ignora peticiones y aperturas tardías del modal.
 Paso 3 personaliza la cuenta del cuidador; no crea un PerfilUsuario. Los 20 SVG
 de assets/avatars se mantienen originales y backend guarda solo el ID o null.
 La inicial se deriva del nombre; ninguna de las dos acciones puede omitirlo.
-Foto propia/Cloudinary, Mi perfil y Paso 4 siguen pendientes. AUTENTICADO y
-REGISTRO_COMPLETADO no entregan sesión: falta acceso autorizado para ir a Mis
-perfiles. idCuidador nunca es una credencial.
+Foto propia/Cloudinary, Mi perfil y la creación de perfiles siguen pendientes. AUTENTICADO y
+REGISTRO_COMPLETADO ahora entregan credenciales opacas; idCuidador nunca es credencial.
+
+## Sesión persistente y Paso 4
+
+Access solo en memoria, refresh en expo-secure-store. Al arrancar se espera
+restauración junto con fuentes, evitando flash de Login. Renovación automática:
+15 minutos de access, 30 días de inactividad y 90 días absolutos desde OTP/registro.
+SecureStore conserva credencial al cerrar/reabrir, recargar JS y reiniciar el teléfono;
+no se promete conservación al desinstalar/borrar datos. Funciona en Expo Go sin
+biometría obligatoria. Los valores seguros no van a AsyncStorage.
+
+Sesión válida abre Mis perfiles (/perfiles), con consulta Bearer real, estado
+vacío/lista/loading/error y menú superior de logout. Ver docs/mis-perfiles-increment.md.
+Paso 4 aparece solo tras crear cuenta nueva; Continuar finaliza onboarding y
+abre esa raíz. Restaurar o acceder como cuidador existente no repite Pasos 3/4.
+
+El cliente privado renueva una vez ante 401 renovable y comparte un refresh entre
+peticiones. GET/HEAD pueden repetirse una vez; mutaciones futuras requieren opt-in
+authReplaySafe. No reintenta refresh por red/5xx ni 403. Una respuesta de rotación
+perdida puede dejar el refresh anterior consumido y requerir nuevo OTP, como se acordó.
+Fallo transitorio conserva credencial y muestra Reintentar; fallo de escritura
+permite guardar el resultado aún en memoria sin repetir registro/OTP.
+
+Logout invalida memoria y marca la credencial local solo para revocación. Si está
+offline se vuelve a Login y nunca se restaura esa credencial. Las revocaciones se
+reintentan al arrancar, regresar al foreground y cada 30 segundos mientras la app
+está activa, sin bloquearla. Tras confirmar HTTP 204 se borran. No borra la cuenta.
+HTTP solo se permite en desarrollo (__DEV__); fuera de él EXPO_PUBLIC_API_URL debe ser HTTPS.
 
 ## Validar
 
 - npm run lint: código móvil y compartido; excluye variantes .web y .cache.
 - npx tsc --noEmit: comprobación de tipos.
 - npm run test:carer-auth: pruebas aisladas de servicio, correo, OTP y contador, sin SMTP.
+- npm run test:session: restauración, rotación, SecureStore simulado, logout y Axios privado.
+- npm run test:profiles: contrato, carga, acciones pendientes y navegación privada.
 - npx expo export --platform android --output-dir .cache/carer-android: Metro, módulos y assets.
 - Revisión en teléfono de ambos temas, TalkBack/VoiceOver, safe areas,
   selección de rol, ayuda y texto ampliado. No validar Web en este alcance.

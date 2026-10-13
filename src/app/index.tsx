@@ -1,17 +1,26 @@
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
+import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
 import { AccessibilityInfo, Alert, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { RoleCard } from '@/components/welcome/role-card';
+import { SessionBoundary } from '@/components/session-boundary';
+import { useSession } from '@/context/session';
 import { layout, radii, sizes, spacing, typography } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';
 
 type Role = 'user' | 'carer';
 
 export default function WelcomeScreen() {
+  const session = useSession();
+  if (session.status === 'authenticated' && session.stage === 'ready') return <Redirect href="/perfiles" />;
+  if (session.status !== 'anonymous') return <SessionBoundary />;
+  return <WelcomeContent />;
+}
+
+function WelcomeContent() {
   const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
   const window = useWindowDimensions();
