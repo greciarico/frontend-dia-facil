@@ -6,6 +6,7 @@ import Svg, { Path } from 'react-native-svg';
 
 import { AccountLayout, accountStyles } from '@/components/carer/account-layout';
 import { ContinueButton } from '@/components/carer/continue-button';
+import { useCarerRegistration } from '@/context/carer-registration';
 import { CodeRequestError, requestCarerCode } from '@/services/carer-auth';
 import { borders, radii, sizes, spacing, typography } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';
@@ -13,6 +14,7 @@ import { validateCarerEmail } from '@/utils/carer-email';
 
 export default function CarerAccountScreen() {
   const { colors } = useAppTheme();
+  const { clear } = useCarerRegistration();
   const [email, setEmail] = useState('');
   const [fieldError, setFieldError] = useState<string>();
   const [requestError, setRequestError] = useState<string>();
@@ -22,12 +24,13 @@ export default function CarerAccountScreen() {
   const input = useRef<TextInput>(null);
 
   useFocusEffect(useCallback(() => {
+    clear();
     setLoading(false);
     return () => {
       pending.current?.abort();
       pending.current = null;
     };
-  }, []));
+  }, [clear]));
   useEffect(() => {
     const message = fieldError || requestError;
     if (message) AccessibilityInfo.announceForAccessibility(message);

@@ -8,14 +8,16 @@ import { accountStyles } from './account-layout';
 import { CodeEnvelope } from './code-envelope';
 import { ContinueButton } from './continue-button';
 
-export function CodeSuccessModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+export function CodeSuccessModal({ visible, onClose, onDismiss = onClose }: {
+  visible: boolean; onClose: () => void; onDismiss?: () => void;
+}) {
   const { colors } = useAppTheme();
   const title = useRef<Text>(null);
   useEffect(() => {
     if (visible) AccessibilityInfo.announceForAccessibility('¡Código verificado! Tu correo ha sido verificado correctamente.');
   }, [visible]);
   return (
-    <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}
+    <Modal visible={visible} transparent animationType="none" onRequestClose={onDismiss}
       onShow={() => { const target = findNodeHandle(title.current); if (target) AccessibilityInfo.setAccessibilityFocus(target); }}>
       <View style={[styles.overlay, { backgroundColor: colors.overlay.scrim }]}>
         <ScrollView contentContainerStyle={styles.scroll}>

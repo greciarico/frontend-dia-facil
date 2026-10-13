@@ -166,3 +166,53 @@ test('counter uses deadline, rounds upward, survives skipped intervals and has n
   assert.equal(resendLabel(1), 'Enviar de nuevo (00:01)');
   assert.equal(resendLabel(0), 'Enviar de nuevo');
 });
+
+test('registration creates an account with the proof and optional avatar, without email credentials', async () => {
+  for (const avatarId of [null, 'person-01']) {
+    const input = { comprobanteRegistro: 'temporary-test-proof', nombre: 'Grecia', avatarId };
+    const api = service(async (url, body) => {
+      assert.equal(url, '/api/auth/cuidadores/completar-registro');
+      assert.deepEqual(body, input);
+      assert.equal('email' in body, false);
+      return { status: 201, data: { estado: 'REGISTRO_COMPLETADO', idCuidador: 3 } };
+    });
+    assert.deepEqual(await api.completeCarerRegistration(input), { estado: 'REGISTRO_COMPLETADO', idCuidador: 3 });
+  }
+});
+test('registration never treats duplicates or expired proofs as success and does not leak error detail', async () => {
+  for (const codigo of ['COMPROBANTE_INVALIDO', 'CUENTA_EXISTENTE', 'SOLICITUD_INVALIDA']) {
+    const api = service(async () => { throw { isAxiosError: true, response: { data: { codigo, detail: 'private-proof' } } }; });
+    await assert.rejects(api.completeCarerRegistration({ comprobanteRegistro: 'temporary-test-proof', nombre: 'Grecia', avatarId: null }), error => {
+      assert.equal(error.codigo, codigo); assert.ok(!error.message.includes('private-proof')); return true;
+    });
+  }
+  const api = service(async () => ({ status: 200, data: { estado: 'REGISTRO_COMPLETADO', idCuidador: 3 } }));
+  await assert.rejects(api.completeCarerRegistration({ comprobanteRegistro: 'temporary-test-proof', nombre: 'Grecia', avatarId: null }), api.CodeRequestError);
+});
+const { validateCarerName, nameInitial, registrationReducer, registrationInput } = load('src/utils/carer-registration.ts');
+test('name remains required and the avatar fallback comes from the entered name', () => {
+  for (const value of ['', '  ', 'a'.repeat(101)]) assert.equal(typeof validateCarerName(value), 'string');
+  assert.equal(validateCarerName('  María-José  '), undefined);
+  assert.equal(validateCarerName('a'.repeat(100)), undefined);
+  assert.equal(nameInitial(' Grecia '), 'G');
+  assert.equal(nameInitial('élise'), 'É');
+  assert.equal(nameInitial(''), '');
+});
+test('skip only removes the chosen avatar and clearing the flow discards its proof', () => {
+  const pending = { email: 'a@example.com', comprobanteRegistro: 'temporary-test-proof' };
+  const state = registrationReducer(null, { type: 'pending', value: pending });
+  assert.equal(state, pending);
+  assert.deepEqual(registrationInput(state.comprobanteRegistro, ' Grecia ', 'animal-01', true),
+    { comprobanteRegistro: 'temporary-test-proof', nombre: 'Grecia', avatarId: null });
+  assert.equal(registrationInput(state.comprobanteRegistro, 'Grecia', 'animal-01', false).avatarId, 'animal-01');
+  assert.equal(registrationReducer(state, { type: 'clear' }), null);
+});
+test('local avatar catalogue references exactly the original files', () => {
+  const directory = path.join(__dirname, '..', 'assets', 'avatars');
+  const dependencies = Object.fromEntries(fs.readdirSync(directory).filter(file => file.endsWith('.svg'))
+    .map(file => ['@/assets/avatars/' + file, file]));
+  const { carerAvatarIds, carerAvatars } = load('src/constants/carer-avatars.ts', dependencies);
+  assert.equal(carerAvatarIds.length, 20);
+  assert.deepEqual(carerAvatarIds.slice().sort(), Object.values(carerAvatars).map(file => file.replace('.svg', '')).sort());
+  assert.deepEqual(carerAvatarIds.slice().sort(), fs.readdirSync(directory).map(file => file.replace('.svg', '')).sort());
+});

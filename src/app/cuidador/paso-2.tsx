@@ -1,4 +1,4 @@
-import { Redirect, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { Redirect, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, AppState, Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -7,6 +7,7 @@ import { CodeEnvelope } from '@/components/carer/code-envelope';
 import { CodeSuccessModal } from '@/components/carer/code-success-modal';
 import { ContinueButton } from '@/components/carer/continue-button';
 import { OtpInput } from '@/components/carer/otp-input';
+import { useCarerRegistration } from '@/context/carer-registration';
 import { CodeRequestError, requestCarerCode, verifyCarerCode, type VerifiedCode } from '@/services/carer-auth';
 import { radii, sizes, spacing, typography } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';
@@ -22,10 +23,12 @@ export default function CarerCodeScreen() {
 
 function CodeScreen({ email, initialDeadline }: { email: string; initialDeadline?: number }) {
   const { colors } = useAppTheme();
+  const registration = useCarerRegistration();
   const [digits, setDigits] = useState(emptyOtp);
   const [operation, setOperation] = useState<'verify' | 'resend' | null>(null);
   const [phase, setPhase] = useState<'input' | 'animating' | 'confirmed'>('input');
   const [modal, setModal] = useState(false);
+  const [registrationPending, setRegistrationPending] = useState(false);
   const [message, setMessage] = useState<string>();
   const [error, setError] = useState<CodeRequestError>();
   const [codeBlocked, setCodeBlocked] = useState(false);
@@ -37,6 +40,14 @@ function CodeScreen({ email, initialDeadline }: { email: string; initialDeadline
   const pending = useRef<AbortController | null>(null);
   // Temporary result only; never a session and never a route parameter.
   const result = useRef<VerifiedCode | null>(null);
+  function acknowledge() {
+    if (!active.current) return;
+    setModal(false);
+    if (result.current?.estado === 'REGISTRO_PENDIENTE') {
+      registration.begin({ email, comprobanteRegistro: result.current.comprobanteRegistro });
+      router.replace('/cuidador/paso-3');
+    }
+  }
 
   useFocusEffect(useCallback(() => {
     active.current = true;
@@ -81,7 +92,8 @@ function CodeScreen({ email, initialDeadline }: { email: string; initialDeadline
       if (kind === 'verify') {
         const verified = await verifyCarerCode(email, codigo, controller.signal);
         if (!active.current || controller.signal.aborted) return;
-        result.current = verified; setDigits(emptyOtp()); setPhase('animating');
+        result.current = verified; setRegistrationPending(verified.estado === 'REGISTRO_PENDIENTE');
+        setDigits(emptyOtp()); setPhase('animating');
       } else {
         const requested = await requestCarerCode(email, controller.signal);
         if (!active.current || controller.signal.aborted) return;
@@ -126,13 +138,15 @@ function CodeScreen({ email, initialDeadline }: { email: string; initialDeadline
             </Pressable>
           </View>
           <View style={styles.footer}>
-            <ContinueButton label="Verificar" loading={operation === 'verify'} loadingLabel="Verificando…"
-              disabled={locked || codeBlocked || !/^[0-9]{6}$/.test(digits.join(''))} onPress={() => void send('verify')} />
-            {phase === 'confirmed' && <Text style={[accountStyles.small, styles.confirmed, { color: colors.text.secondary }]}>Tu correo fue verificado. La continuación del registro o acceso estará disponible en un próximo paso.</Text>}
+            {phase === 'confirmed' && registrationPending
+              ? <ContinueButton label="Continuar" onPress={acknowledge} />
+              : <ContinueButton label="Verificar" loading={operation === 'verify'} loadingLabel="Verificando…"
+                disabled={locked || codeBlocked || !/^[0-9]{6}$/.test(digits.join(''))} onPress={() => void send('verify')} />}
+            {phase === 'confirmed' && <Text style={[accountStyles.small, styles.confirmed, { color: colors.text.secondary }]}>Tu correo fue verificado.</Text>}
           </View>
         </AccountLayout>
       </View>
-      <CodeSuccessModal visible={modal} onClose={() => setModal(false)} />
+      <CodeSuccessModal visible={modal} onClose={acknowledge} onDismiss={() => setModal(false)} />
     </>
   );
 }

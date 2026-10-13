@@ -183,6 +183,18 @@ modal. `motion` centraliza transición de éxito de 700 ms, balanceo de 175 ms y
 transición. El modal usa surface.elevated y overlay.scrim (light rgba(10,11,10,.55),
 dark rgba(10,11,10,.75)), foco accesible y una salida explícita “Entendido”.
 
+Paso 3 usa layout.carer.profileHeroHeight (336), avatarSize (152) y avatarOptionSize
+(56). El avatar grande y el selector consumen los originales de assets/avatars con
+expo-image; el círculo fallback usa background.purple e inicial del nombre.
+El selector indica selección únicamente con borde circular morado, sin checks.
+Cuatro avatares rápidos y “+” ocupan cinco espacios iguales en una sola fila,
+reduciendo el diámetro al ancho disponible. El modal presenta los 20 avatares
+en grid sin nombres visibles; las etiquetas descriptivas y selected/checked
+permanecen para lectores de pantalla. Se permite quitar selección.
+No se usan capturas como assets ni nuevas
+fuentes/colores fuera del sistema. El éxito de registro es solo un texto dentro
+del Paso 3, sin nueva pantalla terminal ni diseño del Paso 4.
+
 ### Espaciado
 
 La misma escala debe utilizarse para `padding`, `margin`, `gap` y separación entre elementos.

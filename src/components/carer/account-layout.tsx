@@ -7,11 +7,12 @@ import Svg, { Path } from 'react-native-svg';
 import { borders, layout, radii, sizes, spacing, typography } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';
 
-export function AccountLayout({ step, hero, children }: { step: 1 | 2; hero: ReactNode; children: ReactNode }) {
+export function AccountLayout({ step, hero, children }: { step: 1 | 2 | 3; hero: ReactNode; children: ReactNode }) {
   const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
   const window = useWindowDimensions();
-  const heroHeight = step === 1 ? layout.carer.accountHeroHeight : layout.carer.codeHeroHeight;
+  const heroHeight = step === 1 ? layout.carer.accountHeroHeight
+    : step === 2 ? layout.carer.codeHeroHeight : layout.carer.profileHeroHeight;
   function back() {
     if (router.canGoBack()) router.back();
     else router.replace(step === 1 ? '/' : '/cuidador/paso-1');

@@ -38,6 +38,7 @@ export const motion = { carerSuccessDuration: 700, carerTiltDuration: 175, carer
 export const layout = {
   contentMaxWidth: 480,
   carer: { accountHeroHeight: 314, codeHeroHeight: 396, illustrationWidth: 248,
+    profileHeroHeight: 336, avatarSize: 152, avatarOptionSize: 56,
     accountIllustrationRatio: 250 / 183, codeIllustrationRatio: 240 / 190,
     curveHeight: 32, stepDot: 12, stepGap: 28, codeCellHeight: 60 },
   welcome: { heroHeight: 280, illustrationWidth: 248, illustrationRatio: 234 / 197, curveHeight: 32,

@@ -47,6 +47,10 @@ function translateError(error: unknown, verification: boolean): never {
       }
       case 'CUENTA_INACTIVA':
         throw new CodeRequestError('Tu cuenta está inactiva. No puedes continuar. Puedes volver a la pantalla anterior.', false, codigo);
+      case 'COMPROBANTE_INVALIDO':
+        throw new CodeRequestError('La verificación ya no es válida. Solicita y verifica otro código para crear tu cuenta.', false, codigo);
+      case 'CUENTA_EXISTENTE':
+        throw new CodeRequestError('La cuenta ya existe. Vuelve al Paso 1 y verifica otro código para acceder.', false, codigo);
       case 'REENVIO_PREMATURO': {
         const header = error.response.headers?.['retry-after'];
         const seconds = typeof header === 'string' && /^\d+$/.test(header) ? Number(header) : undefined;
@@ -63,6 +67,33 @@ function translateError(error: unknown, verification: boolean): never {
     }
   }
   throw new CodeRequestError('El servicio no está disponible en este momento. Inténtalo más tarde.');
+}
+
+export type CompletedRegistration = { estado: 'REGISTRO_COMPLETADO'; idCuidador: number };
+
+export async function completeCarerRegistration(input: {
+  comprobanteRegistro: string; nombre: string; avatarId: string | null;
+}, signal?: AbortSignal): Promise<CompletedRegistration> {
+  try {
+    const response = await getHttpClient().post('/api/auth/cuidadores/completar-registro', input, { signal });
+    const data = response.data;
+    if (response.status !== 201 || data?.estado !== 'REGISTRO_COMPLETADO'
+      || !Number.isInteger(data.idCuidador) || data.idCuidador <= 0) {
+      throw new CodeRequestError('No pudimos confirmar la creación. Si la cuenta ya existe al reintentar, vuelve a verificar tu correo.');
+    }
+    return { estado: 'REGISTRO_COMPLETADO', idCuidador: data.idCuidador };
+  } catch (error) {
+    if (isAxiosError(error) && error.response?.data?.codigo === 'SOLICITUD_INVALIDA') {
+      throw new CodeRequestError('Revisa tu nombre y el avatar seleccionado.', true, 'SOLICITUD_INVALIDA');
+    }
+    if (isAxiosError(error) && ['SERVICIO_NO_DISPONIBLE', 'ERROR_INTERNO'].includes(error.response?.data?.codigo)) {
+      throw new CodeRequestError('No pudimos crear tu cuenta. Inténtalo más tarde.');
+    }
+    if (isAxiosError(error) && ['ECONNABORTED', 'ETIMEDOUT'].includes(error.code || '')) {
+      throw new CodeRequestError('La solicitud tardó demasiado. Si la cuenta ya existe al reintentar, vuelve a verificar tu correo.');
+    }
+    return translateError(error, false);
+  }
 }
 
 export async function requestCarerCode(email: string, signal?: AbortSignal): Promise<RequestedCode> {

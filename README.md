@@ -1,7 +1,7 @@
 # DiaFacil móvil
 
 Expo SDK 57, React Native, TypeScript y Expo Router. El alcance actual es la
-bienvenida, solicitud y verificación OTP del cuidador en Android/iOS; no se desarrolla ni valida Web.
+bienvenida, OTP y creación de cuenta del cuidador en Android/iOS; no se desarrolla ni valida Web.
 
 ## Ejecutar
 
@@ -17,7 +17,8 @@ La ayuda explica brevemente ambos roles mediante un aviso nativo.
 
 ## Organización
 
-- src/app: bienvenida y rutas cuidador/paso-1 y cuidador/paso-2, con Expo Router.
+- src/app: bienvenida y rutas cuidador/paso-1, paso-2 y paso-3, con Expo Router.
+- src/context/carer-registration.tsx: comprobante de registro únicamente en memoria del navegador cuidador.
 - src/theme: tokens de DiaFacil y resolución del tema del sistema.
 - src/components/welcome: tarjeta de rol, compartida por las dos opciones.
 - src/config/env.ts: lectura y validación diferida de la URL pública del backend.
@@ -91,15 +92,31 @@ Reiniciar el backend para cargar esta política si no se ha recargado aún.
 10. Pasar a segundo plano y volver: se recalcula desde el instante objetivo.
     El contador es conservador, no tiempo exacto del servidor. REENVIO_PREMATURO
     prevalece y aplica Retry-After. Sin un header válido se pide volver al Paso 1.
+11. Para correo sin cuenta, Entendido abre Paso 3; para cuidador existente no lo abre.
+12. Ingresar nombre (obligatorio, hasta 100 caracteres) y elegir avatar opcional.
+    Ver todos abre los 20 originales; Usar la inicial de mi nombre elimina selección.
+13. Continuar envía nombre y avatar opcional. Personalizar más tarde envía el mismo
+    nombre con avatarId null. Ambos bloquean duplicados y muestran carga.
+14. HTTP 201 REGISTRO_COMPLETADO muestra Cuenta creada dentro de Paso 3 y bloquea
+    las acciones. Solo la acción Personalizar más tarde muestra:
+    “Podrás personalizar tu perfil más adelante desde Mi perfil.”
+
+Antes de probar el registro, revisar backend_dia_facil/docs/sql/add-cuidador-avatar.sql
+y confirmar que cuidador.avatar_id existe en la base de prueba. El incremento no
+ejecutó SQL ni habilitó Flyway. El entorno local configurado con ddl-auto=update
+puede crear la columna al reiniciar; fuera de él se requiere aplicar el script revisado.
 
 Errores de validación aparecen junto al campo; errores HTTP, conexión y timeout
 se muestran con textos comprensibles y anuncios accesibles. Una salida del
 formulario cancela la espera y evita navegación tardía. No hay logs sensibles.
 El correo solo es un parámetro de presentación: no crea ni persiste una sesión.
-Los resultados AUTENTICADO y REGISTRO_PENDIENTE solo se conservan en memoria
-durante Paso 2. No se persiste autenticación, no se transporta el comprobante en
+REGISTRO_PENDIENTE se transfiere del Paso 2 al Paso 3 solo en un contexto en memoria.
+No se persiste autenticación, no se transporta el comprobante en
 la URL y no se registra OTP, correo, cuerpos ni comprobantes. Al salir se descarta
-el resultado. El código se borra al verificar correctamente o confirmar reenvío.
+el resultado; completar el registro también borra el comprobante. El código se
+borra al verificar correctamente o confirmar reenvío. Acceso directo a Paso 3
+sin comprobante vuelve al Paso 1. Comprobante vencido o cuenta existente permite
+volver a verificar correo sin inventar una sesión.
 
 Código incorrecto permite corregirlo; código inexistente, vencido, usado o límite
 de intentos requiere uno nuevo; cuenta inactiva bloquea ambos envíos. Una respuesta
@@ -109,13 +126,12 @@ cancela/ignora peticiones y aperturas tardías del modal.
 
 ## Continuación pendiente
 
-No se implementa Paso 3. El prototipo “Personaliza tu perfil” muestra nombre y
-avatar, mientras la documentación sitúa el perfil de la persona usuaria después
-de “Mis perfiles”; debe aclararse antes de conectar esa pantalla.
-AUTENTICADO no entrega sesión: falta acceso autorizado para ir a Mis perfiles.
-REGISTRO_PENDIENTE entrega un comprobante de diez minutos; existe lógica interna
-de registro con comprobante y nombre del cuidador, pero falta endpoint HTTP y el
-avatar no está incluido en ese contrato. idCuidador nunca es una credencial.
+Paso 3 personaliza la cuenta del cuidador; no crea un PerfilUsuario. Los 20 SVG
+de assets/avatars se mantienen originales y backend guarda solo el ID o null.
+La inicial se deriva del nombre; ninguna de las dos acciones puede omitirlo.
+Foto propia/Cloudinary, Mi perfil y Paso 4 siguen pendientes. AUTENTICADO y
+REGISTRO_COMPLETADO no entregan sesión: falta acceso autorizado para ir a Mis
+perfiles. idCuidador nunca es una credencial.
 
 ## Validar
 
