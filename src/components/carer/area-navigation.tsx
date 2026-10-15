@@ -4,6 +4,7 @@ import { carerDestinations } from '@/constants/carer-navigation';
 import { useSession } from '@/context/session';
 import { borders, layout, radii, shadows, sizes, spacing, typography } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';
+import { isProfilesDestination } from '@/utils/profile-navigation';
 import { AccountAvatar } from './account-avatar';
 import { AreaIcon } from './area-icon';
 
@@ -13,9 +14,9 @@ export function AreaNavigation() {
   const { colors } = useAppTheme();
   return <View style={[styles.bar, { backgroundColor: colors.surface.elevated, borderColor: colors.border.decorative, shadowColor: colors.shadow }]}>
     {carerDestinations.map(item => {
-      const selected = item.href === pathname;
+      const selected = item.href === pathname || item.id === 'profiles' && isProfilesDestination(pathname);
       const color = selected ? colors.action.primary : item.href ? colors.text.secondary : colors.text.disabled;
-      return <Pressable key={item.id} disabled={!item.href} onPress={() => { if (item.href && !selected) router.replace(item.href); }}
+      return <Pressable key={item.id} disabled={!item.href} onPress={() => { if (item.href && item.href !== pathname) router.dismissTo(item.href); }}
         accessibilityRole="tab" accessibilityLabel={item.label} accessibilityState={{ selected, disabled: !item.href }}
         accessibilityHint={!item.href ? 'Disponible próximamente.' : undefined}
         style={[styles.item, { backgroundColor: selected ? colors.profiles.information : 'transparent' }]}>

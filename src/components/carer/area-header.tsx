@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { AccessibilityInfo, findNodeHandle, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSession } from '@/context/session';
 import { layout, radii, sizes, spacing, typography } from '@/theme/tokens';
@@ -8,7 +8,9 @@ import { AreaIcon } from './area-icon';
 import { ContinueButton } from './continue-button';
 import { NotificationBell } from './notification-bell';
 
-export function AreaHeader({ title }: { title: string }) {
+export function AreaHeader({ title, onBack, showNotifications = true, backLabel = 'Volver a Mis perfiles', rightContent }: {
+  title: ReactNode; onBack?: () => void; showNotifications?: boolean; backLabel?: string; rightContent?: ReactNode;
+}) {
   const { manager } = useSession();
   const { colors } = useAppTheme();
   const [open, setOpen] = useState(false);
@@ -29,11 +31,14 @@ export function AreaHeader({ title }: { title: string }) {
   }
   return <>
     <View style={styles.header}>
-      <Pressable ref={options} accessibilityRole="button" accessibilityLabel="Opciones de cuenta" onPress={() => { setError(false); setOpen(true); }} style={styles.options}>
+      {onBack ? <Pressable accessibilityRole="button" accessibilityLabel={backLabel} onPress={onBack} style={styles.options}>
+        <AreaIcon name="back" color={colors.text.primary} />
+      </Pressable> : <Pressable ref={options} accessibilityRole="button" accessibilityLabel="Opciones de cuenta" onPress={() => { setError(false); setOpen(true); }} style={styles.options}>
         <AreaIcon name="more" color={colors.text.secondary} />
-      </Pressable>
+      </Pressable>}
       <Text accessibilityRole="header" style={[styles.title, { color: colors.text.primary }]}>{title}</Text>
-      <NotificationBell />
+      {rightContent !== undefined ? <View style={styles.options}>{rightContent}</View>
+        : showNotifications ? <NotificationBell /> : <View style={styles.options} />}
     </View>
     <Modal visible={open} transparent animationType="none" onRequestClose={close}
       onShow={() => { const target = findNodeHandle(heading.current); if (target) AccessibilityInfo.setAccessibilityFocus(target); }}>

@@ -9,8 +9,9 @@ import { useAppTheme } from '@/theme/use-theme';
 import { AvatarOption } from './avatar-option';
 import { accountStyles } from './account-layout';
 
-export function AvatarSelector({ value, onChange, disabled, name }: {
+export function AvatarSelector({ value, onChange, disabled, name, title = 'Elige tu avatar', resetLabel = 'Usar la inicial de mi nombre' }: {
   value: CarerAvatarId | null; onChange: (id: CarerAvatarId | null) => void; disabled: boolean; name: string;
+  title?: string; resetLabel?: string;
 }) {
   const { colors } = useAppTheme();
   const [open, setOpen] = useState(false);
@@ -43,12 +44,12 @@ export function AvatarSelector({ value, onChange, disabled, name }: {
     </View>
     <Pressable accessibilityRole="button" disabled={disabled} accessibilityState={{ disabled }}
       onPress={() => onChange(null)} style={styles.reset}>
-      <Text style={[accountStyles.small, { color: colors.action.primary, textDecorationLine: 'underline' }]}>Usar la inicial de mi nombre</Text>
+      <Text style={[accountStyles.small, { color: colors.action.primary, textDecorationLine: 'underline' }]}>{resetLabel}</Text>
     </Pressable>
     <Modal visible={open} animationType="none" onRequestClose={() => setOpen(false)}>
       <View accessibilityViewIsModal style={[styles.modal, { backgroundColor: colors.background.primary,
         paddingTop: insets.top + spacing['2xl'], paddingBottom: insets.bottom + spacing.lg }]}>
-        <Text accessibilityRole="header" style={[accountStyles.title, { color: colors.text.primary }]}>Elige tu avatar</Text>
+        <Text accessibilityRole="header" style={[accountStyles.title, { color: colors.text.primary }]}>{title}</Text>
         <FlatList key={columns} data={carerAvatarIds} numColumns={columns} keyExtractor={id => id}
           onLayout={({ nativeEvent }) => setGalleryWidth(nativeEvent.layout.width)}
           initialNumToRender={8} contentContainerStyle={styles.list}

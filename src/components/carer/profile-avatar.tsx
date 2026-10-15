@@ -6,15 +6,14 @@ import { useAppTheme } from '@/theme/use-theme';
 import { profileAvatar } from '@/utils/profiles';
 import { AccountAvatar } from './account-avatar';
 
-export function ProfileAvatar({ name, avatar }: { name: string; avatar: string | null }) {
+export function ProfileAvatar({ name, avatar, size = layout.profiles.avatarSize }: { name: string; avatar: string | null; size?: number }) {
   // Key the renderer so a changed reference resets only its image failure state.
-  return <AvatarImage key={avatar || ''} name={name} avatar={avatar} />;
+  return <AvatarImage key={avatar || ''} name={name} avatar={avatar} size={size} />;
 }
-function AvatarImage({ name, avatar }: { name: string; avatar: string | null }) {
+function AvatarImage({ name, avatar, size }: { name: string; avatar: string | null; size: number }) {
   const [failed, setFailed] = useState(false);
   const { colors } = useAppTheme();
   const resolved = profileAvatar(avatar);
-  const size = layout.profiles.avatarSize;
   return <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: colors.background.purple, overflow: 'hidden' }}>
     <AccountAvatar name={name} avatarId={failed ? null : resolved.local} size={size} />
     {!failed && resolved.uri && <Image source={{ uri: resolved.uri }} contentFit="cover" accessible={false}

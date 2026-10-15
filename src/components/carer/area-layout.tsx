@@ -6,10 +6,10 @@ import { useAppTheme } from '@/theme/use-theme';
 import { AreaHeader } from './area-header';
 import { AreaNavigation } from './area-navigation';
 
-export function CarerAreaLayout({ title, children }: { title: string; children: ReactNode }) {
+export function CarerAreaLayout({ title, children, showHeader = true }: { title: string; children: ReactNode; showHeader?: boolean }) {
   const { colors } = useAppTheme();
   return <SafeAreaView style={[styles.page, { backgroundColor: colors.background.primary }]}>
-    <AreaHeader title={title} />
+    {showHeader && <AreaHeader title={title} />}
     <View style={styles.content}>{children}</View>
     <View style={styles.navigation}><AreaNavigation /></View>
   </SafeAreaView>;

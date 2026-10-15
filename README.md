@@ -131,7 +131,7 @@ cancela/ignora peticiones y aperturas tardías del modal.
 Paso 3 personaliza la cuenta del cuidador; no crea un PerfilUsuario. Los 20 SVG
 de assets/avatars se mantienen originales y backend guarda solo el ID o null.
 La inicial se deriva del nombre; ninguna de las dos acciones puede omitirlo.
-Foto propia/Cloudinary, Mi perfil y la creación de perfiles siguen pendientes. AUTENTICADO y
+Foto propia/Cloudinary, Mi perfil y la gestión interna de cada perfil siguen pendientes. AUTENTICADO y
 REGISTRO_COMPLETADO ahora entregan credenciales opacas; idCuidador nunca es credencial.
 
 ## Sesión persistente y Paso 4
@@ -145,6 +145,15 @@ biometría obligatoria. Los valores seguros no van a AsyncStorage.
 
 Sesión válida abre Mis perfiles (/perfiles), con consulta Bearer real, estado
 vacío/lista/loading/error y menú superior de logout. Ver docs/mis-perfiles-increment.md.
+Ambos botones de creación abren el mismo formulario real: nombre obligatorio de
+hasta 60 caracteres y avatar local opcional. POST crea perfil/configuración;
+confirmación solo tras 201; Comenzar abre el detalle por el ID real y consulta GET.
+Las tarjetas de Mis perfiles abren ese mismo detalle; volver lleva a Mis perfiles.
+Ver docs/perfil-inicio-increment.md para el detalle y su validación.
+Crear sus actividades abre el estado vacío real del perfil, consultado con Bearer.
+Nueva actividad permanece deshabilitada hasta implementar su formulario.
+Ver docs/actividades-vacias-increment.md para contrato, navegación y validación.
+Ver docs/crear-perfil-increment.md para contrato, límites y pruebas MySQL opt-in.
 Paso 4 aparece solo tras crear cuenta nueva; Continuar finaliza onboarding y
 abre esa raíz. Restaurar o acceder como cuidador existente no repite Pasos 3/4.
 
@@ -167,7 +176,7 @@ HTTP solo se permite en desarrollo (__DEV__); fuera de él EXPO_PUBLIC_API_URL d
 - npx tsc --noEmit: comprobación de tipos.
 - npm run test:carer-auth: pruebas aisladas de servicio, correo, OTP y contador, sin SMTP.
 - npm run test:session: restauración, rotación, SecureStore simulado, logout y Axios privado.
-- npm run test:profiles: contrato, carga, acciones pendientes y navegación privada.
+- npm run test:profiles: consulta/creación, estados, confirmación, errores y navegación privada.
 - npx expo export --platform android --output-dir .cache/carer-android: Metro, módulos y assets.
 - Revisión en teléfono de ambos temas, TalkBack/VoiceOver, safe areas,
   selección de rol, ayuda y texto ampliado. No validar Web en este alcance.

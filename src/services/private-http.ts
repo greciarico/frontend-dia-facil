@@ -1,10 +1,25 @@
-import { create, type InternalAxiosRequestConfig } from 'axios';
+import { create, type AxiosRequestConfig, type InternalAxiosRequestConfig } from 'axios';
 
 import { getApiUrl } from '@/config/env';
 import { sessionManager } from './session';
 import { SessionFailure } from './session-manager';
 
 type PrivateConfig = InternalAxiosRequestConfig & { _retried?: boolean; _access?: string; _epoch?: number; authReplaySafe?: boolean };
+export type PrivateRequestOptions = AxiosRequestConfig & { authReplaySafe?: boolean };
+/** Deliberately drops server detail, Axios config, headers and request/response bodies. */
+export class PrivateHttpError extends Error {
+  constructor(readonly status?: number, readonly codigo?: string, readonly fields: string[] = []) {
+    super('No pudimos completar la solicitud.');
+  }
+}
+function safeHttpError(error: { response?: { status?: number; data?: { codigo?: unknown; errores?: unknown } } }) {
+  const data = error.response?.data;
+  const allowed = ['SOLICITUD_INVALIDA', 'LIMITE_PERFILES_ALCANZADO', 'PERFIL_NO_ENCONTRADO', 'SERVICIO_NO_DISPONIBLE', 'ERROR_INTERNO', 'ACCESO_DENEGADO'];
+  const codigo = typeof data?.codigo === 'string' && allowed.includes(data.codigo) ? data.codigo : undefined;
+  const fields = Array.isArray(data?.errores) ? [...new Set(data.errores.flatMap(field =>
+    field && typeof field === 'object' && ['nombre', 'avatar'].includes(field.campo) ? [field.campo as string] : []))] : [];
+  return new PrivateHttpError(error.response?.status, codigo, fields);
+}
 let client: ReturnType<typeof create> | undefined;
 export function getAuthenticatedHttpClient() {
   if (client) return client;
@@ -20,7 +35,8 @@ export function getAuthenticatedHttpClient() {
   });
   client.interceptors.response.use(response => response, async error => {
     const config = error.config as PrivateConfig | undefined;
-    if (error.response?.status !== 401 || !config || config._epoch !== sessionManager.revision()) throw new SessionFailure('network');
+    if (config && config._epoch !== sessionManager.revision()) throw new SessionFailure('canceled');
+    if (error.response?.status !== 401 || !config) throw safeHttpError(error);
     const renewable = error.response.data?.codigo === 'SESION_REQUIERE_RENOVACION';
     if (!renewable) await sessionManager.recoverRejected(config._access || '', false);
     const method = config.method?.toLowerCase();

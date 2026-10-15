@@ -37,7 +37,8 @@ export const shadows = { card: { offsetY: 3, opacity: 0.12, radius: 3, elevation
 export const motion = { carerSuccessDuration: 700, carerTiltDuration: 175, carerTiltDegrees: 4 } as const;
 export const layout = {
   contentMaxWidth: 480,
-  profiles: { avatarSize: 80, emptyIllustrationRatio: 1536 / 1024 },
+  activities: { emptyIllustrationSize: 120 },
+  profiles: { avatarSize: 80, detailAvatarSize: 168, confirmationAvatarSize: 200, emptyIllustrationRatio: 1536 / 1024 },
   carer: { accountHeroHeight: 314, codeHeroHeight: 396, illustrationWidth: 248,
     profileHeroHeight: 336, avatarSize: 152, avatarOptionSize: 56,
     accountIllustrationRatio: 250 / 183, codeIllustrationRatio: 240 / 190,

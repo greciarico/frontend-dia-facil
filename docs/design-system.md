@@ -214,13 +214,25 @@ success/successSurface y el mismo par amarillo de marca. No se agregan colores.
 Mis perfiles utiliza header y navegación inferior compartidos, con safe areas
 y contenido desplazable. `profiles.information` y `profiles.cards` reutilizan
 purple.light, blue.light y orange.light en light; elevated/surface en dark.
-`layout.profiles` define avatarSize 80 y la proporción original 256/213 del asset
+`layout.profiles` define avatarSize 80, confirmationAvatarSize 200 y la proporción 1536/1024 del asset
 local thoughtful-carer. Las tarjetas no dibujan progreso sin datos reales.
-Los destinos futuros y acciones de creación/acceso permanecen deshabilitados,
+Los destinos futuros permanecen deshabilitados; las tarjetas abren el perfil real,
 con estado accesible; Perfiles expone selected. Mi perfil muestra el avatar
 efectivo del cuidador. Texto ampliado permite ajustar altura y envolver etiquetas.
+Los botones de creación abren el formulario protegido sin menú inferior. Se
+reutiliza el selector circular con etiquetas configurables, sin modificar las del
+Paso 3. Cámara deshabilitada y fallback con inicial. Confirmación usa avatar
+efectivo y decoración SVG estática, sin fotografías ni assets del prototipo.
 
 La misma escala debe utilizarse para `padding`, `margin`, `gap` y separación entre elementos.
+
+Actividades reutiliza el header del área con etiqueta de regreso configurable y
+avatar pasivo a la derecha. El título envuelve con texto ampliado. Su estado vacío
+usa una ilustración SVG local de calendario con círculo decorativo integrado,
+colores semánticos y `layout.activities.emptyIllustrationSize` (120). El contenido
+es desplazable y comparte la única barra inferior del área. Nueva actividad usa
+el botón principal deshabilitado, sin ruta ni handler provisional. Solo se dibuja
+el vacío tras finalizar la consulta; loading, error y datos presentes son distintos.
 
 | Token | Valor |
 |---|---:|

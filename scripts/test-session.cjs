@@ -253,3 +253,29 @@ test('storage retry retains immediate onboarding, but a new manager restores rea
   assert.equal(restored.getSnapshot().skippedAvatar, false);
   assert.ok(!allowedScreens(restored.getSnapshot()).includes('paso-4'));
 });
+
+test('private client retries opted-in POST only after renewable 401 and keeps safe business metadata', async () => {
+  let request, failure; let renewals = 0, replays = 0;
+  const manager = { revision: () => 1, access: async () => 'access', recoverRejected: async () => { renewals++; } };
+  const client = async config => { replays++; assert.equal(config._retried, true); return { status: 201 }; };
+  client.interceptors = { request: { use: fn => { request = fn; } }, response: { use: (_ok, fn) => { failure = fn; } } };
+  const exports = {};
+  new Function('require', 'exports', ts.transpileModule(fs.readFileSync(path.join(__dirname, '../src/services/private-http.ts'), 'utf8'), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS },
+  }).outputText)(id => ({ axios: { create: () => client }, '@/config/env': { getApiUrl: () => 'https://example.invalid' },
+    './session': { sessionManager: manager }, './session-manager': { SessionFailure } })[id], exports);
+  exports.getAuthenticatedHttpClient();
+  const config = { method: 'post', url: '/api/perfiles', authReplaySafe: true, headers: { set() {} } };
+  await request(config);
+  assert.equal((await failure({ config, response: { status: 401, data: { codigo: 'SESION_REQUIERE_RENOVACION' } } })).status, 201);
+  assert.equal(renewals, 1); assert.equal(replays, 1);
+  for (const status of [409, 503]) {
+    await assert.rejects(failure({ config, response: { status, data: { codigo: 'LIMITE_PERFILES_ALCANZADO', detail: 'private detail',
+      errores: [{ campo: 'nombre', mensaje: 'private' }, { campo: 'secret' }] } } }), error => {
+      assert.equal(error.status, status); assert.equal(error.codigo, 'LIMITE_PERFILES_ALCANZADO');
+      assert.deepEqual(error.fields, ['nombre']); assert.ok(!JSON.stringify(error).includes('private')); return true;
+    });
+  }
+  await assert.rejects(failure({ config, code: 'ECONNABORTED' }));
+  assert.equal(renewals, 1); assert.equal(replays, 1);
+});

@@ -1,5 +1,9 @@
 # Mis perfiles
 
+Este informe describe el incremento inicial de consulta. La creación real y sus
+rutas están implementadas posteriormente en crear-perfil-increment.md; las
+referencias a creación deshabilitada de este informe son históricas.
+
 ## Resultado y navegación
 
 La raíz redirige únicamente authenticated/ready a /perfiles. El grupo
