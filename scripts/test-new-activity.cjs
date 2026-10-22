@@ -25,6 +25,8 @@ function load(file, modules = {}, timers = {}) {
 }
 const options = load('utils/activity-icon-options.ts');
 const draftUtils = load('utils/activity-draft.ts');
+const createUtils = load('utils/create-activity.ts', { './activity-draft': draftUtils,
+  './activity-icon-options': load('utils/activity-icon-options.ts') });
 test('approved Desayunar template populates all five image references without any per-step lookup', () => {
   const source = JSON.parse(fs.readFileSync(path.join(__dirname, '../../backend_dia_facil/src/main/resources/db/datos-base.json'), 'utf8'));
   const template = source.plantillas[0];
@@ -67,7 +69,7 @@ function nodes(tree) {
   if (!tree || typeof tree !== 'object') return [];
   if (Array.isArray(tree)) return tree.flatMap(nodes);
   if (Object.hasOwn(presentations, tree.type)) return [tree, ...nodes(presentations[tree.type](tree.props))];
-  return [tree, ...nodes(tree.props?.children), ...nodes(tree.props?.formHeader),
+  return [tree, ...nodes(tree.props?.children), ...nodes(tree.props?.formHeader), ...nodes(tree.props?.formActions),
     ...(tree.type === 'DragList' ? [...nodes(tree.props.ListHeaderComponent), ...nodes(tree.props.ListFooterComponent),
       ...tree.props.data.flatMap((item, index) => nodes(tree.props.renderItem({ item, getIndex: () => index, drag() {}, isActive: false })))] : [])];
 }
@@ -219,23 +221,32 @@ test('gallery remains available without suggestions, contains the full catalogue
   }
 });
 
-test('new screen loads real profile, routes both back actions to activities and never enables creation', () => {
+test('new screen loads real profile, routes back to activities and keeps invalid creation disabled', () => {
   let state = { status: 'loading' }; const navigations = []; let hardware; let retried = 0;
-  const values = []; let cursor = 0;
+  const parentValues = []; let formValues = []; let values = parentValues; let cursor = 0;
+  const posted = []; let completed;
+  const creation = { sending: false, error: null, submit: input => posted.push(input) };
   const native = { StyleSheet: { create: x => x }, Text: 'Text', View: 'View', ActivityIndicator: 'Spinner',
+    Keyboard: { dismiss() {} },
     KeyboardAvoidingView: 'Keyboard', ScrollView: 'Scroll', TextInput: 'Input', Platform: { OS: 'android' },
     BackHandler: { addEventListener: (_event, callback) => { hardware = callback; return { remove() {} }; } } };
-  const screen = load('app/(cuidador-autenticado)/(principal)/perfiles/[idPerfilUsuario]/nueva-actividad.tsx', { ...styling,
+  const Screen = load('app/(cuidador-autenticado)/(principal)/perfiles/[idPerfilUsuario]/nueva-actividad.tsx', { ...styling,
     'react-native': native,
     'react-native-gesture-handler': { GestureHandlerRootView: 'GestureRoot' },
-    react: { useCallback: fn => fn, useState: initial => { const i = cursor++; if (!(i in values)) values[i] = initial;
-      return [values[i], value => { values[i] = value; }]; },
-      useReducer: (reducer, initial) => { const i = cursor++; if (!(i in values)) values[i] = initial;
-        return [values[i], action => { values[i] = reducer(values[i], action); }]; } },
+    react: { useCallback: fn => fn, useRef: initial => {const i=cursor++;if(!(i in values))values[i]={current:initial};return values[i];},
+      useState: initial => { const i = cursor++; const store=values; if (!(i in store)) store[i] = initial;
+      return [store[i], value => { store[i] = value; }]; },
+      useReducer: (reducer, initial) => { const i = cursor++; const store=values;if (!(i in store)) store[i] = initial;
+        return [store[i], action => { store[i] = reducer(store[i], action); }]; } },
     'expo-router': { Stack: { Screen: 'Screen' }, router: { dismissTo: value => navigations.push(value) },
       useLocalSearchParams: () => ({ idPerfilUsuario: '12' }), useFocusEffect: fn => fn() },
     '@/utils/profile-navigation': navigation, '@/utils/activity-icon-options': options,
     '@/utils/activity-draft': draftUtils,
+    '@/utils/create-activity': createUtils,
+    '@/hooks/use-create-activity': { useCreateActivity: (id, onCreated) => { assert.equal(id,12); completed=onCreated;return creation; } },
+    '@/components/carer/activity-dialog': { ActivityDialog: 'Dialog' },
+    '@/components/carer/activity-created-modal': { ActivityCreatedModal: 'CreatedModal' },
+    '@/components/carer/step-dialog-actions': { StepDialogActions: 'Actions' },
     '@/components/carer/activity-icon-selector': { ActivityIconSelector: 'Selector' },
     '@/components/carer/activity-section-heading': { ActivitySectionHeading: 'SectionHeading' },
     '@/components/carer/activity-time-field': { ActivityTimeField: 'Time' },
@@ -246,6 +257,7 @@ test('new screen loads real profile, routes both back actions to activities and 
     '@/hooks/use-activity-icons': { useActivityIcons: () => ({ catalogue: { status: 'ready', icons: [bread] }, suggestions: { status: 'ready', icons: [] } }) },
     '@/hooks/use-activity-template': { useActivityTemplate: () => ({ state: { status: 'ready', template: null }, retry() {} }) },
   }).default;
+  const screen=()=>{cursor=0;values=parentValues;return Screen();};
   assert.ok(!nodes(screen()).some(node => node.type === 'Input'));
   state = { status: 'error' }; nodes(screen()).find(node => node.props?.label === 'Reintentar').props.onPress(); assert.equal(retried, 1);
   state = { status: 'not-found' }; assert.ok(text(screen()).includes('No pudimos encontrar'));
@@ -254,7 +266,8 @@ test('new screen loads real profile, routes both back actions to activities and 
   nodes(tree).find(node => node.type === 'Screen').props.options.header().props.onBack();
   assert.deepEqual(navigations.pop(), navigation.activitiesHref(12));
   const form = nodes(tree).find(node => typeof node.type === 'function').type;
-  const render = () => { cursor = 0; return form(); };
+  const formProps=nodes(tree).find(node=>node.type===form).props;
+  const render = () => { cursor = 0;values=formValues;return form(formProps); };
   const headings = nodes(render()).filter(node => node.type === 'SectionHeading');
   assert.deepEqual(headings.map(node => [node.props.icon, node.props.title]), [['pencil', 'Nombre de la actividad'], ['clock', 'Hora'], ['imagePlus', 'Elige un ícono']]);
   const iconHeading = headings[2];
@@ -267,7 +280,38 @@ test('new screen loads real profile, routes both back actions to activities and 
   nodes(render()).find(node => node.type === 'Selector').props.onChange(bread);
   nodes(render()).find(node => node.type === 'Input').props.onChangeText('Leer');
   tree = render(); assert.deepEqual(nodes(tree).find(node => node.type === 'Selector').props.value, bread);
-  assert.equal(tree.type, 'Steps'); assert.ok(tree.props.formHeader);
+  assert.ok(nodes(tree).find(node => node.type === 'Steps').props.formHeader);
+  assert.equal(nodes(tree).find(node => node.props?.label === 'Crear actividad').props.disabled, true);
+  nodes(render()).find(node=>node.type==='Time').props.onChange(420);
+  nodes(render()).find(node=>node.type==='Steps').props.dispatch({type:'save',description:'Mi paso',pictograma:null});
+  tree=render(); assert.equal(nodes(tree).find(node=>node.props?.label==='Crear actividad').props.disabled,false);
+  nodes(tree).find(node=>node.props?.label==='Crear actividad').props.onPress();
+  assert.deepEqual(posted[0],{nombre:'Leer',hora:'07:00',codigoIcono:'bread',pasos:[{descripcion:'Mi paso',idArasaac:null}]});
+  creation.sending=true;tree=render();assert.equal(nodes(tree).find(node=>node.type==='Steps').props.busy,true);
+  assert.equal(nodes(tree).find(node=>node.type==='Input').props.editable,false);
+  assert.equal(nodes(tree).find(node=>node.props?.label==='Crear actividad').props.loading,true);
+  creation.sending=false;creation.error={kind:'uncertain',message:'Respuesta desconocida'};
+  tree=render();assert.ok(nodes(tree).some(node=>node.props?.label==='Ver actividades'));
+  nodes(tree).find(node=>node.props?.label==='Crear actividad').props.onPress();
+  tree=render();assert.equal(posted.length,1);
+  nodes(tree).find(node=>node.type==='Actions').props.onCancel();
+  assert.equal(nodes(render()).find(node=>node.type==='Input').props.value,'Leer');
+  assert.equal(nodes(render()).find(node=>node.type==='Steps').props.draft.steps[0].descripcion,'Mi paso');
+  completed();assert.equal(navigations.length,0);
+  tree=screen();let modal=nodes(tree).find(node=>node.type==='CreatedModal');
+  assert.equal(modal.props.profileName,'Persona real');
+  assert.ok(!nodes(tree).some(node=>node.type===form)); // The sent form is unmounted.
+  modal.props.onCreateAnother();modal.props.onViewActivities();assert.equal(navigations.length,0);
+  tree=screen();assert.ok(nodes(tree).some(node=>node.type===form));
+  formValues=[];creation.error=null; // Fresh hooks on a real React remount.
+  tree=render();assert.equal(nodes(tree).find(node=>node.type==='Input').props.value,'');
+  assert.equal(nodes(tree).find(node=>node.type==='Time').props.value,null);
+  assert.equal(nodes(tree).find(node=>node.type==='Selector').props.value,null);
+  assert.equal(nodes(tree).find(node=>node.type==='Steps').props.draft.steps.length,0);
+  completed();modal=nodes(screen()).find(node=>node.type==='CreatedModal');
+  modal.props.onViewActivities();modal.props.onViewActivities();
+  assert.equal(navigations.length,1);assert.deepEqual(navigations.pop(),navigation.activitiesHref(12));
+  assert.ok(!nodes(screen()).some(node=>node.type==='CreatedModal'||node.type===form));
 });
 
 const template = (id = 4, descriptions = ['Lávate las manos', 'Prepara la mesa']) => ({ idPlantillaActividad: id, nombre: 'Desayunar',
@@ -778,4 +822,147 @@ test('dialog retains default presentation and accessible focus/back, with option
     nodes(tree).find(n => n.props?.accessibilityViewIsModal).props.onAccessibilityEscape();
   }
   assert.equal(closed, 5);
+});
+
+test('creation serializes only final definition data, requires one step, and accepts many steps without a product maximum', () => {
+  const step = { key: 'temporary-99', orden: 20, descripcion: 'Texto final', pictograma: pictogramFixture(), selected: true };
+  assert.deepEqual(createUtils.createActivityInput(' Desayuno ', 7 * 60, bread, [step]), {
+    nombre: 'Desayuno', hora: '07:00', codigoIcono: 'bread', pasos: [{ descripcion: 'Texto final', idArasaac: 123 }],
+  });
+  assert.equal(createUtils.createActivityInput('A', 0, bread, [{ ...step, pictograma: null }]).hora, '00:00');
+  assert.equal(createUtils.createActivityInput('A', 1439, bread, Array(1000).fill(step)).pasos.length, 1000);
+  for (const args of [['',0,bread,[step]],['A',null,bread,[step]],['A',1440,bread,[step]],['A',0,null,[step]],
+    ['A',0,bread,[]],['A',0,bread,[{...step,descripcion:' '}]],['A',0,bread,[{...step,pictograma:{idPictograma:2,nombre:'Legacy'}}]]]) {
+    assert.ok(createUtils.activityInputError(...args)); assert.throws(() => createUtils.createActivityInput(...args));
+  }
+});
+
+test('creation service posts once, validates 201, and treats transport/5xx/malformed success as uncertain', async () => {
+  class HttpError extends Error { constructor(status,codigo){super('safe');this.status=status;this.codigo=codigo;} }
+  const input=createUtils.createActivityInput('A',0,bread,[{key:'one',orden:1,descripcion:'Paso',pictograma:null}]);
+  let calls=[];let failure;let response={status:201,data:{idActividad:27,nombre:'A',hora:'00:00',codigoIcono:'bread'}};
+  const api=load('services/activities.ts',{'./private-http':{PrivateHttpError:HttpError,getAuthenticatedHttpClient:()=>({
+    post:async(...args)=>{calls.push(args);if(failure)throw failure;return response;}})},'@/utils/activities':load('utils/activities.ts')});
+  const signal=new AbortController().signal;
+  assert.equal((await api.createActivity(12,input,signal)).idActividad,27);
+  assert.deepEqual(calls[0],['/api/perfiles/12/actividades',input,{signal,authReplaySafe:true}]);
+  for(const [status,codigo,kind] of [[400,'SOLICITUD_INVALIDA','validation'],[400,'ICONO_NO_ENCONTRADO','icon'],
+    [400,'PICTOGRAMA_INVALIDO','pictogram'],[404,'PERFIL_NO_ENCONTRADO','not-found'],[409,'CONFLICTO_CREACION','conflict'],
+    [503,'PICTOGRAMAS_NO_DISPONIBLES','unavailable'],[500,'ERROR_INTERNO','uncertain'],[401,'SESION_INVALIDA','access']]) {
+    failure=new HttpError(status,codigo);const before=calls.length;
+    await assert.rejects(api.createActivity(12,input),e=>e.kind===kind);assert.equal(calls.length,before+1);
+  }
+  failure=new Error('private body');await assert.rejects(api.createActivity(12,input),e=>e.kind==='uncertain'&&!e.message.includes('private'));
+  failure=undefined;response={status:201,data:{}};await assert.rejects(api.createActivity(12,input),e=>e.kind==='uncertain');
+  response={status:200,data:{}};await assert.rejects(api.createActivity(12,input),e=>e.kind==='uncertain');
+});
+
+test('creation hook blocks synchronous double submit, keeps errors local, and ignores late navigation after blur/session change', async () => {
+  const slots=[];let cursor=0;let focus;let epoch=1;let status='authenticated';let created=0;const requests=[];
+  class CreateError extends Error { constructor(kind){super(kind);this.kind=kind;} }
+  const hook=load('hooks/use-create-activity.ts',{
+    react:{useRef:initial=>{const i=cursor++;if(!(i in slots))slots[i]={current:initial};return slots[i];},useCallback:fn=>fn,
+      useState:initial=>{const i=cursor++;if(!(i in slots))slots[i]=initial;return[slots[i],v=>{slots[i]=v;}];}},
+    'expo-router':{useFocusEffect:fn=>{focus=fn;}},
+    '@/context/session':{useSession:()=>({manager:{revision:()=>epoch,getSnapshot:()=>({status})}})},
+    '@/services/activities':{CreateActivityError:CreateError,createActivity:(id,input,signal)=>new Promise((resolve,reject)=>requests.push({id,input,signal,resolve,reject}))},
+  }).useCreateActivity;
+  const render=()=>{cursor=0;return hook(12,()=>created++);};
+  render();const blur=focus();const input={nombre:'A',hora:'00:00',codigoIcono:'bread',pasos:[{descripcion:'Paso',idArasaac:null}]};
+  let view=render();const a=view.submit(input);void view.submit(input);assert.equal(requests.length,1);assert.equal(render().sending,true);
+  requests[0].reject(new CreateError('validation'));await a;assert.equal(render().error.kind,'validation');assert.equal(render().sending,false);
+  assert.equal(input.pasos[0].descripcion,'Paso');assert.equal(created,0);
+  const b=render().submit(input);epoch++;requests[1].resolve({idActividad:27});await b;assert.equal(created,0);
+  // A separate focused attempt is abandoned; abort is never evidence of server rollback.
+  const c=render().submit(input);blur();assert.equal(requests[2].signal.aborted,true);requests[2].resolve({idActividad:28});await c;assert.equal(created,0);
+  render();focus();const d=render().submit(input);requests[3].resolve({idActividad:29});await d;
+  assert.equal(created,1);assert.equal(render().error,null);
+  await render().submit(input);assert.equal(requests.length,4); // Success remains terminal until navigation unmounts.
+});
+
+test('activity cards show real name/time and local icon fallback without completion or fake actions', () => {
+  const surfaces=load('utils/activity-icon-surface.ts',{'@/theme/tokens':tokens});
+  const component=load('components/carer/activity-summary-card.tsx',{...styling,
+    './account-layout':{accountStyles:{body:{textAlign:'center'},small:{}}},
+    react:{useState:initial=>[initial,()=>{}]},'@/constants/activity-icons':{resolveActivityIcon:code=>code==='bread'?'local-bread':undefined},
+    '@/utils/activity-draft':draftUtils,'./area-icon':{AreaIcon:'Icon'},
+    '@/utils/activity-icon-surface':surfaces,
+  }).ActivitySummaryCard;
+  const card=component({index:0,activity:{idActividad:27,nombre:'Desayuno',hora:'07:00',codigoIcono:'bread'}});
+  assert.ok(text(card).includes('Desayuno'));assert.ok(text(card).includes('07:00 a. m.'));
+  assert.equal(nodes(card).find(n=>n.type==='Image').props.source,'local-bread');
+  assert.ok(!nodes(card).some(n=>n.props?.onPress||n.props?.accessibilityRole==='button'));
+  const fallback=component({index:1,activity:{idActividad:28,nombre:'A',hora:'23:59',codigoIcono:null}});
+  assert.ok(nodes(fallback).some(n=>n.type==='Icon'));assert.ok(!text(fallback).includes('%'));
+  const flatten=styles=>Object.assign({},...styles.filter(Boolean));
+  for(const tree of [card,fallback]) {
+    for(const label of nodes(tree).filter(n=>n.type==='Text')) {
+      assert.equal(flatten(label.props.style).textAlign,'left');
+      assert.equal(label.props.numberOfLines,undefined);assert.equal(label.props.allowFontScaling,undefined);
+    }
+  }
+  const first=nodes(card).find(n=>n.props?.importantForAccessibility==='no-hide-descendants');
+  assert.equal(flatten(first.props.style).backgroundColor,tokens.colors.yellow.light);
+  const changedId=component({index:0,activity:{idActividad:999,nombre:'Nombre largo que conserva espacio para el texto',hora:'23:59',codigoIcono:null}});
+  const surface=nodes(changedId).find(n=>n.props?.importantForAccessibility==='no-hide-descendants');
+  assert.equal(flatten(surface.props.style).backgroundColor,tokens.colors.yellow.light);
+  assert.equal(flatten(surface.props.style).flexShrink,0);
+});
+
+test('activity icon surfaces repeat the five existing light families solely by zero-based position', () => {
+  const {getActivityIconSurface}=load('utils/activity-icon-surface.ts',{'@/theme/tokens':tokens});
+  const expected=[tokens.colors.yellow.light,tokens.colors.green.light,tokens.colors.orange.light,tokens.colors.blue.light,tokens.colors.purple.light];
+  assert.deepEqual(Array.from({length:10},(_,index)=>getActivityIconSurface(index)),[...expected,...expected]);
+  assert.equal(getActivityIconSurface(1002),expected[2]);
+});
+
+test('success modal uses the provided asset, profile name and non-destructive modal actions; close/back share View activities', () => {
+  let another=0;let viewed=0;
+  const modal=load('components/carer/activity-created-modal.tsx',{...styling,
+    '@/assets/illustrations/carer-success.png':'@/assets/illustrations/carer-success.png',
+    './activity-dialog':{ActivityDialog:'Dialog'},'./step-dialog-actions':{StepDialogActions:'Actions'},
+  }).ActivityCreatedModal;
+  const tree=modal({profileName:'Perfil real',onCreateAnother:()=>another++,onViewActivities:()=>viewed++});
+  assert.equal(tree.props.centered,true);assert.equal(tree.props.showClose,true);
+  assert.equal(tree.props.closeLabel,'Ver actividades y cerrar');
+  assert.equal(text(tree.props.title),'¡Actividad creada\ncon éxito!');
+  assert.equal(tree.props.description,'La actividad se ha agregado a la agenda de Perfil real.');
+  assert.equal(tree.props.decoration.props.source,'@/assets/illustrations/carer-success.png');
+  assert.ok(fs.existsSync(path.join(__dirname,'../assets/illustrations/carer-success.png')));
+  assert.equal(tree.props.decoration.props.contentFit,'contain');
+  const actions=nodes(tree).find(node=>node.type==='Actions');
+  assert.equal(actions.props.secondaryLabel,'Crear otra');assert.equal(actions.props.label,'Ver actividades');
+  assert.ok(!actions.props.destructive);
+  const rendered=dialogActions(actions.props);const buttons=nodes(rendered).filter(node=>node.type==='Button');
+  assert.deepEqual(buttons.map(node=>node.props.label),['Crear otra','Ver actividades']);
+  assert.deepEqual(buttons.map(node=>node.props.variant),['secondary','primary']);
+  buttons[0].props.onPress();assert.equal(another,1);assert.equal(viewed,0);
+  buttons[1].props.onPress();tree.props.onClose();assert.equal(viewed,2);
+  const Dialog=load('components/carer/activity-dialog.tsx',{...styling,
+    react:{useRef:()=>({current:null})},'./area-icon':{AreaIcon:'Icon'},
+  }).ActivityDialog;
+  const native=Dialog(tree.props);
+  native.props.onRequestClose();assert.equal(viewed,3);
+  const close=nodes(native).find(n=>n.props?.accessibilityLabel==='Ver actividades y cerrar');
+  close.props.onPress();assert.equal(viewed,4);
+  nodes(native).find(n=>n.props?.accessibilityViewIsModal).props.onAccessibilityEscape();assert.equal(viewed,5);
+});
+
+test('FAB keeps one accessible creation entry, fixed circular target and semantic colors in both themes', () => {
+  for(const theme of Object.values(tokens.themes)) {
+    const component=load('components/carer/create-activity-button.tsx',{...styling,
+      '@/theme/use-theme':{useAppTheme:()=>theme},'./area-icon':{AreaIcon:'Icon'},'./continue-button':{ContinueButton:'Button'},
+    }).CreateActivityButton;
+    const calls=[];const tree=component({id:12,floating:true,onCreateActivity:id=>calls.push(id)});
+    assert.equal(tree.props.accessibilityRole,'button');assert.equal(tree.props.accessibilityLabel,'Nueva actividad');
+    const style=Object.assign({},...tree.props.style({pressed:false}));
+    assert.ok(style.width>=tokens.sizes.touchTarget);assert.equal(style.width,style.height);assert.equal(style.borderRadius,style.width/2);
+    assert.equal(style.backgroundColor,theme.colors.action.primary);
+    assert.equal(nodes(tree).find(n=>n.type==='Icon').props.name,'plus');
+    assert.ok(!nodes(tree).some(n=>n.type==='Text'));
+    tree.props.onPress();assert.deepEqual(calls,[12]);
+    const full=component({id:12,onCreateActivity:id=>calls.push(id)});
+    assert.equal(full.type,'Button');assert.equal(full.props.label,'Nueva actividad');
+    const disabled=component({id:12,floating:true});assert.equal(disabled.props.disabled,true);assert.equal(disabled.props.onPress,undefined);
+  }
 });

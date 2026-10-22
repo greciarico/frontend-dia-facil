@@ -10,7 +10,7 @@ function load(file, modules = {}) {
   const defaults = {
     'react/jsx-runtime': { jsx, jsxs: jsx, Fragment: 'Fragment' },
     'react-native': { StyleSheet: { create: value => value }, Text: 'Text', View: 'View',
-      Pressable: 'Pressable', ScrollView: 'ScrollView', ActivityIndicator: 'Spinner' },
+      Pressable: 'Pressable', FlatList: 'List', ScrollView: 'ScrollView', ActivityIndicator: 'Spinner' },
     'expo-image': { Image: 'Image' },
     ...modules,
   };
@@ -478,7 +478,7 @@ test('installed Expo router history removes confirmation and Android back resolv
 
 test('activity contract distinguishes empty and real summaries, rejects invalid data and drops internal fields', () => {
   assert.deepEqual(activityUtils.parseActivities({ actividades: [] }), { actividades: [] });
-  const activity = { idActividad: 7, nombre: 'Desayunar' };
+  const activity = { idActividad: 7, nombre: 'Desayunar', hora: '07:00', codigoIcono: 'bread' };
   assert.deepEqual(activityUtils.parseActivities({ actividades: [{ ...activity, perfilUsuario: { id: 999 } }] }), { actividades: [activity] });
   for (const value of [null, {}, { actividades: null }, { actividades: '[]' }, { actividades: [null] },
     { actividades: [{ ...activity, idActividad: 0 }] }, { actividades: [{ ...activity, idActividad: 2147483648 }] },
@@ -494,7 +494,7 @@ test('activities service uses private GET with cancellation and never converts f
   const signal = new AbortController().signal;
   assert.deepEqual(await api.getActivities(12, signal), { actividades: [] });
   assert.deepEqual(called, ['/api/perfiles/12/actividades', { signal }]);
-  response = { status: 200, data: { actividades: [{ idActividad: 7, nombre: 'Desayunar' }] } };
+  response = { status: 200, data: { actividades: [{ idActividad: 7, nombre: 'Desayunar', hora: '07:00', codigoIcono: 'bread' }] } };
   assert.equal((await api.getActivities(12)).actividades.length, 1);
   response = { status: 200, data: {} }; await assert.rejects(api.getActivities(12), error => error.kind === 'invalid-response');
   response = { status: 204 }; await assert.rejects(api.getActivities(12), error => error.kind === 'invalid-response');
@@ -510,7 +510,8 @@ test('activities screen shows the intentional empty state only after loading, no
     'expo-router': { Stack: { Screen: 'Screen' }, router: { dismissTo: href => navigations.push(href), push: href => navigations.push(href) }, useLocalSearchParams: () => ({ idPerfilUsuario: '12' }) },
     '@/components/carer/area-header': { AreaHeader: 'Header' }, '@/components/carer/profile-avatar': { ProfileAvatar: 'Avatar' },
     '@/components/carer/activities-empty-illustration': { ActivitiesEmptyIllustration: 'Illustration' },
-    '@/components/carer/create-activity-button': { CreateActivityButton: 'CreateActivity' },
+    '@/components/carer/activity-summary-card': { ActivitySummaryCard: 'ActivityCard' },
+    '@/components/carer/create-activity-button': { CreateActivityButton: 'CreateActivity', activityFabSize: 56 },
     '@/hooks/use-profile-activities': { useProfileActivities: id => { assert.equal(id, 12); return { state, reload: () => retries++ }; } },
   }).default;
   assert.ok(textOf(screen()).includes('Cargando actividades'));
@@ -527,9 +528,21 @@ test('activities screen shows the intentional empty state only after loading, no
   assert.equal(header.props.rightContent.props.children.props.avatar, null);
   header.props.onBack(); assert.deepEqual(navigations.pop(), profileNavigation.profileHref(12));
   state = { ...state, data: { actividades: [{ idActividad: 7, nombre: 'Desayunar' }] } };
-  assert.ok(textOf(screen()).includes('Este perfil ya tiene actividades'));
+  const list=nodes(screen()).find(node=>node.type==='List');
+  assert.equal(list.props.renderItem({item:state.data.actividades[0],index:0}).props.activity.idActividad,7);
+  assert.equal(list.props.renderItem({item:state.data.actividades[0],index:0}).props.index,0);
+  assert.equal(list.props.keyExtractor(state.data.actividades[0]),'7');
   assert.ok(!textOf(screen()).includes('Aún no hay')); assert.ok(!textOf(screen()).includes('Desayunar'));
-  assert.ok(!nodes(screen()).some(node => ['Illustration', 'CreateActivity'].includes(node.type)));
+  assert.ok(!nodes(screen()).some(node => node.type === 'Illustration'));
+  assert.ok(nodes(screen()).some(node => node.type === 'CreateActivity'));
+  assert.equal(nodes(screen()).find(node => node.type === 'CreateActivity').props.floating,true);
+  assert.ok(!nodes(screen()).some(node=>node.type==='ScrollView'));
+  assert.ok(list.props.contentContainerStyle.paddingBottom>=56+tokens.spacing.lg*2);
+  state={...state,data:{actividades:Array.from({length:12},(_,index)=>({idActividad:index+1,nombre:'Actividad '+index,hora:'07:00',codigoIcono:'bread'}))}};
+  const many=nodes(screen()).find(node=>node.type==='List');
+  assert.equal(many.props.data.length,12);assert.equal(many.props.data[11].idActividad,12);
+  assert.equal(many.props.renderItem({item:many.props.data[11],index:11}).props.index,11);
+  assert.equal(nodes(screen()).filter(node=>node.type==='CreateActivity').length,1);
   state = { status: 'error' };
   assert.ok(!textOf(screen()).includes('Aún no hay'));
   nodes(screen()).find(node => node.props?.label === 'Reintentar').props.onPress(); assert.equal(retries, 1);

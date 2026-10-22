@@ -19,9 +19,9 @@ import { DeleteStepsDialog } from './delete-steps-dialog';
 type Dialog = { kind: 'edit'; key?: string; text: string; touched: boolean; pictogram: StepPictogram }
   | { kind: 'remove'; keys: string[] } | { kind: 'apply'; template: ActivityTemplate; displayName: string };
 const stepKey = (step: DraftStep) => step.key;
-export function ActivityStepsEditor({ draft, dispatch, suggestion, retry, displayName, formHeader }: {
+export function ActivityStepsEditor({ draft, dispatch, suggestion, retry, displayName, formHeader, formActions, busy = false }: {
   draft: StepsDraft; dispatch: Dispatch<Parameters<typeof stepsDraftReducer>[1]>; suggestion: TemplateState; retry: () => void;
-  displayName: string; formHeader?: ReactNode;
+  displayName: string; formHeader?: ReactNode; formActions?: ReactNode; busy?: boolean;
 }) {
   const { colors } = useAppTheme();
   const [dialog, setDialog] = useState<Dialog | null>(null);
@@ -36,10 +36,10 @@ export function ActivityStepsEditor({ draft, dispatch, suggestion, retry, displa
   }, [dispatch]));
   const candidate = suggestion.status === 'ready' ? suggestion.template : null;
   useEffect(() => {
-    if (candidate && !draft.personalized && !draft.editing && draft.source !== templateFingerprint(candidate)) {
+    if (!busy && candidate && !draft.personalized && !draft.editing && draft.source !== templateFingerprint(candidate)) {
       dispatch({ type: 'suggest', template: candidate });
     }
-  }, [candidate, draft.editing, draft.personalized, draft.source, dispatch]);
+  }, [busy, candidate, draft.editing, draft.personalized, draft.source, dispatch]);
   useEffect(() => {
     if (!selectedKeys.size) return;
     const valid = new Set(draft.steps.map(stepKey));
@@ -49,10 +49,10 @@ export function ActivityStepsEditor({ draft, dispatch, suggestion, retry, displa
   const show = useCallback((next: Dialog) => { dispatch({ type: 'editing', open: true }); setDialog(next); }, [dispatch]);
   const move = useCallback((key: string, direction: -1 | 1) => {
     const index = draft.steps.findIndex(step => step.key === key);
-    if (dragging || index < 0 || index + direction < 0 || index + direction >= draft.steps.length) return;
+    if (busy || dragging || index < 0 || index + direction < 0 || index + direction >= draft.steps.length) return;
     dispatch({ type: 'move', key, direction });
     AccessibilityInfo.announceForAccessibility(`Paso movido a la posición ${index + direction + 1}.`);
-  }, [draft.steps, dragging, dispatch]);
+  }, [busy, draft.steps, dragging, dispatch]);
   const removalSteps = useMemo(() => {
     if (dialog?.kind !== 'remove') return [];
     const keys = new Set(dialog.keys);
@@ -68,7 +68,7 @@ export function ActivityStepsEditor({ draft, dispatch, suggestion, retry, displa
     return <View style={[frame, styles.rowFrame]}>
       <View style={[styles.row, { borderColor: colors.border.decorative, opacity: isActive ? 0.8 : 1 }]}>
         <Pressable accessibilityRole="checkbox" accessibilityLabel={`${selected ? 'Deseleccionar' : 'Seleccionar'} paso ${step.orden}: ${step.descripcion}`}
-          accessibilityState={{ checked: selected, selected, disabled: dragging }} disabled={dragging}
+          accessibilityState={{ checked: selected, selected, disabled: dragging || busy }} disabled={dragging || busy}
           onPress={() => select({ type: 'toggle', key: step.key })} style={styles.select}>
           <View style={[styles.circle, { borderColor: colors.border.control, backgroundColor: selected ? colors.action.primary : colors.surface.default }]} />
           <View style={[styles.number, { backgroundColor: colors.welcome.intro }]}>
@@ -78,27 +78,27 @@ export function ActivityStepsEditor({ draft, dispatch, suggestion, retry, displa
         {step.pictograma?.idArasaac && <StepPictogramImage pictogram={step.pictograma} />}
         <Text style={[accountStyles.small, styles.description, { color: colors.text.primary }]}>{step.descripcion}</Text>
         <Pressable accessibilityRole="button" accessibilityLabel={`Editar paso ${step.orden}: ${step.descripcion}`}
-          accessibilityState={{ disabled: dragging }} disabled={dragging}
+          accessibilityState={{ disabled: dragging || busy }} disabled={dragging || busy}
           onPress={() => show({ kind: 'edit', key: step.key, text: step.descripcion, touched: false, pictogram: step.pictograma })} style={styles.action}>
           <View style={[styles.editIcon, { backgroundColor: colors.welcome.intro }]}><AreaIcon name="pencil" color={colors.action.primary} size={sizes.iconSmall} /></View>
         </Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel={`Reordenar paso ${step.orden}`}
-          accessibilityState={{ disabled: dragging || dialogOpen }}
+          accessibilityState={{ disabled: dragging || dialogOpen || busy }}
           accessibilityHint="Mantén pulsado y arrastra. También puedes usar las acciones Subir y Bajar."
           accessibilityActions={[...(step.orden > 1 ? [{ name: 'moveUp', label: 'Subir' }] : []),
             ...(step.orden < draft.steps.length ? [{ name: 'moveDown', label: 'Bajar' }] : [])]}
           onAccessibilityAction={event => { if (event.nativeEvent.actionName === 'moveUp') move(step.key, -1);
             if (event.nativeEvent.actionName === 'moveDown') move(step.key, 1); }}
-          disabled={dragging || dialogOpen} onLongPress={() => { Keyboard.dismiss(); drag(); }} style={styles.action}>
+          disabled={dragging || dialogOpen || busy} onLongPress={() => { Keyboard.dismiss(); drag(); }} style={styles.action}>
           <AreaIcon name="drag" color={colors.text.secondary} size={sizes.iconSmall} />
         </Pressable>
       </View>
     </View>;
-  }, [selectedKeys, frame, colors, dragging, show, dialogOpen, draft.steps.length, move]);
+  }, [busy, selectedKeys, frame, colors, dragging, show, dialogOpen, draft.steps.length, move]);
   const beginDrag = useCallback(() => {
-    if (!active.current) return;
+    if (!active.current || busy) return;
     gesture.current = draft.steps.map(stepKey); setDragging(true); dispatch({ type: 'editing', open: true });
-  }, [draft.steps, dispatch]);
+  }, [busy, draft.steps, dispatch]);
   const endDrag = useCallback(({ data, to, from }: DragEndParams<DraftStep>) => {
     if (!active.current || !gesture.current) return;
     const original = gesture.current; gesture.current = null;
@@ -115,7 +115,8 @@ export function ActivityStepsEditor({ draft, dispatch, suggestion, retry, displa
       style={styles.list} containerStyle={styles.list} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled"
       onDragBegin={beginDrag} onDragEnd={endDrag}
       ListHeaderComponent={<View>
-        <View style={styles.formHeader}>{formHeader}</View>
+        <View style={styles.formHeader} pointerEvents={busy ? 'none' : 'auto'} accessibilityElementsHidden={busy}
+          importantForAccessibility={busy ? 'no-hide-descendants' : 'auto'}>{formHeader}</View>
         <View style={[frame, styles.top]}>
           <ActivitySectionHeading icon="steps" title="Paso a paso" />
           <Text accessibilityLiveRegion="polite" style={[accountStyles.small, { color: colors.text.secondary }]}>
@@ -130,7 +131,7 @@ export function ActivityStepsEditor({ draft, dispatch, suggestion, retry, displa
       </Text>
       <ContinueButton label="Reintentar sugerencia" onPress={retry} />
     </View>}
-    {canApply && <ActivitySecondaryAction label={`Usar pasos sugeridos para “${displayName}”`} icon="sparkles" disabled={dragging}
+    {canApply && <ActivitySecondaryAction label={`Usar pasos sugeridos para “${displayName}”`} icon="sparkles" disabled={dragging || busy}
       onPress={() => show({ kind: 'apply', template: candidate!, displayName })} />}
     {draft.steps.length === 0 && suggestion.status !== 'loading' && <Text style={[accountStyles.small, { color: colors.text.secondary }]}>
       {candidate ? 'Puedes agregar tus propios pasos.' : 'Aún no hay pasos sugeridos. Agrega tus propios pasos.'}
@@ -140,11 +141,11 @@ export function ActivityStepsEditor({ draft, dispatch, suggestion, retry, displa
       ListFooterComponent={<View>
         <View style={[frame, styles.bottom]}>
           {selectedSteps.length ? <ActivitySecondaryAction label={selectedSteps.length === 1 ? 'Eliminar paso' : `Eliminar ${selectedSteps.length} pasos`}
-            icon="trash" destructive disabled={dragging} onPress={() => show({ kind: 'remove', keys: selectedSteps.map(stepKey) })} />
-            : <ActivitySecondaryAction label="Agregar paso" icon="plus" disabled={dragging || draft.steps.length >= maximumStepOrder}
+            icon="trash" destructive disabled={dragging || busy} onPress={() => show({ kind: 'remove', keys: selectedSteps.map(stepKey) })} />
+            : <ActivitySecondaryAction label="Agregar paso" icon="plus" disabled={dragging || busy || draft.steps.length >= maximumStepOrder}
               onPress={() => show({ kind: 'edit', text: '', touched: false, pictogram: null })} />}
         </View>
-        <View style={styles.create}><ContinueButton label="Crear actividad" disabled /></View>
+        <View style={styles.create}>{formActions ?? <ContinueButton label="Crear actividad" disabled />}</View>
       </View>} />
     {dialog?.kind === 'edit' && <StepFormDialog mode={dialog.key ? 'edit' : 'create'} text={dialog.text} pictogram={dialog.pictogram} touched={dialog.touched}
       onChangeText={text => setDialog({ ...dialog, text })}

@@ -1,5 +1,8 @@
 # Nueva actividad: revisión final del incremento B
 
+Este documento conserva la revisión del incremento B. La persistencia y la
+habilitación posterior de Crear actividad están en [incremento C](crear-actividad.md).
+
 El formulario sigue sin persistencia: Crear actividad está deshabilitado. Esta
 revisión no cambia backend, hora, consultas, keywords, plantillas ni dependencias.
 

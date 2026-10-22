@@ -6,15 +6,15 @@ import { useAppTheme } from '@/theme/use-theme';
 import { accountStyles } from './account-layout';
 import { AreaIcon } from './area-icon';
 
-export function ActivityDialog({ title, onClose, children, description, centered = false, decoration, showClose = false, avoidKeyboard = false, compact = false }: {
-  title: string; onClose: () => void; children: ReactNode; description?: string;
+export function ActivityDialog({ title, onClose, children, description, centered = false, decoration, showClose = false, avoidKeyboard = false, compact = false, closeLabel = 'Cancelar y cerrar diálogo' }: {
+  title: ReactNode; onClose: () => void; children: ReactNode; description?: string; closeLabel?: string;
   centered?: boolean; decoration?: ReactNode; showClose?: boolean; avoidKeyboard?: boolean; compact?: boolean;
 }) {
   const { colors } = useAppTheme();
   const heading = useRef<Text>(null);
   const content = <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scroll}>
     <View accessibilityViewIsModal onAccessibilityEscape={onClose} style={[styles.card, compact && styles.compact, { backgroundColor: colors.surface.elevated }]}>
-      {showClose && <Pressable accessibilityRole="button" accessibilityLabel="Cancelar y cerrar diálogo" onPress={onClose}
+      {showClose && <Pressable accessibilityRole="button" accessibilityLabel={closeLabel} onPress={onClose}
         style={({ pressed }) => [styles.close, { backgroundColor: pressed ? colors.welcome.intro : 'transparent' }]}>
         <AreaIcon name="close" color={colors.text.primary} size={sizes.iconSmall} />
       </Pressable>}
