@@ -177,6 +177,9 @@ HTTP solo se permite en desarrollo (__DEV__); fuera de él EXPO_PUBLIC_API_URL d
 - npm run test:carer-auth: pruebas aisladas de servicio, correo, OTP y contador, sin SMTP.
 - npm run test:session: restauración, rotación, SecureStore simulado, logout y Axios privado.
 - npm run test:profiles: consulta/creación, estados, confirmación, errores y navegación privada.
+- npm run test:activity-icons: 52 códigos/assets estáticos, seeds y separación icono/pictograma.
+- El catálogo funcional backend vigente para esa prueba es db/datos-base.json;
+  los INSERT SQL se comprueban solo como referencias históricas.
 - npx expo export --platform android --output-dir .cache/carer-android: Metro, módulos y assets.
 - Revisión en teléfono de ambos temas, TalkBack/VoiceOver, safe areas,
   selección de rol, ayuda y texto ampliado. No validar Web en este alcance.
@@ -185,3 +188,7 @@ Al añadir rutas, iniciar Expo para regenerar .expo/types/router.d.ts antes de
 comprobar tipos si la caché todavía contiene únicamente la bienvenida.
 En PowerShell con scripts deshabilitados, usar npm.cmd y npx.cmd.
 No se añadieron dependencias para el flujo del cuidador ni proyectos nativos.
+
+`src/constants/activity-icons.ts` resuelve los 52 códigos de IconoActividad contra
+PNG locales mediante require explícitos. No añade selector ni renderizado de
+actividades; los pictogramas de pasos siguen siendo un concepto distinto.

@@ -15,3 +15,7 @@ export function isProfilesDestination(pathname: string) {
 export function activitiesHref(id: number) {
   return { pathname: '/perfiles/[idPerfilUsuario]/actividades' as const, params: { idPerfilUsuario: String(id) } };
 }
+
+export function newActivityHref(id: number) {
+  return { pathname: '/perfiles/[idPerfilUsuario]/nueva-actividad' as const, params: { idPerfilUsuario: String(id) } };
+}

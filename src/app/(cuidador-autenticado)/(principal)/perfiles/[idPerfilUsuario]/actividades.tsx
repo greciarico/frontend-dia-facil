@@ -9,7 +9,7 @@ import { ProfileAvatar } from '@/components/carer/profile-avatar';
 import { useProfileActivities } from '@/hooks/use-profile-activities';
 import { layout, sizes, spacing, typography } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';
-import { profileHref, validProfileId } from '@/utils/profile-navigation';
+import { newActivityHref, profileHref, validProfileId } from '@/utils/profile-navigation';
 
 export default function ProfileActivitiesScreen() {
   const params = useLocalSearchParams<{ idPerfilUsuario?: string }>();
@@ -32,7 +32,8 @@ export default function ProfileActivitiesScreen() {
         <View style={styles.illustration}><ActivitiesEmptyIllustration /></View>
         <Text accessibilityRole="header" style={[styles.title, { color: colors.text.primary }]}>Aún no hay actividades</Text>
         <Text style={[styles.description, { color: colors.text.secondary }]}>Agrega las actividades que formarán su rutina diaria</Text>
-        <View style={styles.create}><CreateActivityButton id={state.profile.idPerfilUsuario} /></View>
+        <View style={styles.create}><CreateActivityButton id={state.profile.idPerfilUsuario}
+          onCreateActivity={profileId => router.push(newActivityHref(profileId))} /></View>
       </View> : <View style={styles.feedback}>
         <Text style={[accountStyles.body, styles.center, { color: colors.text.secondary }]}>Este perfil ya tiene actividades. La visualización de su agenda aún no está disponible.</Text>
         <ContinueButton label="Volver al perfil" onPress={back} />

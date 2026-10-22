@@ -53,7 +53,9 @@
     "lint": "expo lint",
     "test:carer-auth": "node --test scripts/test-carer-auth.cjs",
     "test:session": "node --test scripts/test-session.cjs",
-    "test:profiles": "node --test scripts/test-profiles.cjs"
+    "test:profiles": "node --test scripts/test-profiles.cjs",
+    "test:activity-icons": "node --test scripts/test-activity-icons.cjs",
+    "test:new-activity": "node --test scripts/test-new-activity.cjs"
   },
   "private": true
 }

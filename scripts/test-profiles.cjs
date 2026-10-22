@@ -417,7 +417,7 @@ test('installed Expo router history removes confirmation and Android back resolv
   const area = manifest.children.find(route => route.route === '(cuidador-autenticado)').children.find(route => route.route === '(principal)');
   const profileNode = area.children.find(route => route.route === 'perfiles/[idPerfilUsuario]');
   assert.equal(area.initialRouteName, 'perfiles'); assert.equal(profileNode.initialRouteName, 'index');
-  assert.deepEqual(profileNode.children.map(route => route.route).sort(), ['actividades', 'index']);
+  assert.deepEqual(profileNode.children.map(route => route.route).sort(), ['actividades', 'index', 'nueva-actividad']);
   const childRouter = StackRouter({ initialRouteName: principal.unstable_settings.anchor });
   const childOptions = { routeNames: ['perfiles', 'perfiles/[idPerfilUsuario]'], routeParamList: {}, routeGetIdList: {} };
   const parentRouter = StackRouter({ initialRouteName: '(principal)' });
@@ -507,7 +507,7 @@ test('activities service uses private GET with cancellation and never converts f
 test('activities screen shows the intentional empty state only after loading, not on failures or existing data', () => {
   let state = { status: 'loading' }; let retries = 0; const navigations = [];
   const screen = load('app/(cuidador-autenticado)/(principal)/perfiles/[idPerfilUsuario]/actividades.tsx', { ...styling,
-    'expo-router': { Stack: { Screen: 'Screen' }, router: { dismissTo: href => navigations.push(href) }, useLocalSearchParams: () => ({ idPerfilUsuario: '12' }) },
+    'expo-router': { Stack: { Screen: 'Screen' }, router: { dismissTo: href => navigations.push(href), push: href => navigations.push(href) }, useLocalSearchParams: () => ({ idPerfilUsuario: '12' }) },
     '@/components/carer/area-header': { AreaHeader: 'Header' }, '@/components/carer/profile-avatar': { ProfileAvatar: 'Avatar' },
     '@/components/carer/activities-empty-illustration': { ActivitiesEmptyIllustration: 'Illustration' },
     '@/components/carer/create-activity-button': { CreateActivityButton: 'CreateActivity' },
@@ -519,7 +519,8 @@ test('activities screen shows the intentional empty state only after loading, no
   assert.ok(textOf(screen()).includes('Aún no hay actividades'));
   assert.ok(textOf(screen()).includes('Agrega las actividades que formarán su rutina diaria'));
   assert.equal(nodes(screen()).find(node => node.type === 'CreateActivity').props.id, 12);
-  assert.equal(nodes(screen()).find(node => node.type === 'CreateActivity').props.onCreateActivity, undefined);
+  nodes(screen()).find(node => node.type === 'CreateActivity').props.onCreateActivity(12);
+  assert.deepEqual(navigations.pop(), profileNavigation.newActivityHref(12));
   const header = nodes(screen()).find(node => node.type === 'Screen').props.options.header();
   assert.equal(textOf(header.props.title), 'Actividades de Persona real');
   assert.equal(header.props.rightContent.props.children.props.name, 'Persona real');
