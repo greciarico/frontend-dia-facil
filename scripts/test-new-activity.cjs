@@ -756,6 +756,12 @@ test('dialog actions stay in reading order and stack for small screens or enlarg
     assert.equal(style(tree.props.style).flexDirection, direction);
     assert.deepEqual(nodes(tree).filter(n => n.type === 'Button').map(n => n.props.label), ['Cancelar', 'Guardar cambios']);
   }
+  const renewal = nodes(actions({ label: 'Sí, renovar', secondaryVariant: 'destructive-outline', onConfirm() {}, onCancel() {} }))
+    .filter(n => n.type === 'Button');
+  assert.deepEqual(renewal.map(n => n.props.variant), ['destructive-outline', 'primary']);
+  assert.ok(renewal.every(n => n.props.size === 'modal'));
+  const unchanged = nodes(actions({ label: 'Guardar cambios', onConfirm() {}, onCancel() {} })).filter(n => n.type === 'Button');
+  assert.deepEqual(unchanged.map(n => n.props.variant), ['secondary', 'primary']);
 });
 
 test('button variants preserve primary defaults and modal targets, using separate destructive tokens with accessible large text', () => {

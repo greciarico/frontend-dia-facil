@@ -1,5 +1,23 @@
 ## Sistema visual
 
+Mi agenda usa variantes visuales de los componentes existentes: ActivitySummaryCard
+`appearance="agenda"` y BottomNavigation `appearance="user"`. Los valores por defecto
+conservan el aspecto del cuidador. `getActivityVisualFamily(index)` devuelve las
+familias Yellow, Green, Orange, Blue y Purple mediante index % 5; mantiene la
+función previa getActivityIconSurface y normaliza hoverLight de Purple como hover.
+No hay colores nuevos ni relación entre color e identidad de la actividad.
+La variante agenda integra la zona del PNG en la tarjeta, sin círculo; en light
+utiliza light/stroke/hover/default de la familia y en dark reutiliza superficies
+y bordes semánticos. Pendiente utiliza text.disabled y completada un check blanco.
+`layout.userAgenda.navigationMaxWidth=256` limita solo la barra Usuario con texto
+normal; con texto ampliado se permite el ancho disponible hasta contentMaxWidth.
+
+La ayuda contextual de conexión Usuario reutiliza `ActivityDialog`, `ContinueButton size="modal"` y los iconos de cámara/teclado. Sus alternativas son secciones informativas sin fondo ni forma de tarjeta, con iconos morados, títulos Nunito bold y texto flexible; se distinguen únicamente mediante espaciado. `respectSafeArea` es una opción del diálogo compartido, desactivada por defecto y usada aquí; no cambia los diálogos previos. El modal no tiene animaciones y conserva foco accesible y contenido desplazable.
+
+Los formularios de onboarding comparten [el patrón de teclado medido](keyboard-forms.md). Conserva la composición normal y safe areas; con teclado se adapta el viewport y se desplaza solo lo necesario para mostrar el campo enfocado, con separación `spacing.md`, sin offsets por dispositivo.
+
+El onboarding de Usuario reutiliza `welcome.hero`/`welcome.body`, la curva SVG continua del cuidador y los PNG locales transparentes. Su variante de layout no altera la pantalla autenticada temporal ni los estados de recuperación. `layout.userOnboarding` conserva la proporción de los PNG y el ancho máximo de la ilustración de error. `motion.userConnectionTransitionDuration` define 1.200 ms de transición exclusivamente visual; no representa progreso backend, no anuncia porcentajes y respeta movimiento reducido.
+
 Los estilos globales de DiaFacil deben centralizarse mediante **design tokens** reutilizables.
 
 Los tokens se definen desde el inicio del proyecto. Si durante el desarrollo surge un nuevo valor global necesario, debe incorporarse al sistema existente.

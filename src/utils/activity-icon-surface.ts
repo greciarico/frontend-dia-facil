@@ -1,8 +1,14 @@
 import { colors } from '@/theme/tokens';
 
-const surfaces = [colors.yellow.light, colors.green.light, colors.orange.light, colors.blue.light, colors.purple.light] as const;
+const families = [colors.yellow, colors.green, colors.orange, colors.blue,
+  { ...colors.purple, hover: colors.purple.hoverLight }] as const;
+
+/** Visual position only: never persisted or associated with an activity ID. */
+export function getActivityVisualFamily(index: number) {
+  return families[index % families.length];
+}
 
 /** Zero-based visual list position, independent of activity identity or persistence. */
 export function getActivityIconSurface(index: number) {
-  return surfaces[index % surfaces.length];
+  return getActivityVisualFamily(index).light;
 }

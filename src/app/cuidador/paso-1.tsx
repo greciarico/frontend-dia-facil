@@ -2,6 +2,7 @@ import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Keyboard, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAwareTextInput } from '@/components/forms/keyboard-aware-form';
 import Svg, { Path } from 'react-native-svg';
 
 import { AccountLayout, accountStyles } from '@/components/carer/account-layout';
@@ -82,7 +83,7 @@ export default function CarerAccountScreen() {
             <Path d="M3 5h18v14H3Z" fill={colors.action.primary} />
             <Path d="m4 6 8 6 8-6" fill="none" stroke={colors.surface.default} strokeWidth={sizes.stroke} strokeLinejoin="round" />
           </Svg>
-          <TextInput ref={input} value={email} editable={!loading} keyboardType="email-address" autoCapitalize="none"
+          <KeyboardAwareTextInput ref={input} value={email} editable={!loading} keyboardType="email-address" autoCapitalize="none"
             autoCorrect={false} autoComplete="email" textContentType="emailAddress" returnKeyType="go"
             placeholder="Correo electrónico" placeholderTextColor={colors.text.secondary}
             accessibilityLabel="Correo electrónico" accessibilityHint={fieldError || 'Ingresa el correo donde recibirás tu código.'}

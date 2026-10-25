@@ -1,18 +1,18 @@
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
 import { borders, layout, radii, sizes, spacing, typography } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';
+import { KeyboardAwareForm } from '@/components/forms/keyboard-aware-form';
 
 export function AccountLayout({ step, hero, children, onBack }: {
   step: 1 | 2 | 3 | 4; hero: ReactNode; children: ReactNode; onBack?: () => void;
 }) {
   const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
-  const window = useWindowDimensions();
   const heroHeight = step === 1 ? layout.carer.accountHeroHeight
     : step === 2 ? layout.carer.codeHeroHeight : layout.carer.profileHeroHeight;
   function back() {
@@ -21,10 +21,7 @@ export function AccountLayout({ step, hero, children, onBack }: {
     else router.replace(step === 1 ? '/' : '/cuidador/paso-1');
   }
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.welcome.body }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="never"
-        showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1, minHeight: window.height }}>
+    <KeyboardAwareForm style={{ backgroundColor: colors.welcome.body }}>
         <View style={[styles.hero, step === 4 && styles.completedHero, { minHeight: heroHeight + insets.top,
           paddingTop: insets.top + spacing['2xl'], paddingLeft: Math.max(insets.left, spacing.lg),
           paddingRight: Math.max(insets.right, spacing.lg), backgroundColor: colors.welcome.hero }]}>
@@ -62,8 +59,7 @@ export function AccountLayout({ step, hero, children, onBack }: {
           paddingRight: Math.max(insets.right, spacing['4xl']), paddingBottom: insets.bottom + spacing['3xl'] }]}>
           {children}
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+    </KeyboardAwareForm>
   );
 }
 

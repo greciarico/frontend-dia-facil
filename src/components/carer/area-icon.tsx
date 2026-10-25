@@ -2,9 +2,16 @@ import Svg, { Path } from 'react-native-svg';
 import { sizes } from '@/theme/tokens';
 
 const paths = {
+  audio: 'M11 4 6 8H3v8h3l5 4ZM15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14',
+  copy: 'M9 9h12v13H9ZM15 9V2H3v14h6',
+  refresh: 'M21 10a9 9 0 1 0 0 5M21 3v7h-7',
+  shield: 'M12 2 3 6v6c0 6 9 10 9 10s9-4 9-10V6ZM8 12l3 3 5-6',
   back: 'm15 5-7 7 7 7',
   close: 'M6 6l12 12M18 6 6 18',
   camera: 'M3 7h4l2-3h6l2 3h4v14H3ZM16 14a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z',
+  keyboard: 'M2 5h20v14H2ZM6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 13h.01M10 13h.01M14 13h.01M18 13h.01M7 16h10',
+  send: 'M4 12h16m-6-6 6 6-6 6',
+  help: 'M9 8a3 3 0 0 1 6 0c0 2-3 2-3 4m0 4h.01M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z',
   activities: 'M4 5h16v16H4ZM8 2v6m8-6v6M4 10h16M8 14h2m4 0h2m-8 4h2',
   accessibility: 'M12 3v3m0 12v3M3 12h3m12 0h3M6 6l2 2m8 8 2 2M6 18l2-2m8-8 2-2M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z',
   device: 'M7 2h10v20H7ZM10 5h4m-3 14h2',

@@ -35,9 +35,12 @@ export const radii = { control: 16, card: 20 } as const;
 export const sizes = { touchTarget: 48, icon: 24, iconSmall: 20, stroke: 2 } as const;
 export const borders = { default: 1, selected: 2 } as const;
 export const shadows = { card: { offsetY: 3, opacity: 0.12, radius: 3, elevation: 3 } } as const;
-export const motion = { carerSuccessDuration: 700, carerTiltDuration: 175, carerTiltDegrees: 4 } as const;
+export const motion = { carerSuccessDuration: 700, carerTiltDuration: 175, carerTiltDegrees: 4,
+  userConnectionTransitionDuration: 1200 } as const;
 export const layout = {
   contentMaxWidth: 480,
+  userAgenda: { navigationMaxWidth: 256 },
+  deviceLink: { illustrationWidth: 208, illustrationHeight: 132, qrSize: 208, quietZone: 16 },
   activities: { emptyIllustrationSize: 120, iconSize: 64, iconTileSize: 88,
     sectionIconSize: 36, sectionIconRadius: 8, suggestionTileSize: 72 },
   profiles: { avatarSize: 80, detailAvatarSize: 168, confirmationAvatarSize: 200, emptyIllustrationRatio: 1536 / 1024 },
@@ -47,6 +50,7 @@ export const layout = {
     curveHeight: 32, stepDot: 12, stepGap: 28, codeCellHeight: 60 },
   welcome: { heroHeight: 280, illustrationWidth: 248, illustrationRatio: 234 / 197, curveHeight: 32,
     roleIllustrationHeight: 96, roleMinHeight: 216, stackBelowWidth: 340, stackAboveFontScale: 1.35 },
+  userOnboarding: { illustrationRatio: 1378 / 1141, errorIllustrationWidth: 308 },
 } as const;
 
 export type SemanticColors = {

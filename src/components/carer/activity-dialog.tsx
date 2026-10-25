@@ -1,16 +1,19 @@
 import type { ReactNode } from 'react';
 import { useRef } from 'react';
 import { AccessibilityInfo, findNodeHandle, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { layout, radii, sizes, spacing, typography } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';
 import { accountStyles } from './account-layout';
 import { AreaIcon } from './area-icon';
 
-export function ActivityDialog({ title, onClose, children, description, centered = false, decoration, showClose = false, avoidKeyboard = false, compact = false, closeLabel = 'Cancelar y cerrar diálogo' }: {
+export function ActivityDialog({ title, onClose, children, description, centered = false, decoration, showClose = false, avoidKeyboard = false, compact = false, respectSafeArea = false, closeLabel = 'Cancelar y cerrar diálogo' }: {
   title: ReactNode; onClose: () => void; children: ReactNode; description?: string; closeLabel?: string;
   centered?: boolean; decoration?: ReactNode; showClose?: boolean; avoidKeyboard?: boolean; compact?: boolean;
+  respectSafeArea?: boolean;
 }) {
   const { colors } = useAppTheme();
+  const insets = useSafeAreaInsets();
   const heading = useRef<Text>(null);
   const content = <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scroll}>
     <View accessibilityViewIsModal onAccessibilityEscape={onClose} style={[styles.card, compact && styles.compact, { backgroundColor: colors.surface.elevated }]}>
@@ -28,7 +31,10 @@ export function ActivityDialog({ title, onClose, children, description, centered
   </ScrollView>;
   return <Modal visible transparent animationType="none" onRequestClose={onClose}
     onShow={() => { const target = findNodeHandle(heading.current); if (target) AccessibilityInfo.setAccessibilityFocus(target); }}>
-    <View style={[styles.overlay, { backgroundColor: colors.overlay.scrim }]}>
+    <View style={[styles.overlay, { backgroundColor: colors.overlay.scrim }, respectSafeArea && {
+      paddingTop: Math.max(spacing['2xl'], insets.top), paddingBottom: Math.max(spacing['2xl'], insets.bottom),
+      paddingLeft: Math.max(spacing['2xl'], insets.left), paddingRight: Math.max(spacing['2xl'], insets.right),
+    }]}>
       {avoidKeyboard ? <KeyboardAvoidingView style={styles.keyboard} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>{content}</KeyboardAvoidingView> : content}
     </View>
   </Modal>;

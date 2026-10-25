@@ -10,7 +10,7 @@ function load(file, modules = {}) {
   const defaults = {
     'react/jsx-runtime': { jsx, jsxs: jsx, Fragment: 'Fragment' },
     'react-native': { StyleSheet: { create: value => value }, Text: 'Text', View: 'View',
-      Pressable: 'Pressable', FlatList: 'List', ScrollView: 'ScrollView', ActivityIndicator: 'Spinner' },
+      Pressable: 'Pressable', FlatList: 'List', ScrollView: 'ScrollView', ActivityIndicator: 'Spinner', useWindowDimensions: () => ({ fontScale: 1 }) },
     'expo-image': { Image: 'Image' },
     ...modules,
   };
@@ -29,7 +29,8 @@ const creationUtils = load('utils/create-profile.ts', { '@/constants/carer-avata
 const profileNavigation = load('utils/profile-navigation.ts');
 const activityUtils = load('utils/activities.ts');
 const tokens = load('theme/tokens.ts');
-const styling = { '@/theme/tokens': tokens, '@/theme/use-theme': { useAppTheme: () => tokens.themes.light },
+const styling = { '@/context/device-access': { DeviceAccessProvider: 'DeviceProvider', useDeviceAccess: () => ({ status: 'unlinked', stage: 'ready' }) },
+  '@/components/user/device-access-boundary': { DeviceAccessBoundary: 'DeviceBoundary' }, '@/theme/tokens': tokens, '@/theme/use-theme': { useAppTheme: () => tokens.themes.light },
   '@/utils/profile-navigation': profileNavigation,
   '@/components/carer/account-layout': { accountStyles: {} },
   '@/components/carer/area-icon': { AreaIcon: 'Icon' },
@@ -181,7 +182,7 @@ test('private route group only becomes available after restoration or onboarding
   for (const [status, stage, allowed] of [['anonymous', 'ready', false], ['booting', 'ready', false],
     ['authenticated', 'otp', false], ['authenticated', 'onboarding', false], ['authenticated', 'ready', true]]) {
     snapshot = { status, stage };
-    const inner = layout().props.children;
+    const inner = layout().props.children.props.children;
     const groups = nodes(inner.type(inner.props)).filter(node => node.type === 'Protected');
     const privateGroup = groups.find(node => nodes(node.props.children).some(child => child.props?.name === '(cuidador-autenticado)'));
     assert.equal(privateGroup.props.guard, allowed);
@@ -382,10 +383,11 @@ test('bottom navigation keeps Perfiles selected inside detail and still allows r
     'expo-router': { usePathname: () => pathname, router: { dismissTo: value => navigations.push(value) } },
     '@/constants/carer-navigation': load('constants/carer-navigation.ts'), '@/context/session': { useSession: () => ({ caregiver: { nombre: 'Cuidador', avatarId: null } }) },
     './account-avatar': { AccountAvatar: 'Avatar' },
+    '@/components/bottom-navigation': load('components/bottom-navigation.tsx',styling),
   }).AreaNavigation;
-  let tab = nodes(bar()).find(node => node.props?.accessibilityLabel === 'Perfiles');
+  let tab = nodes(bar().type(bar().props)).find(node => node.props?.accessibilityLabel === 'Perfiles');
   assert.equal(tab.props.accessibilityState.selected, true); tab.props.onPress(); assert.deepEqual(navigations, ['/perfiles']);
-  pathname = '/perfiles'; tab = nodes(bar()).find(node => node.props?.accessibilityLabel === 'Perfiles'); tab.props.onPress(); assert.equal(navigations.length, 1);
+  pathname = '/perfiles'; tab = nodes(bar().type(bar().props)).find(node => node.props?.accessibilityLabel === 'Perfiles'); tab.props.onPress(); assert.equal(navigations.length, 1);
 });
 
 test('installed Expo router history removes confirmation and Android back resolves to the profiles anchor', () => {
@@ -417,7 +419,7 @@ test('installed Expo router history removes confirmation and Android back resolv
   const area = manifest.children.find(route => route.route === '(cuidador-autenticado)').children.find(route => route.route === '(principal)');
   const profileNode = area.children.find(route => route.route === 'perfiles/[idPerfilUsuario]');
   assert.equal(area.initialRouteName, 'perfiles'); assert.equal(profileNode.initialRouteName, 'index');
-  assert.deepEqual(profileNode.children.map(route => route.route).sort(), ['actividades', 'index', 'nueva-actividad']);
+  assert.deepEqual(profileNode.children.map(route => route.route).sort(), ['actividades', 'index', 'nueva-actividad', 'vincular-dispositivo']);
   const childRouter = StackRouter({ initialRouteName: principal.unstable_settings.anchor });
   const childOptions = { routeNames: ['perfiles', 'perfiles/[idPerfilUsuario]'], routeParamList: {}, routeGetIdList: {} };
   const parentRouter = StackRouter({ initialRouteName: '(principal)' });

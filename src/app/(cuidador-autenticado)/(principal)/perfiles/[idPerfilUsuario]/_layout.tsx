@@ -14,6 +14,8 @@ export default function ProfileLayout() {
       onBack={() => router.dismissTo('/perfiles')} /> }} />
     <Stack.Screen name="actividades" options={{ header: () => <AreaHeader title="Actividades" showNotifications={false}
       backLabel="Volver al perfil" onBack={() => router.dismissTo(id ? profileHref(id) : '/perfiles')} /> }} />
+    <Stack.Screen name="vincular-dispositivo" options={{ header: () => <AreaHeader title="Vincular dispositivo" showNotifications={false}
+      backLabel="Volver al perfil" onBack={() => router.dismissTo(id ? profileHref(id) : '/perfiles')} /> }} />
     <Stack.Screen name="nueva-actividad" options={{ header: () => <AreaHeader title="Nueva actividad" showNotifications={false}
       backLabel="Volver a las actividades" onBack={() => router.dismissTo(id ? activitiesHref(id) : '/perfiles')} /> }} />
   </Stack>;

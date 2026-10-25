@@ -6,6 +6,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { RoleCard } from '@/components/welcome/role-card';
+import { useDeviceAccess } from '@/context/device-access';
+import { DeviceAccessBoundary } from '@/components/user/device-access-boundary';
 import { SessionBoundary } from '@/components/session-boundary';
 import { useSession } from '@/context/session';
 import { layout, radii, sizes, spacing, typography } from '@/theme/tokens';
@@ -15,6 +17,10 @@ type Role = 'user' | 'carer';
 
 export default function WelcomeScreen() {
   const session = useSession();
+  const device = useDeviceAccess();
+  if (device.status === 'linked') return <Redirect href={device.stage === 'ready' ? '/mi-agenda' : '/usuario'} />;
+  if (device.status === 'pending' || device.paused) return <Redirect href="/usuario" />;
+  if (device.status !== 'unlinked') return <DeviceAccessBoundary />;
   if (session.status === 'authenticated' && session.stage === 'ready') return <Redirect href="/perfiles" />;
   if (session.status !== 'anonymous') return <SessionBoundary />;
   return <WelcomeContent />;
@@ -66,7 +72,7 @@ function WelcomeContent() {
         <View style={[styles.roles, stacked && styles.stacked]} accessibilityLabel="Elige cómo usar DiaFacil">
           <RoleCard title="Soy usuario" description="Quiero ver mi agenda y seguir mis actividades"
             variant="user" illustration={require('@/assets/illustrations/im-user.png')}
-            selected={selected === 'user'} onSelect={() => select('user')} />
+            selected={selected === 'user'} onSelect={() => select('user')} onContinue={() => router.navigate('/usuario')} />
           <RoleCard title="Soy cuidador" description="Quiero configurar, personalizar y acompañar la agenda"
             variant="carer" illustration={require('@/assets/illustrations/im-carer.png')}
             selected={selected === 'carer'} onSelect={() => select('carer')}

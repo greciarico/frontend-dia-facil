@@ -19,3 +19,7 @@ export function activitiesHref(id: number) {
 export function newActivityHref(id: number) {
   return { pathname: '/perfiles/[idPerfilUsuario]/nueva-actividad' as const, params: { idPerfilUsuario: String(id) } };
 }
+
+export function deviceLinkHref(id: number) {
+  return { pathname: '/perfiles/[idPerfilUsuario]/vincular-dispositivo' as const, params: { idPerfilUsuario: String(id) } };
+}
