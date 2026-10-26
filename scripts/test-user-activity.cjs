@@ -42,17 +42,23 @@ test('only the agenda card becomes one accessible button; its state circle has n
  assert.equal(card({activity:response().actividad,index:0}).type,'View');
 });
 
-test('detail presentation keeps both actions disabled for all real states and guide flags, with no speech or execution callbacks',()=>{
+test('detail hides direct completion until the first guide and stays disabled without action callbacks',()=>{
  for(const theme of [tokens.themes.light,tokens.themes.dark]){
  const content=load('components/user/activity-detail.tsx',{...styling,react:{useState:v=>[v,()=>{}],useRef:v=>({current:v}),useLayoutEffect:fn=>fn()},'expo-image':{Image:'Image'},'@/theme/use-theme':{useAppTheme:()=>theme},
   '@/components/carer/area-icon':{AreaIcon:'Icon'},'@/components/carer/continue-button':{ContinueButton:'Button'},'@/constants/activity-icons':{resolveActivityIcon:()=>null},
   '@/utils/activity-draft':{formatActivityTime:()=> '7:00 a.m.'},'@/utils/user-agenda':agenda,'@/utils/user-activity':utils}).UserActivityDetailContent;
  for(const estado of ['PENDIENTE','EN_PROGRESO','COMPLETADA'])for(const guiaInicialCompletada of [false,true]){
   const raw=response();Object.assign(raw.actividad,{estado,guiaInicialCompletada});const tree=content({detail:raw});
-  const buttons=nodes(tree).filter(n=>n.type==='Button');assert.deepEqual(buttons.map(n=>n.props.label),['Ver paso a paso','Ya lo hice']);
+  const buttons=nodes(tree).filter(n=>n.type==='Button');assert.deepEqual(buttons.map(n=>n.props.label),guiaInicialCompletada&&estado!=='COMPLETADA'?['Ver paso a paso','Ya lo hice']:['Ver paso a paso']);
   assert.ok(buttons.every(n=>n.props.disabled===true&&n.props.onPress===undefined));assert.ok(!nodes(tree).some(n=>n.props?.onPress));
   assert.ok(text(tree).includes('Es hora de Actividad real'));assert.ok(text(tree).includes('Sábado, 24 de octubre'));
-  assert.equal(text(tree).includes('Esta opción se habilitará después de completar la primera guía.'),!guiaInicialCompletada&&estado!=='COMPLETADA');
+  assert.equal(text(tree).includes('Recorre los pasos para completar esta actividad.'),!guiaInicialCompletada&&estado!=='COMPLETADA');
+  assert.equal(text(tree).split('Recorre los pasos para completar esta actividad.').length-1,!guiaInicialCompletada&&estado!=='COMPLETADA'?1:0);
+  assert.equal(text(tree).includes('Puedes seguir los pasos de esta actividad o marcarla como completa.'),guiaInicialCompletada&&estado!=='COMPLETADA');
+  const active=content({detail:raw,onStart:()=>{},onDirect:()=>{},busy:true});
+  const primary=nodes(active).find(n=>n.type==='Button');assert.equal(primary.props.disabled,false);assert.equal(primary.props.busy,true);assert.equal(primary.props.appearance,'solid-purple');
+  assert.equal(primary.props.leadingIcon.props.color,tokens.colors.background.primary);
+  if(estado==='COMPLETADA'){assert.ok(text(tree).includes('¿Quieres recordar los pasos?'));assert.equal(text(tree).split('Actividad completada').length-1,1);}
   if(estado==='EN_PROGRESO')assert.ok(text(tree).includes('En progreso'));if(estado==='COMPLETADA')assert.ok(text(tree).includes('Actividad completada'));
  }
  }
@@ -60,7 +66,7 @@ test('detail presentation keeps both actions disabled for all real states and gu
 
 test('detail route handles loading, unavailable and recoverable errors, and Back consistently returns to Mi agenda',()=>{
  let state={status:'loading'},param='7',seen=[],routes=[],retries=0;
- const screen=load('app/(usuario-autenticado)/actividades/[idActividad].tsx',{...styling,'expo-router':{router:{dismissTo:v=>routes.push(v)},useLocalSearchParams:()=>({idActividad:param})},
+ const screen=load('app/(usuario-autenticado)/actividades/[idActividad].tsx',{...styling,react:{useState:v=>[v,()=>{}]},'@/components/user/execution-success':{ExecutionSuccess:'Success'},'@/hooks/use-execution-action':{useExecutionAction:()=>({busy:false,blocked:false,run:()=>{}})},'@/services/user-execution':{},'@/utils/user-execution':{},'expo-router':{router:{dismissTo:v=>routes.push(v)},useLocalSearchParams:()=>({idActividad:param})},
   '@/components/carer/area-icon':{AreaIcon:'Icon'},'@/components/carer/continue-button':{ContinueButton:'Button'},'@/components/user/activity-detail':{UserActivityDetailContent:'Detail'},
   '@/hooks/use-user-activity':{useUserActivity:id=>{seen.push(id);return{state,reload:()=>retries++};}},'@/utils/user-activity':utils}).default;
  let tree=screen();assert.ok(nodes(tree).some(n=>n.type==='Spinner'));assert.ok(!nodes(tree).some(n=>n.type==='Detail'));
@@ -141,7 +147,7 @@ test('metadata adapts to native text measurements, stays stable after stacking a
   const style=flatten(value.props.style);assert.equal(style.fontFamily,tokens.typography.family.semibold);assert.equal(style.fontSize,tokens.typography.size.md);
   assert.equal(value.props.numberOfLines,undefined);assert.equal(value.props.ellipsizeMode,undefined);assert.equal(value.props.adjustsFontSizeToFit,undefined);assert.equal(value.props.allowFontScaling,undefined);
  }
- assert.ok(text(tree).includes('Puedes seguir los pasos de esta actividad o marcarla como completa.'));
+ assert.ok(text(tree).includes('Recorre los pasos para completar esta actividad.'));
  const reading=nodes(tree).find(n=>n.type==='Text'&&text(n).startsWith('Es hora de'));
  assert.equal(flatten(reading.props.style).fontFamily,tokens.typography.family.semibold);
 });

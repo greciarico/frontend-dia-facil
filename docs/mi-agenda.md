@@ -43,18 +43,18 @@ informativo «Es hora de {nombre}» y las dos acciones del prototipo. El bloque 
 lectura no reproduce voz ni se anuncia como botón: expo-speech está instalado,
 pero su integración con ConfiguracionPerfil.lecturaVoz queda pendiente.
 
-«Ver paso a paso» y «Ya lo hice» permanecen visibles, deshabilitados y sin
-handlers. No existen rutas provisionales ni comandos para ejecutar/finalizar.
-La elegibilidad de dominio para futura finalización directa es
-`guiaInicialCompletada && estado !== 'COMPLETADA'`; no activa el botón en este
-incremento. Si falta primera guía se explica que debe completarse antes.
+«Ver paso a paso» inicia/recupera la guía real. «Ya lo hice» solo se muestra con
+`guiaInicialCompletada=true` y finaliza DIRECTA cuando no está COMPLETADA.
+Si falta primera guía se explica que debe recorrerse para completar la actividad.
 EN_PROGRESO conserva su estado; COMPLETADA muestra confirmación informativa sin
 crear otra ejecución. Los cambios de plantilla no modifican esta bandera.
 
 La introducción usa spacing.md entre icono, nombre y lectura, conservando los
 tamaños. La lectura y los valores de Hora/Fecha utilizan Nunito semibold.
-La descripción de opciones es siempre «Puedes seguir los pasos de esta actividad
-o marcarla como completa»; las acciones permanecen deshabilitadas.
+La primera guía muestra únicamente «Recorre los pasos para completar esta
+actividad», una vez. Tras completarla se ofrece «Puedes seguir los pasos de esta
+actividad o marcarla como completa». Para una actividad COMPLETADA, la sección
+ofrece recordar sus pasos, sin acciones de finalización deshabilitadas.
 
 Hora usa ancho natural y Fecha el restante. onLayout identifica el ancho real de
 la tarjeta y onTextLayout evalúa el texto visible: Hora en varias líneas o Fecha
@@ -118,10 +118,10 @@ en backend; la revocación futura pertenece al cuidador/E2.
 
 1. E3 ya vinculado y reapertura → agenda directa, sin bienvenida ni confirmación.
 2. Crear actividades desde Cuidador → volver a primer plano Usuario: nombre,
-   iconos y horas reales en orden; ninguna tarjeta ejecuta ni completa.
+   iconos y horas reales en orden; tocar una tarjeta abre su detalle sin completar.
 3. Perfil sin actividades → vacío solo tras consulta; red caída → error/reintento.
 4. Verificar medianoche de Lima, foreground y pull-to-refresh; no usar el reloj
-   local del teléfono como autoridad del día. No crear ejecuciones desde esta UI.
+   local del teléfono como autoridad del día. Consultar la agenda no crea ejecuciones.
 5. Salir offline → onboarding; reapertura permanece pausada. Reconectar al mismo
    perfil con código/QR no incrementa E1. Cambiar a otro perfil y regresar conserva
    vínculos independientes. Renovar código exige el vigente al reconectar.
@@ -139,7 +139,68 @@ sin errores; export Android offline correcta. Android físico, texto ampliado y
 lectores de pantalla requieren la prueba manual descrita arriba.
 
 `test-user-activity.cjs` añade contrato mínimo, elegibilidad por actividad,
-acciones deshabilitadas en todos los estados, apertura por ID, retorno nativo,
+acciones según primera guía/estado, apertura por ID, retorno nativo,
 loading/404/red, renovación del día y cancelación de consultas. En Android físico
 probar abrir cada tarjeta, regresar con flecha/Atrás/Agenda, fallos de red, texto
 ampliado y lectores de pantalla. No se afirma validación física desde el export.
+
+## Guía y finalización reales
+
+Ruta `/actividades/guia/[idActividad]`, dentro del mismo layout Usuario. Iniciar
+desde el detalle hace POST; abrir/recuperar la ruta solo GET. `useUserGuide`
+recarga al enfocar, primer plano y medianoche, cancela lecturas obsoletas y
+recupera por ID la ejecución ya conocida. Una ejecución de ayer se muestra
+no vigente: volver al detalle permite comenzar hoy sin alterar el historial.
+
+Cada paso muestra exclusivamente su Pictograma mediante StepPictogramImage,
+con fallback existente. No utiliza el icono 3D de la actividad ni busca ARASAAC.
+El indicador virtualizado tiene cantidad dinámica y targets accesibles: futuros
+deshabilitados, alcanzados navegables, actual seleccionado y anunciado.
+La voz es decorativa, sin acción ni autoplay en este incremento.
+
+Primera guía: solo Siguiente paso y, al final, Finalizar actividad. Posteriores:
+también finalización anticipada con confirmación, conservando progreso parcial.
+La selección visual de un paso no altera el máximo alcanzado persistido.
+Los estados completados no ofrecen nuevos comandos sobre esa ejecución.
+
+En un detalle COMPLETADA, Ver paso a paso abre la misma ruta sin POST de inicio.
+GET determina el modo consulta a partir del estado real. Todos los pasos son
+navegables, aunque la finalización haya sido DIRECTA o GUIADA anticipada. Siguiente
+paso cambia solo la posición local y el último ofrece Volver a la actividad.
+No se alteran alcanzado/completado, no se crea ejecución/progreso y no hay otra
+finalización ni celebración. La ejecución activa mantiene sus restricciones.
+El cambio de día conserva el regreso al detalle antes de iniciar hoy.
+
+El botón del detalle usa la apariencia optativa solid-purple: blanco sobre el
+morado existente, pressed por opacidad sutil. busy bloquea el toque y anuncia
+ocupado sin adoptar la superficie deshabilitada ni sustituir su contenido. Los
+botones existentes conservan su apariencia por defecto.
+
+ExecutionSuccess omite la fecha y destaca el nombre real del perfil en semibold
+morado. CelebrationPicture reutiliza user-happy.png con una entrada única de
+500 ms; al abandonar o activar movimiento reducido se detiene y queda estática.
+No bloquea la navegación, no reproduce sonidos ni repite la animación al enfocar.
+
+`useExecutionAction` bloquea doble toque y callbacks de éxito tras abandonar la
+pantalla. `user-execution` usa el cliente privado E3 existente. Resultado técnico
+desconocido: una lectura GET, sin replay de escritura; si también falla, Consultar
+resultado bloquea otras escrituras hasta resolverlo. Drafts, credenciales y E3
+no cambian. La finalización confirmada muestra ExecutionSuccess solo en memoria;
+botón y Atrás Android regresan a Mi agenda, que consulta el estado COMPLETADA.
+No hay demoras artificiales ni nuevos campos/tablas/dependencias.
+
+`test-user-execution.cjs` comprueba contratos, recuperación, doble toque,
+abandono de pantalla, navegación alcanzada y confirmación de cierre anticipado.
+Validación física pendiente: completar primera guía, interrumpir/reabrir,
+navegar hacia atrás entre pasos alcanzados, nueva ejecución DIRECTA y cierre
+GUIADA anticipado; repetir con red perdida, cambio de día, texto ampliado y
+TalkBack/VoiceOver. Las pruebas automatizadas no sustituyen esa validación.
+
+Validación del incremento de guía: 190 pruebas frontend correctas, TypeScript
+sin errores, lint sin errores y export Android offline correcta.
+
+Refinamiento de consulta/celebración: 194 pruebas frontend correctas. Se añaden
+casos de consulta sin escritura tras finalización GUIADA, DIRECTA o anticipada,
+apariencia ocupada del botón, nombre destacado sin fecha y animación con
+movimiento reducido/cleanup. Comprobar físicamente feedback táctil, texto
+ampliado y TalkBack/VoiceOver; la exportación no sustituye esa revisión.

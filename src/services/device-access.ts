@@ -8,7 +8,9 @@ import { parseUserLink, validDeviceToken } from '@/utils/user-link';
 
 function failure(error: unknown): never {
   if (isAxiosError(error)) {
-    if (error.response?.status === 404 && error.response.data?.codigo === 'ACTIVIDAD_NO_ENCONTRADA') throw new DeviceFailure('not-found');
+    const code = error.response?.data?.codigo;
+    if (error.response?.status === 404 && ['ACTIVIDAD_NO_ENCONTRADA', 'EJECUCION_NO_ENCONTRADA'].includes(code)) throw new DeviceFailure('not-found', code);
+    if (error.response?.status === 409 && ['DIA_AGENDA_CAMBIADO', 'GUIA_INICIAL_REQUERIDA', 'RECORRIDO_NO_PERMITIDO', 'GUIA_NO_DISPONIBLE'].includes(code)) throw new DeviceFailure('guide-conflict', code);
     if (error.response?.status === 401) throw new DeviceFailure('invalid-access');
     if (error.response?.status === 422 && error.response.data?.codigo === 'CODIGO_VINCULACION_INVALIDO') throw new DeviceFailure('invalid-code');
     if (error.response?.status === 429) throw new DeviceFailure('rate');

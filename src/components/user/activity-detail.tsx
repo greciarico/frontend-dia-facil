@@ -7,7 +7,7 @@ import { resolveActivityIcon } from '@/constants/activity-icons';
 import { formatActivityTime } from '@/utils/activity-draft';
 import { formatAgendaDate } from '@/utils/user-agenda';
 import { eligibleForDirectCompletion, type UserActivityDetail } from '@/utils/user-activity';
-import { borders, layout, radii, sizes, spacing, typography } from '@/theme/tokens';
+import { borders, colors as palette, layout, radii, sizes, spacing, typography } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';
 
 function ActivityPicture({ code }: { code: string | null }) {
@@ -20,7 +20,9 @@ function ActivityPicture({ code }: { code: string | null }) {
   </View>;
 }
 
-export function UserActivityDetailContent({ detail }: { detail: UserActivityDetail }) {
+export function UserActivityDetailContent({ detail, onStart, onDirect, disabled = false, busy = false }: {
+  detail: UserActivityDetail; onStart?: () => void; onDirect?: () => void; disabled?: boolean; busy?: boolean;
+}) {
   const { colors } = useAppTheme();
   const { fontScale } = useWindowDimensions();
   const activity = detail.actividad;
@@ -48,8 +50,8 @@ export function UserActivityDetailContent({ detail }: { detail: UserActivityDeta
       <View style={styles.nameBlock}>
         <Text style={[styles.small, { color: colors.text.secondary }]}>Actividad</Text>
         <Text accessibilityRole="header" style={[styles.name, { color: colors.text.primary }]}>{activity.nombre}</Text>
-        {activity.estado !== 'PENDIENTE' && <Text style={[styles.body, styles.centered, { color: completed ? colors.status.success : colors.text.secondary }]}>
-          {completed ? 'Actividad completada' : 'En progreso'}
+        {activity.estado === 'EN_PROGRESO' && <Text style={[styles.body, styles.centered, { color: colors.text.secondary }]}>
+          En progreso
         </Text>}
       </View>
       <View accessible style={[styles.reading, { backgroundColor: colors.profiles.information }]}>
@@ -84,15 +86,16 @@ export function UserActivityDetailContent({ detail }: { detail: UserActivityDeta
       <View style={styles.actionHeading}>
         <View style={[styles.headingIcon, { backgroundColor: colors.welcome.iconSurface }]}><AreaIcon name="steps" color={colors.action.primary} /></View>
         <View style={styles.flexText}>
-          <Text accessibilityRole="header" style={[styles.sectionTitle, { color: colors.text.primary }]}>¿Qué harás ahora?</Text>
-          <Text style={[styles.small, { color: colors.text.secondary }]}>Puedes seguir los pasos de esta actividad o marcarla como completa.</Text>
+          {completed && <Text style={[styles.small, { color: colors.status.success }]}>Actividad completada</Text>}
+          <Text accessibilityRole="header" style={[styles.sectionTitle, { color: colors.text.primary }]}>{completed ? '¿Quieres recordar los pasos?' : '¿Qué harás ahora?'}</Text>
+          <Text style={[styles.small, { color: colors.text.secondary }]}>{completed ? 'Puedes volver a verlos cuando quieras.'
+            : activity.guiaInicialCompletada ? 'Puedes seguir los pasos de esta actividad o marcarla como completa.' : 'Recorre los pasos para completar esta actividad.'}</Text>
         </View>
       </View>
-      <ContinueButton label="Ver paso a paso" disabled leadingIcon={<AreaIcon name="steps" color={colors.text.secondary} />} />
-      <ContinueButton label="Ya lo hice" variant="secondary" disabled leadingIcon={<AreaIcon name="check" color={colors.text.secondary} />} />
-      {!completed && !eligibleForDirectCompletion(activity) && <Text style={[styles.small, { color: colors.text.secondary }]}>
-        Esta opción se habilitará después de completar la primera guía.
-      </Text>}
+      <ContinueButton label="Ver paso a paso" appearance="solid-purple" busy={busy} disabled={disabled || !onStart} onPress={onStart}
+        leadingIcon={<AreaIcon name="steps" color={palette.background.primary} />} />
+      {!completed && activity.guiaInicialCompletada && <ContinueButton label="Ya lo hice" variant="secondary" busy={busy} disabled={disabled || !eligibleForDirectCompletion(activity) || !onDirect} onPress={onDirect}
+        leadingIcon={<AreaIcon name="check" color={colors.action.primary} />} />}
     </View>
   </View>;
 }

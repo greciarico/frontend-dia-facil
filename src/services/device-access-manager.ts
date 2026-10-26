@@ -2,8 +2,8 @@ import { validDeviceToken, validLinkCode, type UserLink } from '@/utils/user-lin
 import type { UserProfile } from '@/utils/profiles';
 
 export class DeviceFailure extends Error {
-  constructor(readonly kind: 'invalid-code' | 'invalid-access' | 'network' | 'rate' | 'storage' | 'canceled' | 'not-found') {
-    super(kind === 'not-found' ? 'Esta actividad no está disponible.' : kind === 'invalid-code' ? 'El código no es válido.' : kind === 'rate' ? 'Espera un momento antes de intentarlo nuevamente.'
+  constructor(readonly kind: 'invalid-code' | 'invalid-access' | 'network' | 'rate' | 'storage' | 'canceled' | 'not-found' | 'guide-conflict', readonly code?: string) {
+    super(kind === 'guide-conflict' ? 'Consulta nuevamente la actividad para continuar.' : kind === 'not-found' ? 'Esta actividad no está disponible.' : kind === 'invalid-code' ? 'El código no es válido.' : kind === 'rate' ? 'Espera un momento antes de intentarlo nuevamente.'
       : kind === 'storage' ? 'No pudimos guardar tu conexión de forma segura. Inténtalo de nuevo.'
         : 'No pudimos conectar tu agenda. Revisa tu conexión e inténtalo de nuevo.');
   }

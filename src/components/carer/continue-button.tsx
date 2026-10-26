@@ -1,27 +1,29 @@
 import type { ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
 
-import { borders, radii, sizes, spacing, typography } from '@/theme/tokens';
+import { borders, colors as palette, radii, sizes, spacing, typography } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';
 
-export function ContinueButton({ label, onPress, loading = false, disabled = false, loadingLabel = 'Enviando…', leadingIcon, variant = 'primary', size = 'screen' }: {
+export function ContinueButton({ label, onPress, loading = false, busy = false, disabled = false, loadingLabel = 'Enviando…', leadingIcon, variant = 'primary', size = 'screen', appearance = 'default' }: {
   label: string; onPress?: () => void; loading?: boolean; disabled?: boolean; loadingLabel?: string; leadingIcon?: ReactNode;
   variant?: 'primary' | 'secondary' | 'destructive' | 'destructive-outline'; size?: 'screen' | 'modal';
+  busy?: boolean; appearance?: 'default' | 'solid-purple';
 }) {
   const { colors } = useAppTheme();
   const outlined = variant === 'secondary' || variant === 'destructive-outline';
   const destructive = variant === 'destructive' || variant === 'destructive-outline';
-  const foreground = destructive ? (outlined ? colors.destructive.default : colors.destructive.onDefault)
+  const solid = appearance === 'solid-purple' && variant === 'primary';
+  const foreground = solid ? palette.background.primary : destructive ? (outlined ? colors.destructive.default : colors.destructive.onDefault)
     : outlined ? colors.action.primary : colors.action.onPrimary;
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={loading ? loadingLabel : label}
-      accessibilityState={{ disabled: disabled || loading, busy: loading }} disabled={disabled || loading}
+      accessibilityState={{ disabled: disabled || loading || busy, busy: loading || busy }} disabled={disabled || loading || busy}
       onPress={onPress} style={({ pressed }) => [styles.button, size === 'modal' && styles.modal, {
         backgroundColor: disabled && !loading ? colors.action.disabled
-          : outlined ? (pressed ? (destructive ? colors.destructive.surface : colors.welcome.intro) : colors.surface.elevated)
+          : solid ? palette.purple.default : outlined ? (pressed ? (destructive ? colors.destructive.surface : colors.welcome.intro) : colors.surface.elevated)
           : variant === 'destructive' ? colors.destructive.default : pressed ? colors.action.pressed : colors.action.primary,
         ...(outlined ? { borderWidth: borders.default, borderColor: disabled ? colors.border.decorative : destructive ? colors.destructive.default : colors.action.primary } : {}),
-        opacity: variant === 'destructive' && pressed && !disabled ? 0.8 : 1 }]}>
+        opacity: solid && pressed && !disabled ? 0.92 : variant === 'destructive' && pressed && !disabled ? 0.8 : 1 }]}>
       {loading && <ActivityIndicator color={foreground} accessible={false} />}
       {!loading && leadingIcon}
       <Text style={[styles.label, size === 'modal' && styles.modalLabel, destructive && styles.destructiveLabel,
