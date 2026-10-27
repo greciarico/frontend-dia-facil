@@ -23,13 +23,14 @@ No hay imágenes inventadas, descargas masivas ni Cloudinary.
 
 idPictograma es local; idArasaac es externo. URL calculada por backend y validada
 contra host/formato oficial. Rutas legacy no se renderizan. Las elecciones solo
-viven en memoria. En C se verificarán/resolverán las referencias elegidas antes
-de crear PasoActividad independientes de plantillas.
+viven en el borrador hasta crear. El [POST C](crear-actividad.md) ya verifica/resuelve
+las referencias elegidas antes de crear PasoActividad independientes de plantillas.
 
 Los cinco predeterminados de Desayunar ya fueron aprobados visualmente: 2443,
 5549, 36965, 2349 y 8688, respectivamente. El DTO de plantilla entrega directamente
 las imágenes al borrador, sin búsquedas individuales. Los textos de pasos no cambian.
-Crear actividad continúa deshabilitado, sin POST.
+Crear actividad ya persiste realmente mediante C/D; la selección del editor por
+sí sola no escribe Pictograma/PasoActividad ni cambia plantillas.
 
 Contrato, transición y licencia: ../../backend_dia_facil/docs/pictogramas-arasaac.md.
 

@@ -1,5 +1,9 @@
 ## Sistema visual
 
+Estado de implementación y pendientes: [continuidad del proyecto](../../documentacion-dia-facil/ESTADO_ACTUAL_PROYECTO.md).
+Las descripciones de entregas B o pantallas temporales inferiores se actualizan
+con los módulos vigentes; los prototipos no deben restaurar reglas antiguas.
+
 Mi agenda usa variantes visuales de los componentes existentes: ActivitySummaryCard
 `appearance="agenda"` y BottomNavigation `appearance="user"`. Los valores por defecto
 conservan el aspecto del cuidador. `getActivityVisualFamily(index)` devuelve las
@@ -275,13 +279,13 @@ icono elegido permanece visible al editar el nombre. No hay tarjeta duplicada de
 selección: si el elegido sale de las sugerencias, aparece Tu selección con una
 tarjeta compacta no interactiva de 72, imagen de 48, nombre y check. Ver más íconos sigue siendo el acceso
 explícito al catálogo. La selección usa PNG locales
-con contentFit contain. Crear actividad está deshabilitado hasta el incremento
-de persistencia real. No hay assets inventados.
+con contentFit contain. Crear actividad ya está habilitado con validación y POST
+real; ver [C/D](crear-actividad.md). No hay assets inventados.
 
 Hora y Paso a paso reutilizan ActivitySectionHeading con reloj/lista SVG del
 AreaIcon existente. La hora es un campo táctil de 48 mínimo con selector nativo
-instalado, sin fecha en el dominio. Los pasos muestran número y descripción, sin
-imágenes porque las referencias actuales de Pictograma no son renderizables.
+instalado, sin fecha en el dominio. Los pasos muestran número, descripción y
+miniatura ARASAAC opcional, con contain y fallback; no usan el icono 3D de actividad.
 La sección de pasos forma una tarjeta continua con cabecera, filas compactas y
 pie, usando el mismo borde, superficie, radio, sombra y padding que las demás.
 Selector circular y número comparten un área táctil de 48; lápiz y handle tienen
@@ -303,7 +307,8 @@ borrador personalizado tiene descripción neutra; la propuesta pendiente se ofre
 en una acción secundaria lila con destellos, oculta al aceptar sus mismos pasos.
 La marca de protección permanece. Edición, eliminación y sustitución usan ActivityDialog con superficies
 semánticas, foco en el título y contenido desplazable. El editor admite texto
-ampliado, multiline y máximo 120 caracteres. Los pasos y hora no se guardan en B.
+ampliado, multiline y máximo 120 caracteres. Hora/pasos son borrador hasta el POST
+final implementado en C, que no altera la plantilla original.
 
 La [revisión final de UX de B](nueva-actividad-ux.md) documenta el trabajo acotado
 del arrastre y el warning de InteractionManager originado en dependencias, sin
@@ -329,6 +334,15 @@ actualizarlas ni ocultar mensajes.
 | `radii.card` | `20` | Tarjetas y contenedores |
 
 ### Implementación
+
+Detalle Usuario: ContinueButton opta por `appearance="solid-purple"`, blanco
+sobre purple.default en ambos temas. `busy` bloquea duplicados y anuncia ocupado
+sin adoptar la superficie disabled ni cambiar icono/texto. Los defaults de otros
+botones permanecen iguales. No añadir flecha a Ver paso a paso.
+
+Celebración Usuario: `motion.userCelebrationDuration=500`, entrada única de la
+ilustración existente; movimiento reducido estático, sin sonidos ni loops. El
+nombre real se destaca en semibold/morado y la fecha no se muestra en éxito.
 
 `ContinueButton` mantiene el tamaño `screen` por defecto y ofrece `size="modal"`:
 target mínimo de 48, padding vertical 8/horizontal 12 y texto Nunito de 16.

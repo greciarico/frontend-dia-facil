@@ -1,5 +1,7 @@
 # Creación de PerfilUsuario
 
+> **Alcance hist?rico.** Informe hist?rico de creaci?n. El c?digo actual es DF- + 16 s?mbolos; Comenzar abre el hub del perfil real, no la lista. Las reglas actuales est?n en [perfiles HTTP](../../backend_dia_facil/docs/perfiles-http.md). Los resultados de pruebas y pendientes f?sicos inferiores pertenecen a ese incremento, no a una nueva validaci?n.
+
 Nota posterior: el incremento descrito en [perfil-inicio-increment.md](perfil-inicio-increment.md)
 cambia el destino de Comenzar al detalle del perfil creado por su ID real.
 El flujo de creación y su contrato permanecen iguales.

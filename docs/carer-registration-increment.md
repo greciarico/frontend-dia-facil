@@ -1,5 +1,7 @@
 # Paso 3: creación de la cuenta del cuidador
 
+> **Alcance hist?rico.** Informe hist?rico del primer registro. Sus notas sobre ausencia de sesi?n/Paso 4 y ?xito terminal en Paso 3 fueron sustituidas por [sesi?n y Paso 4](carer-session-increment.md). AUTENTICADO y REGISTRO_COMPLETADO actuales s? emiten sesi?n. Los resultados de pruebas y pendientes f?sicos inferiores pertenecen a ese incremento, no a una nueva validaci?n.
+
 ## Resultado y límites
 
 REGISTRO_PENDIENTE → Entendido → Paso 3. AUTENTICADO no abre Paso 3 y no es una

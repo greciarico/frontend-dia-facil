@@ -1,6 +1,6 @@
 # E3: vinculación del dispositivo del usuario
 
-Entrada desde «Soy usuario»: bienvenida → Conecta tu agenda → QR o código manual → Conectando → confirmación real → Ir a mi agenda. Sin números de pasos ni porcentajes ficticios de backend. «¿Necesitas ayuda?» abre ayuda contextual sobre Conecta tu agenda. La llegada ahora es [Mi agenda real](mi-agenda.md), sin ejecución, recordatorios ni accesibilidad configurable.
+Entrada desde «Soy usuario»: bienvenida → Conecta tu agenda → QR o código manual → Conectando → confirmación real → Ir a mi agenda. Sin números de pasos ni porcentajes ficticios de backend. «¿Necesitas ayuda?» abre ayuda contextual sobre Conecta tu agenda. La llegada es [Mi agenda real, con detalle y ejecución](mi-agenda.md); recordatorios y accesibilidad configurable siguen pendientes.
 
 ## Ayuda contextual
 
@@ -33,6 +33,10 @@ Salir del perfil es ahora una pausa local: retiene las pruebas previas en Secure
 `expo-camera` ya estaba instalado, no se añadió dependencia para E3. Solo se usa cámara tras elegir Escanear; permiso denegado permite código manual y, si corresponde, abrir ajustes. La cámara solo se monta con foco y app activa; se ignoran escaneos repetidos y callbacks tardíos. Plugin con microphonePermission=false; no se solicitan permisos de audio. Los tres PNG proporcionados permanecen locales en `assets/illustrations/`.
 
 ## Preparación del entorno
+
+El usuario confirmó posteriormente vinculación física por QR y código. Las notas
+de transición documentan cómo preparar otra BD, no una orden para repetirla sobre
+la instalación funcional. No se ha realizado una nueva auditoría de su MySQL.
 
 Completar primero [la transición y activación backend](../../backend_dia_facil/docs/dispositivos-e3.md). No se ejecutó en la BD local desde este entorno. E1 también pasa a utilizar exclusivamente el formato vigente. El QR sigue conteniendo exactamente el código mostrado, sin URLs, datos personales ni tokens. `EXPO_PUBLIC_API_URL` conserva la configuración LAN ya funcional; no cambiar autenticación del cuidador.
 

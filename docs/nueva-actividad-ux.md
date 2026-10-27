@@ -1,5 +1,7 @@
 # Nueva actividad: revisión final del incremento B
 
+> **Alcance hist?rico.** Informe hist?rico del borrador B y sus pases visuales. El POST final se implement? posteriormente en [C/D](crear-actividad.md); las menciones a Crear actividad deshabilitado describen esa entrega anterior. Los resultados de pruebas y pendientes f?sicos inferiores pertenecen a ese incremento, no a una nueva validaci?n.
+
 Este documento conserva la revisión del incremento B. La persistencia y la
 habilitación posterior de Crear actividad están en [incremento C](crear-actividad.md).
 

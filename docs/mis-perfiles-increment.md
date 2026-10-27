@@ -1,5 +1,7 @@
 # Mis perfiles
 
+> **Alcance hist?rico.** Informe hist?rico de consulta inicial. Creaci?n, acceso al hub, actividades y E1 est?n habilitados actualmente. Ver [estado actual](../../documentacion-dia-facil/ESTADO_ACTUAL_PROYECTO.md). Los resultados de pruebas y pendientes f?sicos inferiores pertenecen a ese incremento, no a una nueva validaci?n.
+
 Este informe describe el incremento inicial de consulta. La creación real y sus
 rutas están implementadas posteriormente en crear-perfil-increment.md; las
 referencias a creación deshabilitada de este informe son históricas.

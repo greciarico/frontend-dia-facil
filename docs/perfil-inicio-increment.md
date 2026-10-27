@@ -1,5 +1,7 @@
 # Pantalla principal de PerfilUsuario
 
+> **Alcance hist?rico.** Informe hist?rico del hub inicial. Actualmente Crear sus actividades y Vincular dispositivo son funcionales; solo Configurar accesibilidad sigue pendiente. Ver [estado actual](../../documentacion-dia-facil/ESTADO_ACTUAL_PROYECTO.md). Los resultados de pruebas y pendientes f?sicos inferiores pertenecen a ese incremento, no a una nueva validaci?n.
+
 Actualización posterior: [Actividades vacías](actividades-vacias-increment.md)
 habilita Crear sus actividades y mueve esta ruta a `perfiles/[idPerfilUsuario]/index.tsx`
 sin cambiar su URL. Las otras dos acciones continúan deshabilitadas.

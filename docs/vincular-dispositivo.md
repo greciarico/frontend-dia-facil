@@ -4,7 +4,7 @@ El hub abre `/perfiles/[idPerfilUsuario]/vincular-dispositivo` pasando únicamen
 
 Contrato: [vinculacion-http.md](../../backend_dia_facil/docs/vinculacion-http.md).
 
-- `services/device-link.ts`: GET/POST y validación estricta de respuesta, códigos legacy/nuevos y conteo real.
+- `services/device-link.ts`: GET/POST y validación estricta de respuesta, formato vigente y conteo real.
 - `hooks/use-device-link.ts`: carga, renovación exclusiva, recuperación por GET tras resultado desconocido/409/429, cancelación y descarte por foco/perfil/época de sesión; recarga en AppState active.
 - Pantalla: QR local con `react-native-qrcode-svg` ya instalado; negro sobre blanco con margen para escaneo también en dark. Misma cadena del servidor en QR y copia.
 - `expo-clipboard ~57.0.2`: versión del catálogo bundledNativeModules de Expo 57, disponible en Expo Go; solo escritura al pulsar Copiar. No se lee el portapapeles ni se piden permisos de cámara.
@@ -40,7 +40,8 @@ E3 ya incorpora vinculación real desde el rol usuario: consultar [el flujo y la
 4. Dos instalaciones con la misma vista: renovar en una; la segunda recibe 409 al intentar con el anterior y consulta el código actual.
 5. Cortar la conexión durante renovación: no reaparece código anterior sin consulta exitosa. Reintentar consulta, no renueva otra vez.
 6. Volver a primer plano recarga; Atrás visual/físico regresa al hub. Salir/cerrar sesión durante petición no publica datos tardíos.
-7. Gestión de dispositivos y vinculación desde rol usuario todavía no disponibles.
+7. Gestión E2 todavía no disponible. Vinculación Usuario E3 sí está implementada;
+   probar su flujo con [la matriz actual](usuario-vinculacion.md).
 8. Tras renovar, verificar espera, deshabilitación y habilitación al terminar; salir y regresar y volver de segundo plano conserva el cooldown real. Una fecha/hora del teléfono incorrecta no debe permitir renovar antes.
 9. Salir durante copia y regresar: una respuesta tardía no debe mostrar feedback nuevo ni dejar el botón bloqueado. Abrir/cancelar el modal y comprobar X/Atrás, texto ampliado y light/dark.
 

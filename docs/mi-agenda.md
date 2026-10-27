@@ -11,7 +11,8 @@ detalle de su actividad mediante su ID, con rol botón y anuncio de propósito.
 El círculo
 no es checkbox ni botón. EN_PROGRESO conserva círculo sin marcar y texto «En
 progreso». TalkBack/VoiceOver anuncia nombre, hora y estado de toda la tarjeta.
-No hay ejecución, progreso por pasos, solicitud de apoyo ni notificaciones.
+La consulta de lista no ejecuta ni completa actividades. La guía y su progreso
+están implementados en las rutas descritas abajo; Apoyo/notificaciones no.
 Fallback de icono y secuencia de cinco superficies reutilizan la implementación
 del cuidador; estados de ejecución no alteran las definiciones persistidas.
 
@@ -39,7 +40,7 @@ El detalle obtiene sus datos desde GET `/api/usuario/actividades/{idActividad}`,
 sin confiar en nombre, hora, estado ni perfil pasados en navegación.
 
 Muestra icono 3D local con fallback, nombre, hora y fecha del servidor, bloque
-informativo «Es hora de {nombre}» y las dos acciones del prototipo. El bloque de
+informativo «Es hora de {nombre}» y acciones según primera guía/estado diario. El bloque de
 lectura no reproduce voz ni se anuncia como botón: expo-speech está instalado,
 pero su integración con ConfiguracionPerfil.lecturaVoz queda pendiente.
 
@@ -114,7 +115,13 @@ reutilización requiere conservar SecureStore; reinstalar sin secretos constituy
 una nueva instalación. La salida local no invalida una copia del secreto anterior
 en backend; la revocación futura pertenece al cuidador/E2.
 
-## Prueba física pendiente
+## Evidencia física y escenarios pendientes
+
+El usuario confirmó físicamente agenda/detalle, inicio/reanudación, navegación
+alcanzada, finalización, EN_PROGRESO al abandonar y check diario COMPLETADA.
+La lista siguiente es una matriz de escenarios, no la afirmación de que todo el
+flujo siga sin probar. El último refinamiento de consulta/celebración permanece
+pendiente de confirmación física; ver [estado central](../../documentacion-dia-facil/ESTADO_ACTUAL_PROYECTO.md).
 
 1. E3 ya vinculado y reapertura → agenda directa, sin bienvenida ni confirmación.
 2. Crear actividades desde Cuidador → volver a primer plano Usuario: nombre,
@@ -134,7 +141,7 @@ fecha, estados informativos, menú y ciclos de foco/foreground/medianoche/cleanu
 `test-user-link.cjs` cubre pausa, migración, reconexión, respuesta perdida y
 aislamiento de credenciales. No sustituyen la prueba física.
 
-Validación actual: 181 pruebas frontend correctas, TypeScript y lint
+Validación histórica del primer detalle: 181 pruebas frontend correctas, TypeScript y lint
 sin errores; export Android offline correcta. Android físico, texto ampliado y
 lectores de pantalla requieren la prueba manual descrita arriba.
 
