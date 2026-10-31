@@ -10,6 +10,8 @@ export default function ProfileLayout() {
   const params = useLocalSearchParams<{ idPerfilUsuario?: string }>();
   const id = validProfileId(params.idPerfilUsuario);
   return <Stack screenOptions={{ contentStyle: { backgroundColor: colors.background.primary } }}>
+    <Stack.Screen name="ajustes" options={{ header: () => <AreaHeader title="Ajustes" showNotifications={false}
+      backLabel="Volver al perfil" onBack={() => router.dismissTo(id ? profileHref(id) : '/perfiles')} /> }} />
     <Stack.Screen name="index" options={{ header: () => <AreaHeader title="Perfil" showNotifications={false}
       onBack={() => router.dismissTo('/perfiles')} /> }} />
     <Stack.Screen name="actividades" options={{ header: () => <AreaHeader title="Actividades" showNotifications={false}

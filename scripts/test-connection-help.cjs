@@ -4,7 +4,7 @@ function load(file,modules={},frame={}) {
  const exports={};const defaults={'react/jsx-runtime':{jsx,jsxs:jsx,Fragment:'Fragment'},...modules};
  new Function('require','exports','requestAnimationFrame','cancelAnimationFrame',ts.transpileModule(fs.readFileSync(path.join(__dirname,'../src',file),'utf8'),{
   compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText)
- (id=>{assert.ok(id in defaults,'Unexpected dependency: '+id);return defaults[id];},exports,frame.request,frame.cancel);return exports;
+ (id=>{if(id==='@/components/app-text')return {AppText:'Text'};if(id==='@/theme/profile-appearance')return defaults[id]||{useProfileAppearance:()=>null,useEffectiveFontScale:()=>defaults['react-native']?.useWindowDimensions?.().fontScale??1};assert.ok(id in defaults,'Unexpected dependency: '+id);return defaults[id];},exports,frame.request,frame.cancel);return exports;
 }
 const tokens=load('theme/tokens.ts');
 function nodes(tree){if(!tree||typeof tree!=='object')return [];if(Array.isArray(tree))return tree.flatMap(nodes);return [tree,...nodes(tree.props?.children)];}

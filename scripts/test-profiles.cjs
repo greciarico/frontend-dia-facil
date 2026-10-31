@@ -18,6 +18,8 @@ function load(file, modules = {}) {
     compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
   }).outputText)(id => {
     if (id.startsWith('@/assets/') || id.includes('Nunito_')) return id;
+    if(id==='@/components/app-text')return {AppText:'Text'};
+    if(id==='@/theme/profile-appearance')return {useEffectiveFontScale:()=>1};
     assert.ok(id in defaults, `Missing test adapter: ${id}`);
     return defaults[id];
   }, exports);
@@ -419,7 +421,7 @@ test('installed Expo router history removes confirmation and Android back resolv
   const area = manifest.children.find(route => route.route === '(cuidador-autenticado)').children.find(route => route.route === '(principal)');
   const profileNode = area.children.find(route => route.route === 'perfiles/[idPerfilUsuario]');
   assert.equal(area.initialRouteName, 'perfiles'); assert.equal(profileNode.initialRouteName, 'index');
-  assert.deepEqual(profileNode.children.map(route => route.route).sort(), ['actividades', 'index', 'nueva-actividad', 'vincular-dispositivo']);
+  assert.deepEqual(profileNode.children.map(route => route.route).sort(), ['actividades', 'ajustes', 'index', 'nueva-actividad', 'vincular-dispositivo']);
   const childRouter = StackRouter({ initialRouteName: principal.unstable_settings.anchor });
   const childOptions = { routeNames: ['perfiles', 'perfiles/[idPerfilUsuario]'], routeParamList: {}, routeGetIdList: {} };
   const parentRouter = StackRouter({ initialRouteName: '(principal)' });

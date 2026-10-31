@@ -96,6 +96,7 @@ reanudaci?n y check diario ya reportadas como correctas.
 - [Pictogramas ARASAAC](docs/pictogramas-arasaac.md).
 - [Vinculaci?n/restauraci?n Usuario](docs/usuario-vinculacion.md) y [E1 cuidador](docs/vincular-dispositivo.md).
 - [Design system](docs/design-system.md) y [teclado](docs/keyboard-forms.md).
+- [Ajustes por perfil, aplicación de accesibilidad y voz](docs/accesibilidad-perfil.md).
 - [Contratos backend](../backend_dia_facil/README.md).
 
 Los documentos *-increment y nueva-actividad-ux conservan decisiones/evidencia de

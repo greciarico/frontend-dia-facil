@@ -59,6 +59,8 @@ export type SemanticColors = {
   text: { primary: string; secondary: string; disabled: string };
   action: { primary: string; pressed: string; onPrimary: string; disabled: string };
   border: { decorative: string; control: string; selected: string };
+  switch: { on: string; off: string; thumb: string };
+  guide: { current: string; reached: string; future: string };
   status: { error: string; errorSurface: string; success: string; successSurface: string };
   destructive: { default: string; surface: string; onDefault: string };
   profiles: { information: string; cards: readonly string[] };
@@ -71,7 +73,7 @@ export type SemanticColors = {
   shadow: string;
   overlay: { scrim: string };
 };
-export type AppTheme = { scheme: 'light' | 'dark'; colors: SemanticColors };
+export type AppTheme = { scheme: 'light' | 'dark'; colors: SemanticColors; highContrast?: boolean };
 const d = derivedColors.dark;
 export const themes: Record<'light' | 'dark', AppTheme> = {
   light: {
@@ -83,6 +85,8 @@ export const themes: Record<'light' | 'dark', AppTheme> = {
       text: colors.text,
       action: { primary: colors.purple.default, pressed: colors.purple.dark, onPrimary: colors.background.primary, disabled: colors.purple.stroke },
       border: { decorative: colors.purple.stroke, control: colors.purple.default, selected: colors.purple.default },
+      switch: { on: colors.purple.default, off: colors.text.disabled, thumb: colors.background.primary },
+      guide: { current: colors.purple.default, reached: colors.background.purple, future: colors.purple.stroke },
       status: { error: colors.bug, errorSurface: colors.orange.light, success: derivedColors.light.successText, successSurface: colors.green.hover },
       profiles: { information: colors.purple.light, cards: [colors.purple.light, colors.blue.light, colors.orange.light] },
       onboarding: {
@@ -105,6 +109,8 @@ export const themes: Record<'light' | 'dark', AppTheme> = {
       text: { primary: d.text, secondary: d.secondaryText, disabled: d.disabledText },
       action: { primary: d.primary, pressed: d.primaryPressed, onPrimary: d.onPrimary, disabled: d.decorativeBorder },
       border: { decorative: d.decorativeBorder, control: d.controlBorder, selected: d.primary },
+      switch: { on: d.primary, off: d.controlBorder, thumb: d.onPrimary },
+      guide: { current: d.primary, reached: d.surface, future: d.decorativeBorder },
       status: { error: d.error, errorSurface: d.errorSurface, success: d.success, successSurface: d.successSurface },
       profiles: { information: d.elevated, cards: [d.elevated, d.surface, d.elevated] },
       onboarding: {
@@ -119,3 +125,22 @@ export const themes: Record<'light' | 'dark', AppTheme> = {
     },
   },
 };
+
+/** Lower-luminance, readable profile presentation. Does not change the caregiver's system theme. */
+export const highContrastTheme: AppTheme = {
+  ...themes.dark, highContrast: true,
+  colors: { ...themes.dark.colors,
+    guide: { current: d.primary, reached: d.elevated, future: d.background },
+  },
+};
+
+/** Derived dark activity surfaces preserve the existing five positional families. */
+function tint(base: string, foreground: string, amount: number) {
+  const channels = [1, 3, 5].map(offset => Math.round(parseInt(base.slice(offset, offset + 2), 16) * (1 - amount)
+    + parseInt(foreground.slice(offset, offset + 2), 16) * amount).toString(16).padStart(2, '0'));
+  return `#${channels.join('')}`;
+}
+export const highContrastActivityFamilies = [colors.yellow, colors.green, colors.orange, colors.blue, colors.purple].map(family => ({
+  light: tint(d.surface, family.default, 0.10), hover: tint(d.elevated, family.default, 0.18),
+  stroke: tint(d.decorativeBorder, family.default, 0.30), default: tint(family.default, colors.background.primary, 0.30),
+}));
