@@ -9,7 +9,7 @@ function load(file, modules = {}) {
   const defaults = { 'react/jsx-runtime': { jsx, jsxs: jsx, Fragment: 'Fragment' }, ...modules };
   new Function('require', 'exports', 'setInterval', 'clearInterval', 'performance', ts.transpileModule(fs.readFileSync(path.join(__dirname, '../src', file), 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
-  }).outputText)(id => { assert.ok(id in defaults, `Missing adapter: ${id}`); return defaults[id]; }, exports,
+  }).outputText)(id => {if(id==='@/components/app-text')return {AppText:'Text'};if(id==='@/components/app-text-input')return {AppTextInput:'Input'};if(id==='@/context/carer-accessibility')return {useCarerAccessibilityFocusListeners:()=>({})}; assert.ok(id in defaults, `Missing adapter: ${id}`); return defaults[id]; }, exports,
     modules.__timers?.setInterval || (() => 0), modules.__timers?.clearInterval || (() => {}), modules.__performance || performance);
   return exports;
 }

@@ -1,7 +1,8 @@
+import { AppText as Text } from '@/components/app-text';
 import { useState } from 'react';
 import { Image } from 'expo-image';
 import { Link } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { sizes, spacing } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';
 import type { StepPictogram } from '@/utils/activity-draft';

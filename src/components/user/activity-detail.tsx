@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
   emphasis: { fontFamily: typography.family.semibold },
   small: { fontFamily: typography.family.regular, fontSize: typography.size.sm, lineHeight: typography.lineHeight.sm },
   centered: { textAlign: 'center' }, flexText: { flexShrink: 1 },
-  reading: { alignSelf: 'center', maxWidth: '100%', flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.md, borderRadius: radii.control },
+  reading: { alignSelf: 'center', maxWidth: '100%', flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md, borderRadius: radii.control },
   readingText: { flexGrow: 0, flexShrink: 1, minWidth: 0 },
   metadata: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, padding: spacing.lg, borderRadius: radii.control, borderWidth: borders.default },
   stacked: { flexDirection: 'column', alignItems: 'stretch' },

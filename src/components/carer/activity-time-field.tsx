@@ -1,7 +1,8 @@
+import { AppText as Text } from '@/components/app-text';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text } from 'react-native';
+import { Platform, Pressable, StyleSheet, } from 'react-native';
 import { borders, radii, sizes, spacing } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';
 import { formatActivityTime, localTimeDate, localTimeMinutes } from '@/utils/activity-draft';

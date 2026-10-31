@@ -1,5 +1,6 @@
+import { AppText as Text } from '@/components/app-text';
 import { Image } from 'expo-image';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, } from 'react-native';
 import { layout, typography } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';
 import { ActivityDialog } from './activity-dialog';

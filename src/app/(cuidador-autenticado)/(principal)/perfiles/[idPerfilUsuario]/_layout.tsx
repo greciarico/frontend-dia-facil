@@ -1,15 +1,16 @@
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { AreaHeader } from '@/components/carer/area-header';
 import { useAppTheme } from '@/theme/use-theme';
+import { useCarerAccessibilityFocusListeners } from '@/context/carer-accessibility';
 import { activitiesHref, profileHref, validProfileId } from '@/utils/profile-navigation';
 
 export const unstable_settings = { anchor: 'index' };
 
 export default function ProfileLayout() {
-  const { colors } = useAppTheme();
+  const { colors } = useAppTheme(), listeners = useCarerAccessibilityFocusListeners();
   const params = useLocalSearchParams<{ idPerfilUsuario?: string }>();
   const id = validProfileId(params.idPerfilUsuario);
-  return <Stack screenOptions={{ contentStyle: { backgroundColor: colors.background.primary } }}>
+  return <Stack screenListeners={listeners} screenOptions={{ contentStyle: { backgroundColor: colors.background.primary } }}>
     <Stack.Screen name="ajustes" options={{ header: () => <AreaHeader title="Ajustes" showNotifications={false}
       backLabel="Volver al perfil" onBack={() => router.dismissTo(id ? profileHref(id) : '/perfiles')} /> }} />
     <Stack.Screen name="index" options={{ header: () => <AreaHeader title="Perfil" showNotifications={false}

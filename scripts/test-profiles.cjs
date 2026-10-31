@@ -16,7 +16,7 @@ function load(file, modules = {}) {
   };
   new Function('require', 'exports', ts.transpileModule(fs.readFileSync(path.join(__dirname, '../src', file), 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
-  }).outputText)(id => {
+  }).outputText)(id => {if(id==='@/components/app-text-input')return {AppTextInput:'Input'};if(id==='@/context/carer-accessibility')return {useCarerAccessibilityFocusListeners:()=>({})};
     if (id.startsWith('@/assets/') || id.includes('Nunito_')) return id;
     if(id==='@/components/app-text')return {AppText:'Text'};
     if(id==='@/theme/profile-appearance')return {useEffectiveFontScale:()=>1};
@@ -149,7 +149,7 @@ test('optional creation callback enables the button; profile access and future m
     '@/components/carer/profile-avatar': { ProfileAvatar: 'Avatar' } }).ProfileCard;
   assert.equal(card({ profile: profile(), surface: 'token' }).props.disabled, true);
   const navigation = load('constants/carer-navigation.ts').carerDestinations;
-  assert.deepEqual(navigation.filter(item => item.href).map(item => item.href), ['/perfiles']);
+  assert.deepEqual(navigation.filter(item => item.href).map(item => item.href), ['/perfiles', '/mi-perfil']);
 });
 
 test('root routes only ready sessions to profiles and preserves immediate OTP/onboarding and restoration UI', () => {
@@ -627,7 +627,8 @@ test('shared header preserves account defaults and accepts a passive avatar and 
     '@/context/session': { useSession: () => ({ manager: {} }) }, './notification-bell': { NotificationBell: 'Bell' },
   }).AreaHeader;
   const original = nodes(header({ title: 'Mis perfiles' }));
-  assert.ok(original.some(node => node.props?.accessibilityLabel === 'Opciones de cuenta'));
+  assert.ok(!original.some(node => node.props?.accessibilityLabel === 'Opciones de cuenta'));
+  assert.ok(!original.some(node => node.type === 'Modal'));
   assert.ok(original.some(node => node.type === 'Bell'));
   const custom = nodes(header({ title: 'Actividades', onBack: back, backLabel: 'Volver al perfil', rightContent: avatar }));
   assert.equal(custom.find(node => node.props?.accessibilityLabel === 'Volver al perfil').props.onPress, back);

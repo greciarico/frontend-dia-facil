@@ -1,5 +1,6 @@
+import { AppText as Text } from '@/components/app-text';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, FlatList, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, ScrollView, StyleSheet, View } from 'react-native';
 import { accountStyles } from '@/components/carer/account-layout';
 import { ActivitiesEmptyIllustration } from '@/components/carer/activities-empty-illustration';
 import { ActivitySummaryCard } from '@/components/carer/activity-summary-card';

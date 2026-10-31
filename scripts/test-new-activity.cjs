@@ -19,7 +19,7 @@ function load(file, modules = {}, timers = {}) {
   new Function('require', 'exports', 'setTimeout', 'clearTimeout', ts.transpileModule(
     fs.readFileSync(path.join(__dirname, '../src', file), 'utf8'), {
       compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
-    }).outputText)(id => {if(id==='@/components/app-text')return {AppText:'Text'};if(id==='@/theme/profile-appearance')return defaults[id]||{useProfileAppearance:()=>null,useEffectiveFontScale:()=>defaults['react-native']?.useWindowDimensions?.().fontScale??1}; assert.ok(id in defaults, `Missing adapter ${id}`); return defaults[id]; }, exports,
+    }).outputText)(id => {if(id==='@/components/app-text-input')return {AppTextInput:'Input'};if(id==='@/context/carer-accessibility')return {useCarerAccessibilityFocusListeners:()=>({})};if(id==='@/components/app-text')return {AppText:'Text'};if(id==='@/theme/profile-appearance')return defaults[id]||{useProfileAppearance:()=>null,useEffectiveFontScale:()=>defaults['react-native']?.useWindowDimensions?.().fontScale??1}; assert.ok(id in defaults, `Missing adapter ${id}`); return defaults[id]; }, exports,
     timers.setTimeout || setTimeout, timers.clearTimeout || clearTimeout);
   return exports;
 }

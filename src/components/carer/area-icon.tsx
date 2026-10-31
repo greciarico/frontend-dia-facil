@@ -2,6 +2,9 @@ import Svg, { Path } from 'react-native-svg';
 import { sizes } from '@/theme/tokens';
 
 const paths = {
+  accessibilityPerson: 'M14 4a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM3 8l9 2 9-2m-9 2v5m0 0-4 7m4-7 4 7',
+  logout: 'M9 3H4v18h5m6-15 6 6-6 6M8 12h13',
+  settings: 'm9 3-1 3-3 1v4l3 1 1 3h4l1-3 3-1V7l-3-1-1-3ZM13 9a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z',
   textSize: 'm3 19 5-14 5 14M5 14h6m4 5 3-8 3 8m-5-3h4',
   contrast: 'M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm0 0v20',
   audio: 'M11 4 6 8H3v8h3l5 4ZM15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14',

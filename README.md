@@ -16,8 +16,9 @@ Las versiones completas est?n en package.json/package-lock.json.
   creaci?n real de actividades con pasos/ARASAAC; listado y vinculaci?n E1.
 - Usuario: onboarding QR/c?digo manual inline y credencial E3 persistente;
   Mi agenda real, detalle, gu?a/reanudaci?n, finalizaci?n y consulta posterior.
-- Apoyo, notificaciones, Mi perfil, accesibilidad configurable, voz y gesti?n E2
-  siguen pendientes. Tener dependencias o prototipos no los vuelve funcionales.
+- Mi perfil del Cuidador y sus preferencias propias: [pantallas y provider](docs/mi-perfil-cuidador.md).
+- Accesibilidad por PerfilUsuario y voz: [configuración y TTS](docs/accesibilidad-perfil.md).
+- Apoyo, notificaciones, pantalla informativa de accesibilidad y E2 siguen pendientes.
 - Desarrollo/validaci?n principalmente Android f?sico con Expo Go. No se afirma
   validaci?n f?sica iOS ni compatibilidad Web por existir configuraci?n web.
 

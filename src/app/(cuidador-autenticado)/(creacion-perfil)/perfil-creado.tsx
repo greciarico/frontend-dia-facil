@@ -1,5 +1,6 @@
+import { AppText as Text } from '@/components/app-text';
 import { Redirect, router } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { AccountAvatar } from '@/components/carer/account-avatar';
 import { accountStyles } from '@/components/carer/account-layout';
