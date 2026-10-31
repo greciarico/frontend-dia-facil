@@ -1,6 +1,6 @@
 # E3: vinculación del dispositivo del usuario
 
-Entrada desde «Soy usuario»: bienvenida → Conecta tu agenda → QR o código manual → Conectando → confirmación real → Ir a mi agenda. Sin números de pasos ni porcentajes ficticios de backend. «¿Necesitas ayuda?» abre ayuda contextual sobre Conecta tu agenda. La llegada es [Mi agenda real, con detalle y ejecución](mi-agenda.md); recordatorios y accesibilidad configurable siguen pendientes.
+Entrada desde «Soy usuario»: bienvenida → Conecta tu agenda → QR o código manual → Conectando → confirmación real → Ir a mi agenda. Sin números de pasos ni porcentajes ficticios de backend. «¿Necesitas ayuda?» abre ayuda contextual sobre Conecta tu agenda. La llegada es [Mi agenda real, con detalle y ejecución](mi-agenda.md); recordatorios siguen pendientes; la accesibilidad por perfil se aplica en el área autenticada mediante su [provider](accesibilidad-perfil.md).
 
 ## Ayuda contextual
 

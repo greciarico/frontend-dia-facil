@@ -23,3 +23,7 @@ export function newActivityHref(id: number) {
 export function deviceLinkHref(id: number) {
   return { pathname: '/perfiles/[idPerfilUsuario]/vincular-dispositivo' as const, params: { idPerfilUsuario: String(id) } };
 }
+
+export function accessibilityHref(id: number) {
+  return { pathname: '/perfiles/[idPerfilUsuario]/ajustes' as const, params: { idPerfilUsuario: String(id) } };
+}

@@ -1,6 +1,7 @@
+import { AppText as Text } from '@/components/app-text';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
-import { BackHandler, ScrollView, StyleSheet, Text } from 'react-native';
+import { BackHandler, ScrollView, StyleSheet, } from 'react-native';
 import { ContinueButton } from '@/components/carer/continue-button';
 import { useDeviceAccess } from '@/context/device-access';
 import { CelebrationPicture } from '@/components/user/celebration-picture';

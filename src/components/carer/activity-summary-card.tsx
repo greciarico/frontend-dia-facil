@@ -1,6 +1,7 @@
+import { AppText as Text } from '@/components/app-text';
 import { Image } from 'expo-image';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { resolveActivityIcon } from '@/constants/activity-icons';
 import type { ActivitySummary } from '@/utils/activities';
 import { formatActivityTime } from '@/utils/activity-draft';
@@ -13,10 +14,12 @@ import { AreaIcon } from './area-icon';
 export function ActivitySummaryCard({ activity, index, status, appearance = 'summary', onPress }: {
   activity: ActivitySummary; index: number; status?: 'pendiente' | 'en progreso' | 'completada'; appearance?: 'summary' | 'agenda'; onPress?: () => void;
 }) {
-  const { colors, scheme } = useAppTheme();
+  const { colors, scheme, highContrast } = useAppTheme();
   const agenda = appearance === 'agenda';
-  const family = agenda ? getActivityVisualFamily(index) : undefined;
-  const border = agenda && scheme === 'light' ? family!.stroke : colors.border.decorative;
+  const family = agenda ? getActivityVisualFamily(index, highContrast) : undefined;
+  const familySurface = agenda && (scheme === 'light' || highContrast);
+  const border = familySurface ? family!.stroke : colors.border.decorative;
+  const stateColor = agenda ? family!.default : colors.status.success;
   const [failed, setFailed] = useState(false);
   const source = resolveActivityIcon(activity.codigoIcono);
   const [hour, minute] = activity.hora.split(':').map(Number);
@@ -24,10 +27,10 @@ export function ActivitySummaryCard({ activity, index, status, appearance = 'sum
   const Container = onPress ? Pressable : View;
   return <Container accessible accessibilityLabel={`${activity.nombre}, ${time}${status ? `, ${status}` : ''}`}
     accessibilityRole={onPress ? 'button' : undefined} accessibilityHint={onPress ? 'Ver detalle de la actividad.' : undefined} onPress={onPress}
-    style={[styles.card, agenda && styles.agendaCard, { backgroundColor: agenda && scheme === 'light' ? family!.light : colors.surface.default,
+    style={[styles.card, agenda && styles.agendaCard, { backgroundColor: familySurface ? family!.light : colors.surface.default,
       borderColor: border, shadowColor: colors.shadow }]}>
     <View accessible={false} importantForAccessibility="no-hide-descendants" style={[styles.iconSurface, agenda && styles.agendaIconSurface, {
-      backgroundColor: agenda ? scheme === 'light' ? family!.hover : colors.surface.elevated : getActivityIconSurface(index),
+      backgroundColor: agenda ? familySurface ? family!.hover : colors.surface.elevated : getActivityIconSurface(index),
       borderColor: border,
     }]}>
       {source && !failed ? <Image source={source} contentFit="contain" style={[styles.icon, agenda && styles.agendaIcon]} onError={() => setFailed(true)} />
@@ -39,9 +42,9 @@ export function ActivitySummaryCard({ activity, index, status, appearance = 'sum
       {status === 'en progreso' && <Text style={[accountStyles.small, styles.left, { color: colors.text.secondary }]}>En progreso</Text>}
     </View>
     {status && <View accessible={false} importantForAccessibility="no-hide-descendants" style={[styles.state, agenda && styles.agendaState, {
-      borderColor: status === 'completada' ? agenda ? family!.default : colors.status.success : agenda ? colors.text.disabled : colors.border.control,
-      backgroundColor: status === 'completada' ? agenda ? family!.default : colors.status.successSurface : 'transparent',
-    }]}>{status === 'completada' && <AreaIcon name="check" color={agenda ? palette.background.primary : colors.status.success} size={sizes.iconSmall} />}</View>}
+      borderColor: status === 'completada' ? stateColor : highContrast ? colors.border.control : agenda ? colors.text.disabled : colors.border.control,
+      backgroundColor: status === 'completada' ? highContrast || agenda ? stateColor : colors.status.successSurface : 'transparent',
+    }]}>{status === 'completada' && <AreaIcon name="check" color={highContrast ? colors.action.onPrimary : agenda ? palette.background.primary : colors.status.success} size={sizes.iconSmall} />}</View>}
   </Container>;
 }
 const styles = StyleSheet.create({

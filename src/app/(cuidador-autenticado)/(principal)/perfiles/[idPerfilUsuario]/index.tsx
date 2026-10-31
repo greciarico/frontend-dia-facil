@@ -8,7 +8,7 @@ import { ProfileAvatar } from '@/components/carer/profile-avatar';
 import { useProfileDetail } from '@/hooks/use-profile-detail';
 import { layout, spacing, typography } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';
-import { activitiesHref, deviceLinkHref, validProfileId } from '@/utils/profile-navigation';
+import { accessibilityHref, activitiesHref, deviceLinkHref, validProfileId } from '@/utils/profile-navigation';
 
 export default function ProfileHomeScreen() {
   const params = useLocalSearchParams<{ idPerfilUsuario?: string }>();
@@ -28,7 +28,7 @@ export default function ProfileHomeScreen() {
       </View>
       <Text style={[styles.name, { color: colors.text.primary }]}>{state.profile.nombre}</Text>
       <Text style={[styles.prompt, { color: colors.action.primary }]}>¿Qué quieres hacer ahora?</Text>
-      <ProfileActions id={state.profile.idPerfilUsuario} onCreateActivities={id => router.push(activitiesHref(id))} onLinkDevice={id => router.push(deviceLinkHref(id))} />
+      <ProfileActions id={state.profile.idPerfilUsuario} onCreateActivities={id => router.push(activitiesHref(id))} onConfigureAccessibility={id => router.push(accessibilityHref(id))} onLinkDevice={id => router.push(deviceLinkHref(id))} />
     </ScrollView> : <View style={styles.feedback}>
       <Text accessibilityRole="alert" style={[accountStyles.body, { color: colors.text.secondary }]}>
         {state.status === 'not-found' ? 'No pudimos encontrar este perfil.' : 'No pudimos cargar el perfil. Revisa tu conexión e inténtalo de nuevo.'}

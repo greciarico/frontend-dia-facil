@@ -41,8 +41,9 @@ sin confiar en nombre, hora, estado ni perfil pasados en navegación.
 
 Muestra icono 3D local con fallback, nombre, hora y fecha del servidor, bloque
 informativo «Es hora de {nombre}» y acciones según primera guía/estado diario. El bloque de
-lectura no reproduce voz ni se anuncia como botón: expo-speech está instalado,
-pero su integración con ConfiguracionPerfil.lecturaVoz queda pendiente.
+lectura anuncia automáticamente solo «Es hora de {nombre}.» cuando lecturaVoz=true
+y se entra al detalle con datos reales. Su icono repite la misma frase desde el
+inicio; con voz desactivada se oculta. Ver [accesibilidad por perfil](accesibilidad-perfil.md).
 
 «Ver paso a paso» inicia/recupera la guía real. «Ya lo hice» solo se muestra con
 `guiaInicialCompletada=true` y finaliza DIRECTA cuando no está COMPLETADA.
@@ -163,7 +164,11 @@ Cada paso muestra exclusivamente su Pictograma mediante StepPictogramImage,
 con fallback existente. No utiliza el icono 3D de la actividad ni busca ARASAAC.
 El indicador virtualizado tiene cantidad dinámica y targets accesibles: futuros
 deshabilitados, alcanzados navegables, actual seleccionado y anunciado.
-La voz es decorativa, sin acción ni autoplay en este incremento.
+El último refinamiento de accesibilidad activa lectura automática por entrada o
+cambio real de paso: «Paso X de N. {descripción}.» El icono junto al contenido
+repite desde el inicio. La deduplicación vive en la ruta y no en el contenido
+que desaparece durante un refetch. Aplica también a consulta, sin escrituras.
+Ver [configuración y voz](accesibilidad-perfil.md).
 
 Primera guía: solo Siguiente paso y, al final, Finalizar actividad. Posteriores:
 también finalización anticipada con confirmación, conservando progreso parcial.
