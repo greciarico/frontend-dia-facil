@@ -1,5 +1,6 @@
+import { AppText as Text } from '@/components/app-text';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { usePictograms } from '@/hooks/use-pictograms';
 import { borders, radii, sizes, spacing } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';

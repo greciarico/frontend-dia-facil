@@ -1,5 +1,6 @@
+import { AppText as Text } from '@/components/app-text';
 import { useState } from 'react';
-import { FlatList, Modal, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { FlatList, Modal, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 

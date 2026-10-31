@@ -1,5 +1,6 @@
+import { AppText as Text } from '@/components/app-text';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { accountStyles } from '@/components/carer/account-layout';
 import { AreaHeader } from '@/components/carer/area-header';
 import { ContinueButton } from '@/components/carer/continue-button';

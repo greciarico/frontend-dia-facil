@@ -1,5 +1,6 @@
+import { AppText as Text } from '@/components/app-text';
 import { useEffect, useRef } from 'react';
-import { AccessibilityInfo, findNodeHandle, Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, findNodeHandle, Modal, ScrollView, StyleSheet, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { layout, radii, sizes, spacing } from '@/theme/tokens';
@@ -12,7 +13,7 @@ export function CodeSuccessModal({ visible, onClose, onDismiss = onClose }: {
   visible: boolean; onClose: () => void; onDismiss?: () => void;
 }) {
   const { colors } = useAppTheme();
-  const title = useRef<Text>(null);
+  const title = useRef<import('react-native').Text>(null);
   useEffect(() => {
     if (visible) AccessibilityInfo.announceForAccessibility('¡Código verificado! Tu correo ha sido verificado correctamente.');
   }, [visible]);

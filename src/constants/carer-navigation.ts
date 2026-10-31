@@ -6,5 +6,5 @@ export const carerDestinations: CarerDestination[] = [
   { id: 'profiles', label: 'Perfiles', icon: 'profiles', href: '/perfiles' },
   { id: 'support', label: 'Apoyo', icon: 'support' },
   { id: 'notifications', label: 'Notificación', icon: 'bell' },
-  { id: 'account', label: 'Mi perfil', icon: 'account' },
+  { id: 'account', label: 'Mi perfil', icon: 'account', href: '/mi-perfil' },
 ];

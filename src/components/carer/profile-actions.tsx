@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { AppText as Text } from '@/components/app-text';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { radii, shadows, sizes, spacing, typography } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';
 import { AreaIcon } from './area-icon';

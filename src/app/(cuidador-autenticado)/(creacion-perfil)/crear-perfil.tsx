@@ -1,6 +1,8 @@
+import { AppTextInput as TextInput } from '@/components/app-text-input';
+import { AppText as Text } from '@/components/app-text';
 import { Redirect, router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Keyboard, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { AccessibilityInfo, Keyboard, Pressable, StyleSheet, TextInput as NativeTextInput, View } from 'react-native';
 import { AccountAvatar } from '@/components/carer/account-avatar';
 import { accountStyles } from '@/components/carer/account-layout';
 import { AreaIcon } from '@/components/carer/area-icon';
@@ -24,7 +26,7 @@ export default function CreateProfileScreen() {
   const [fieldError, setFieldError] = useState<string>();
   const [failure, setFailure] = useState<CreateProfileError>();
   const [loading, setLoading] = useState(false);
-  const input = useRef<TextInput>(null);
+  const input = useRef<NativeTextInput>(null);
   const active = useRef(false);
   const pending = useRef<AbortController | null>(null);
   const committed = useRef(false);

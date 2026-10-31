@@ -1,5 +1,6 @@
+import { AppText as Text } from '@/components/app-text';
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import type { UserProfile } from '@/utils/profiles';
 import { radii, sizes, spacing, typography } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';

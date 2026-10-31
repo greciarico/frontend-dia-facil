@@ -1,7 +1,8 @@
+import { AppText as Text } from '@/components/app-text';
 import { useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
-import Svg, { Circle, Path } from 'react-native-svg';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { TextSizeSelector } from '@/components/accessibility/text-size-selector';
 import { useProfileDetail } from '@/hooks/use-profile-detail';
 import { useAccessibilityEditor } from '@/hooks/use-accessibility-editor';
 import { ProfileAvatar } from '@/components/carer/profile-avatar';
@@ -10,13 +11,9 @@ import { ContinueButton } from '@/components/carer/continue-button';
 import { ActivityDialog } from '@/components/carer/activity-dialog';
 import { StepDialogActions } from '@/components/carer/step-dialog-actions';
 import { validProfileId } from '@/utils/profile-navigation';
-import type { TextSize } from '@/utils/accessibility';
-import { colors as palette, layout, radii, shadows, sizes, spacing, typography } from '@/theme/tokens';
+import { layout, radii, shadows, sizes, spacing, typography } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';
 
-const textChoices: { value: TextSize; label: string }[] = [
-  { value: 'PEQUENO', label: 'Pequeño' }, { value: 'MEDIANO', label: 'Mediano' }, { value: 'GRANDE', label: 'Grande' },
-];
 export default function ProfileSettings() {
   const params = useLocalSearchParams<{ idPerfilUsuario?: string }>(), id = validProfileId(params.idPerfilUsuario);
   const profile = useProfileDetail(id), { state, editor } = useAccessibilityEditor(id);
@@ -46,18 +43,7 @@ export default function ProfileSettings() {
           <View style={styles.flexText}><Text style={[styles.label, { color: colors.text.primary }]}>Tamaño del texto</Text>
             <Text style={[styles.small, { color: colors.text.secondary }]}>Ajusta el tamaño de las letras.</Text></View>
         </View>
-        <View style={[styles.choices, { borderColor: colors.border.decorative }]} accessibilityRole="radiogroup" accessibilityLabel="Tamaño del texto">
-          {textChoices.map(choice => <Pressable key={choice.value} accessibilityRole="radio" accessibilityLabel={choice.label}
-            accessibilityState={{ checked: preferences.tamanoTexto === choice.value, disabled }} disabled={disabled}
-            onPress={() => void editor.change({ tamanoTexto: choice.value })}
-            style={[styles.choice, { backgroundColor: preferences.tamanoTexto === choice.value ? colors.action.primary : 'transparent' }]}>
-            <Text style={[styles.copy, styles.choiceText, { color: preferences.tamanoTexto === choice.value ? colors.action.onPrimary : colors.text.secondary }]}>{choice.label}</Text>
-            <View style={styles.checkSpace}>{preferences.tamanoTexto === choice.value && <Svg width={sizes.iconSmall} height={sizes.iconSmall} viewBox="0 0 24 24" accessible={false}>
-              <Circle cx={12} cy={12} r={12} fill={palette.background.primary} />
-              <Path d="m5 12 4 4L19 6" fill="none" stroke={palette.purple.default} strokeWidth={sizes.stroke} strokeLinecap="round" strokeLinejoin="round" />
-            </Svg>}</View>
-          </Pressable>)}
-        </View>
+        <TextSizeSelector value={preferences.tamanoTexto} disabled={disabled} onChange={tamanoTexto => void editor.change({ tamanoTexto })} />
       </View>
       <View style={[styles.card, styles.setting, { backgroundColor: colors.surface.elevated, borderColor: colors.border.decorative, shadowColor: colors.shadow }]}>
         <View style={[styles.icon, { backgroundColor: colors.welcome.intro }]}><AreaIcon name="contrast" color={colors.action.primary} /></View>
@@ -107,10 +93,7 @@ const styles = StyleSheet.create({
   icon: { width: sizes.touchTarget, height: sizes.touchTarget, borderRadius: sizes.touchTarget / 2, alignItems: 'center', justifyContent: 'center' },
   card: { padding: spacing.lg, gap: spacing.md, borderRadius: radii.card, borderWidth: 1, shadowOffset: { width: 0, height: shadows.card.offsetY },
     shadowOpacity: shadows.card.opacity, shadowRadius: shadows.card.radius, elevation: shadows.card.elevation },
-  heading: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm }, choices: { flexDirection: 'row', flexWrap: 'wrap', borderWidth: 1, borderRadius: radii.control },
-  choice: { flexGrow: 1, flexShrink: 1, minHeight: sizes.touchTarget, paddingVertical: spacing.sm, paddingHorizontal: spacing.xs, borderRadius: radii.control,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs },
-  choiceText: { flexShrink: 1 }, checkSpace: { width: sizes.iconSmall, alignItems: 'center' },
+  heading: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   switchTarget: { minHeight: sizes.touchTarget, minWidth: sizes.touchTarget, justifyContent: 'center', alignItems: 'center' },
   saveStatus: { minHeight: sizes.touchTarget, justifyContent: 'center' },
   setting: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md }, flexText: { flex: 1 },

@@ -1,6 +1,7 @@
+import { AppText as Text } from '@/components/app-text';
 import { Image } from 'expo-image';
 import { useRef, useState } from 'react';
-import { AccessibilityInfo, ActivityIndicator, FlatList, findNodeHandle, Modal, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { AccessibilityInfo, ActivityIndicator, FlatList, findNodeHandle, Modal, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { resolveActivityIcon } from '@/constants/activity-icons';
 import type { IconOptionsState } from '@/hooks/use-activity-icons';
@@ -64,7 +65,7 @@ export function ActivityIconSelector({ catalogue, suggestions, query, value, onC
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const [open, setOpen] = useState(false);
-  const heading = useRef<Text>(null);
+  const heading = useRef<import('react-native').Text>(null);
   const trigger = useRef<View>(null);
   const columns = Math.max(1, Math.min(4, Math.floor((width - spacing['3xl']) / (layout.activities.iconTileSize + spacing.sm))));
   function close() {

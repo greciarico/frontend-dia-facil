@@ -18,7 +18,9 @@ export function ContentSpeechControl({ speech, label, compact = false }: { speec
 }
 const styles = StyleSheet.create({ control: { flexShrink: 1 }, target: { minWidth: sizes.touchTarget, minHeight: sizes.touchTarget,
   alignItems: 'center', justifyContent: 'center', padding: spacing.xs },
-  compactControl: { alignItems: 'flex-start', flexGrow: 0, minWidth: sizes.touchTarget, maxWidth: '100%' },
+  // The compact label's existing padding accommodates the full touch target.
+  compactControl: { alignItems: 'flex-start', flexGrow: 0, minWidth: sizes.touchTarget,
+    marginHorizontal: -(sizes.touchTarget - sizes.icon) / 2, marginVertical: -(sizes.touchTarget - sizes.icon) / 2 },
   compactTarget: { width: sizes.touchTarget, alignSelf: 'flex-start', flexGrow: 0 },
   error: { fontFamily: typography.family.regular,
   fontSize: typography.size.sm, lineHeight: typography.lineHeight.sm } });

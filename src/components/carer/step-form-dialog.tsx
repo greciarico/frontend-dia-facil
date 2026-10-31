@@ -1,4 +1,6 @@
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { AppTextInput as TextInput } from '@/components/app-text-input';
+import { AppText as Text } from '@/components/app-text';
+import { StyleSheet, View } from 'react-native';
 import { borders, radii, shadows, sizes, spacing } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';
 import { stepDescriptionError, type StepPictogram } from '@/utils/activity-draft';

@@ -1,6 +1,8 @@
+import { AppTextInput as TextInput } from '@/components/app-text-input';
+import { AppText as Text } from '@/components/app-text';
 import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useReducer, useRef, useState } from 'react';
-import { ActivityIndicator, BackHandler, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, BackHandler, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { accountStyles } from '@/components/carer/account-layout';
 import { ActivityIconSelector } from '@/components/carer/activity-icon-selector';

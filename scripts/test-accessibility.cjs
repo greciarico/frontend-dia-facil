@@ -23,7 +23,7 @@ test('AppText scales explicit sizes once, leaves inherited text/native scaling i
   const { AppText } = load('components/app-text.tsx', {
     react: { forwardRef: fn => fn }, 'react/jsx-runtime': { jsx },
     'react-native': { Text: 'Text', StyleSheet: { flatten } },
-    '@/theme/profile-appearance': { useProfileAppearance: () => preference }, '@/utils/accessibility': utils,
+    '@/theme/profile-appearance': { useAppearance: () => preference }, '@/utils/accessibility': utils,
   });
   let tree = AppText({ style: { fontSize: 16, lineHeight: 24 }, children: 'Texto' });
   assert.deepEqual(flatten(tree.props.style), { fontSize: 16, lineHeight: 24 });
@@ -41,7 +41,7 @@ function contrast(a, b) {
 test('profile contrast selects the existing dark readable palette regardless of system theme, without altering normal themes', () => {
   let scheme = 'light', preferences = null;
   const { useAppTheme } = load('theme/use-theme.ts', { 'react-native': { useColorScheme: () => scheme }, './tokens': tokens,
-    './profile-appearance': { useProfileAppearance: () => preferences } });
+    './profile-appearance': { useAppearance: () => preferences } });
   assert.equal(useAppTheme(), tokens.themes.light);
   preferences = { ...initial, altoContraste: true };
   for (scheme of ['light', 'dark']) {
@@ -253,8 +253,15 @@ test('route speech reads on focus/content change, not rerenders or refetch, and 
 test('caregiver settings autosave absolute changes, expose selected radio state and confirm reset without editing profile', () => {
   const h = hookHarness(), calls = [];
   const state = { status: 'ready', value: initial, busy: false, uncertain: false };
+  const Selector = load('components/accessibility/text-size-selector.tsx', {
+    'react/jsx-runtime': { jsx, jsxs: jsx }, 'react-native': { Pressable: 'Pressable', View: 'View', StyleSheet: { create: x => x } },
+    'react-native-svg': { __esModule: true, default: 'Svg', Circle: 'Circle', Path: 'Path' },
+    '@/components/app-text': { AppText: 'Text' }, '@/theme/tokens': tokens, '@/theme/use-theme': { useAppTheme: () => tokens.themes.light },
+  }).TextSizeSelector;
+  const renderJsx = (type, props) => type === Selector ? Selector(props) : jsx(type, props);
   const Screen = load('app/(cuidador-autenticado)/(principal)/perfiles/[idPerfilUsuario]/ajustes.tsx', {
-    react: h.react, 'react/jsx-runtime': { jsx, jsxs: jsx }, 'expo-router': { useLocalSearchParams: () => ({ idPerfilUsuario: '12' }) },
+    react: h.react, 'react/jsx-runtime': { jsx: renderJsx, jsxs: renderJsx }, 'expo-router': { useLocalSearchParams: () => ({ idPerfilUsuario: '12' }) },
+    '@/components/accessibility/text-size-selector': { TextSizeSelector: Selector }, '@/components/app-text': { AppText: 'Text' },
     'react-native-svg': { __esModule: true, default: 'Svg', Circle: 'Circle', Path: 'Path' },
     'react-native': { ActivityIndicator: 'Spinner', Pressable: 'Pressable', ScrollView: 'Scroll', Switch: 'Switch', Text: 'Text', View: 'View', StyleSheet: { create: x => x } },
     '@/hooks/use-profile-detail': { useProfileDetail: id => { assert.equal(id, 12); return { state: { status: 'ready', profile: { nombre: 'Persona real', avatar: null } } }; } },

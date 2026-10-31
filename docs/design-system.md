@@ -1,6 +1,13 @@
 ## Sistema visual
 
 Estado de implementación y pendientes: [continuidad del proyecto](../../documentacion-dia-facil/ESTADO_ACTUAL_PROYECTO.md).
+
+Accesibilidad de cuenta: [Mi perfil del Cuidador](mi-perfil-cuidador.md). AppText,
+AppTextInput y useAppTheme obtienen tamaño/contraste mediante useAppearance;
+AppearanceContext de cuenta y ProfileAppearanceContext de Usuario mantienen
+identidades/estado separados. El contexto Usuario conserva exclusivamente su voz.
+TextSizeSelector comparte el selector aprobado sin cambiar layout ni geometría
+del check. Sin provider, los componentes conservan el aspecto normal existente.
 Las descripciones de entregas B o pantallas temporales inferiores se actualizan
 con los módulos vigentes; los prototipos no deben restaurar reglas antiguas.
 

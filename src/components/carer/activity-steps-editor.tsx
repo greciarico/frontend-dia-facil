@@ -1,7 +1,8 @@
+import { AppText as Text } from '@/components/app-text';
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type Dispatch, type ReactNode } from 'react';
 import { useFocusEffect } from 'expo-router';
 import DraggableFlatList, { type DragEndParams, type RenderItemParams } from 'react-native-draggable-flatlist';
-import { AccessibilityInfo, ActivityIndicator, Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, ActivityIndicator, Keyboard, Pressable, StyleSheet, View } from 'react-native';
 import type { TemplateState } from '@/hooks/use-activity-template';
 import { borders, layout, radii, shadows, sizes, spacing } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';
