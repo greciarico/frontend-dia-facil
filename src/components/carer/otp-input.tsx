@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
+import { KeyboardAwareTextInput } from '@/components/forms/keyboard-aware-form';
 
 import { borders, layout, radii, sizes, spacing, typography } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';
@@ -14,7 +15,7 @@ export function OtpInput({ digits, onChange, disabled, error }: {
   const [focused, setFocused] = useState(0);
   return (
     <View style={styles.cells}>
-      {digits.map((digit, index) => <TextInput key={index} ref={input => { refs.current[index] = input; }}
+      {digits.map((digit, index) => <KeyboardAwareTextInput key={index} ref={input => { refs.current[index] = input; }}
         value={digit} editable={!disabled} keyboardType="number-pad" inputMode="numeric"
         autoComplete={index === 0 ? 'one-time-code' : 'off'} textContentType={index === 0 ? 'oneTimeCode' : 'none'}
         autoCorrect={false} selectTextOnFocus maxLength={6} caretHidden

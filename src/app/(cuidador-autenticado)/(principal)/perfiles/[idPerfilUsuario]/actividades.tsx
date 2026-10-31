@@ -1,15 +1,16 @@
 import { Stack, router, useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { accountStyles } from '@/components/carer/account-layout';
 import { ActivitiesEmptyIllustration } from '@/components/carer/activities-empty-illustration';
+import { ActivitySummaryCard } from '@/components/carer/activity-summary-card';
 import { AreaHeader } from '@/components/carer/area-header';
 import { ContinueButton } from '@/components/carer/continue-button';
-import { CreateActivityButton } from '@/components/carer/create-activity-button';
+import { activityFabSize, CreateActivityButton } from '@/components/carer/create-activity-button';
 import { ProfileAvatar } from '@/components/carer/profile-avatar';
 import { useProfileActivities } from '@/hooks/use-profile-activities';
 import { layout, sizes, spacing, typography } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';
-import { profileHref, validProfileId } from '@/utils/profile-navigation';
+import { newActivityHref, profileHref, validProfileId } from '@/utils/profile-navigation';
 
 export default function ProfileActivitiesScreen() {
   const params = useLocalSearchParams<{ idPerfilUsuario?: string }>();
@@ -25,17 +26,23 @@ export default function ProfileActivitiesScreen() {
         rightContent={profile ? <View accessible accessibilityLabel={`Avatar de ${profile.nombre}`}>
           <ProfileAvatar name={profile.nombre} avatar={profile.avatar} size={sizes.touchTarget - spacing.sm} />
         </View> : undefined} /> }} />
-    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+    {state.status === 'ready' && state.data.actividades.length > 0 ? <View style={styles.listArea}>
+      <FlatList data={state.data.actividades} keyExtractor={activity => String(activity.idActividad)}
+        renderItem={({ item, index }) => <ActivitySummaryCard activity={item} index={index} />} showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.populatedContent} style={styles.list} />
+      <View pointerEvents="box-none" style={styles.fabRail}>
+        <View style={styles.fab}><CreateActivityButton floating id={state.profile.idPerfilUsuario}
+          onCreateActivity={profileId => router.push(newActivityHref(profileId))} /></View>
+      </View>
+    </View> : <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
       {state.status === 'loading' ? <View style={styles.feedback} accessible accessibilityLabel="Cargando actividades" accessibilityState={{ busy: true }}>
         <ActivityIndicator color={colors.action.primary} /><Text style={[accountStyles.body, { color: colors.text.secondary }]}>Cargando actividades…</Text>
-      </View> : state.status === 'ready' ? state.data.actividades.length === 0 ? <View>
+      </View> : state.status === 'ready' ? <View>
         <View style={styles.illustration}><ActivitiesEmptyIllustration /></View>
         <Text accessibilityRole="header" style={[styles.title, { color: colors.text.primary }]}>Aún no hay actividades</Text>
         <Text style={[styles.description, { color: colors.text.secondary }]}>Agrega las actividades que formarán su rutina diaria</Text>
-        <View style={styles.create}><CreateActivityButton id={state.profile.idPerfilUsuario} /></View>
-      </View> : <View style={styles.feedback}>
-        <Text style={[accountStyles.body, styles.center, { color: colors.text.secondary }]}>Este perfil ya tiene actividades. La visualización de su agenda aún no está disponible.</Text>
-        <ContinueButton label="Volver al perfil" onPress={back} />
+        <View style={styles.create}><CreateActivityButton id={state.profile.idPerfilUsuario}
+          onCreateActivity={profileId => router.push(newActivityHref(profileId))} /></View>
       </View> : <View style={styles.feedback}>
         <Text accessibilityRole="alert" style={[accountStyles.body, styles.center, { color: colors.text.secondary }]}>
           {state.status === 'not-found' ? 'No pudimos encontrar este perfil.' : 'No pudimos cargar las actividades. Inténtalo de nuevo.'}
@@ -44,10 +51,16 @@ export default function ProfileActivitiesScreen() {
         <ContinueButton label={state.status === 'not-found' ? 'Volver a Mis perfiles' : 'Volver al perfil'}
           onPress={state.status === 'not-found' ? () => router.dismissTo('/perfiles') : back} />
       </View>}
-    </ScrollView>
+    </ScrollView>}
   </>;
 }
 const styles = StyleSheet.create({
+  listArea: { flex: 1, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' },
+  list: { flex: 1 },
+  populatedContent: { width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center', padding: spacing.xl,
+    paddingBottom: activityFabSize + spacing.lg * 2, gap: spacing.md },
+  fabRail: { position: 'absolute', right: spacing.xl, bottom: spacing.lg, zIndex: 1 },
+  fab: { alignSelf: 'flex-end' },
   content: { flexGrow: 1, justifyContent: 'center', width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center',
     paddingHorizontal: spacing['4xl'], paddingVertical: spacing['3xl'] },
   illustration: { alignItems: 'center', marginBottom: spacing['2xl'] },

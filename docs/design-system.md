@@ -1,5 +1,27 @@
 ## Sistema visual
 
+Estado de implementación y pendientes: [continuidad del proyecto](../../documentacion-dia-facil/ESTADO_ACTUAL_PROYECTO.md).
+Las descripciones de entregas B o pantallas temporales inferiores se actualizan
+con los módulos vigentes; los prototipos no deben restaurar reglas antiguas.
+
+Mi agenda usa variantes visuales de los componentes existentes: ActivitySummaryCard
+`appearance="agenda"` y BottomNavigation `appearance="user"`. Los valores por defecto
+conservan el aspecto del cuidador. `getActivityVisualFamily(index)` devuelve las
+familias Yellow, Green, Orange, Blue y Purple mediante index % 5; mantiene la
+función previa getActivityIconSurface y normaliza hoverLight de Purple como hover.
+No hay colores nuevos ni relación entre color e identidad de la actividad.
+La variante agenda integra la zona del PNG en la tarjeta, sin círculo; en light
+utiliza light/stroke/hover/default de la familia y en dark reutiliza superficies
+y bordes semánticos. Pendiente utiliza text.disabled y completada un check blanco.
+`layout.userAgenda.navigationMaxWidth=256` limita solo la barra Usuario con texto
+normal; con texto ampliado se permite el ancho disponible hasta contentMaxWidth.
+
+La ayuda contextual de conexión Usuario reutiliza `ActivityDialog`, `ContinueButton size="modal"` y los iconos de cámara/teclado. Sus alternativas son secciones informativas sin fondo ni forma de tarjeta, con iconos morados, títulos Nunito bold y texto flexible; se distinguen únicamente mediante espaciado. `respectSafeArea` es una opción del diálogo compartido, desactivada por defecto y usada aquí; no cambia los diálogos previos. El modal no tiene animaciones y conserva foco accesible y contenido desplazable.
+
+Los formularios de onboarding comparten [el patrón de teclado medido](keyboard-forms.md). Conserva la composición normal y safe areas; con teclado se adapta el viewport y se desplaza solo lo necesario para mostrar el campo enfocado, con separación `spacing.md`, sin offsets por dispositivo.
+
+El onboarding de Usuario reutiliza `welcome.hero`/`welcome.body`, la curva SVG continua del cuidador y los PNG locales transparentes. Su variante de layout no altera la pantalla autenticada temporal ni los estados de recuperación. `layout.userOnboarding` conserva la proporción de los PNG y el ancho máximo de la ilustración de error. `motion.userConnectionTransitionDuration` define 1.200 ms de transición exclusivamente visual; no representa progreso backend, no anuncia porcentajes y respeta movimiento reducido.
+
 Los estilos globales de DiaFacil deben centralizarse mediante **design tokens** reutilizables.
 
 Los tokens se definen desde el inicio del proyecto. Si durante el desarrollo surge un nuevo valor global necesario, debe incorporarse al sistema existente.
@@ -12,6 +34,9 @@ Los componentes reutilizables, en cambio, se crearán progresivamente conforme a
 |---|---|
 | `colors.success` | `#56AF4E` |
 | `colors.bug` | `#D92A16` |
+| `colors.destructive.default` | `#EB5361` |
+| `colors.destructive.surface` | `rgba(255, 172, 169, 0.24)` |
+| `colors.destructive.onDefault` | `#FFFFFF` |
 | `colors.blue.hover` | `#E2EFFA` |
 | `colors.blue.light` | `#F2F8FC` |
 | `colors.blue.default` | `#498FCF` |
@@ -230,9 +255,64 @@ Actividades reutiliza el header del área con etiqueta de regreso configurable y
 avatar pasivo a la derecha. El título envuelve con texto ampliado. Su estado vacío
 usa una ilustración SVG local de calendario con círculo decorativo integrado,
 colores semánticos y `layout.activities.emptyIllustrationSize` (120). El contenido
-es desplazable y comparte la única barra inferior del área. Nueva actividad usa
-el botón principal deshabilitado, sin ruta ni handler provisional. Solo se dibuja
-el vacío tras finalizar la consulta; loading, error y datos presentes son distintos.
+es desplazable y comparte la única barra inferior del área. Solo se dibuja el vacío
+tras finalizar la consulta; loading, error y datos presentes son distintos.
+
+Nueva actividad abre un formulario protegido con nombre, hora, icono y borrador
+de pasos en memoria. Reutiliza header y barra inferior; tarjetas con radii.card, superficies
+semánticas y sombras existentes. El icono usa layout.activities.iconSize (64) en
+una opción de iconTileSize (88) en galería; las sugerencias
+usan suggestionTileSize (72) e imagen de 48. El borde y check circular morados
+indican selección; el check es decorativo y se conserva el estado accesible.
+Los encabezados comparten un contenedor lila de sectionIconSize (36), radio
+sectionIconRadius (8), icono SVG morado y título Nunito bold. La descripción de
+iconos queda alineada con el título. AreaIcon incluye lápiz, imagen+, destellos,
+cuadrícula y check sin alterar los símbolos existentes. El input mantiene 48 de
+altura mínima, borde decorativo en reposo y borde de control al enfocar.
+Las sugerencias son dinámicas desde tres caracteres con debounce de 250 ms, hasta
+tres opciones reales. Antes de ese umbral se muestra solo la introducción, sin
+instrucción adicional. La banda lila usa destellos y destaca el nombre consultado
+en morado y bold. Ver más íconos centra cuadrícula y texto en un borde discontinuo
+y abre la galería completa, sin buscador, con
+safe areas, foco accesible y cierre explícito. No hay selección automática y el
+icono elegido permanece visible al editar el nombre. No hay tarjeta duplicada de
+selección: si el elegido sale de las sugerencias, aparece Tu selección con una
+tarjeta compacta no interactiva de 72, imagen de 48, nombre y check. Ver más íconos sigue siendo el acceso
+explícito al catálogo. La selección usa PNG locales
+con contentFit contain. Crear actividad ya está habilitado con validación y POST
+real; ver [C/D](crear-actividad.md). No hay assets inventados.
+
+Hora y Paso a paso reutilizan ActivitySectionHeading con reloj/lista SVG del
+AreaIcon existente. La hora es un campo táctil de 48 mínimo con selector nativo
+instalado, sin fecha en el dominio. Los pasos muestran número, descripción y
+miniatura ARASAAC opcional, con contain y fallback; no usan el icono 3D de actividad.
+La sección de pasos forma una tarjeta continua con cabecera, filas compactas y
+pie, usando el mismo borde, superficie, radio, sombra y padding que las demás.
+Selector circular y número comparten un área táctil de 48; lápiz y handle tienen
+áreas de 48, con lápiz sobre un bloque lila pequeño. No se trunca la descripción.
+Seleccionar pasos no edita ni personaliza el borrador. La selección múltiple usa
+claves estables y checkbox accesibles. Agregar paso usa una acción secundaria lila;
+seleccionar pasos la cambia por Eliminar paso / Eliminar N pasos con
+status.error/status.errorSurface y papelera. Cancelar su única confirmación conserva
+la selección; confirmar elimina en una operación y limpia. Las claves mantienen
+la selección al mover y se descartan si una plantilla reemplaza esos pasos.
+
+El formulario usa una sola DraggableFlatList y GestureHandlerRootView local, sin
+listas anidadas ni nuevas dependencias. Se arrastra desde el handle SVG con
+pulsación prolongada; los lectores de pantalla tienen acciones Subir/Bajar. El
+orden local se valida por claves, se renumera y solo un cambio efectivo marca
+personalización. Durante el gesto se suspende la aplicación de plantillas.
+Los textos usan activityQuery(nombre), no el título canónico de plantilla. Un
+borrador personalizado tiene descripción neutra; la propuesta pendiente se ofrece
+en una acción secundaria lila con destellos, oculta al aceptar sus mismos pasos.
+La marca de protección permanece. Edición, eliminación y sustitución usan ActivityDialog con superficies
+semánticas, foco en el título y contenido desplazable. El editor admite texto
+ampliado, multiline y máximo 120 caracteres. Hora/pasos son borrador hasta el POST
+final implementado en C, que no altera la plantilla original.
+
+La [revisión final de UX de B](nueva-actividad-ux.md) documenta el trabajo acotado
+del arrastre y el warning de InteractionManager originado en dependencias, sin
+actualizarlas ni ocultar mensajes.
 
 | Token | Valor |
 |---|---:|
@@ -254,6 +334,28 @@ el vacío tras finalizar la consulta; loading, error y datos presentes son disti
 | `radii.card` | `20` | Tarjetas y contenedores |
 
 ### Implementación
+
+Detalle Usuario: ContinueButton opta por `appearance="solid-purple"`, blanco
+sobre purple.default en ambos temas. `busy` bloquea duplicados y anuncia ocupado
+sin adoptar la superficie disabled ni cambiar icono/texto. Los defaults de otros
+botones permanecen iguales. No añadir flecha a Ver paso a paso.
+
+Celebración Usuario: `motion.userCelebrationDuration=500`, entrada única de la
+ilustración existente; movimiento reducido estático, sin sonidos ni loops. El
+nombre real se destaca en semibold/morado y la fecha no se muestra en éxito.
+
+`ContinueButton` mantiene el tamaño `screen` por defecto y ofrece `size="modal"`:
+target mínimo de 48, padding vertical 8/horizontal 12 y texto Nunito de 16.
+`StepDialogActions` distribuye las acciones por su ancho de contenido, permite
+wrap y las apila en pantallas estrechas o con texto ampliado; no trunca etiquetas
+ni limita el escalado de fuente. Se conserva Cancelar además del cierre X.
+
+Los tokens semánticos `destructive` están separados de `status.error` y conservan
+los valores de Figma en ambos temas. Eliminar utiliza fondo destructive.default
+y texto onDefault; su Cancelar utiliza borde/texto destructive.default sobre
+superficie neutra. Ambas etiquetas destructivas usan Nunito bold de 20 para
+cumplir contraste AA de texto grande con el rojo especificado (umbral 3:1).
+La validación de campos sigue utilizando status.error sin cambios.
 
 Los design tokens deben centralizarse en el frontend y consumirse desde pantallas y componentes.
 
