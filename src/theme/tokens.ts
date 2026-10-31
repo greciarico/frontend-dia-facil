@@ -1,5 +1,6 @@
 /** Original Figma primitives: docs/design-system.md is the source of truth. */
 export const colors = {
+  destructive: { default: '#EB5361', surface: 'rgba(255, 172, 169, 0.24)', onDefault: '#FFFFFF' },
   success: '#56AF4E', bug: '#D92A16',
   blue: { hover: '#E2EFFA', light: '#F2F8FC', default: '#498FCF', stroke: '#EAF1F9' },
   orange: { light: '#FEF6F2', hover: '#FEE8D9', default: '#E78F4C', stroke: '#FDEDE5' },
@@ -34,10 +35,14 @@ export const radii = { control: 16, card: 20 } as const;
 export const sizes = { touchTarget: 48, icon: 24, iconSmall: 20, stroke: 2 } as const;
 export const borders = { default: 1, selected: 2 } as const;
 export const shadows = { card: { offsetY: 3, opacity: 0.12, radius: 3, elevation: 3 } } as const;
-export const motion = { carerSuccessDuration: 700, carerTiltDuration: 175, carerTiltDegrees: 4 } as const;
+export const motion = { carerSuccessDuration: 700, carerTiltDuration: 175, carerTiltDegrees: 4,
+  userConnectionTransitionDuration: 1200, userCelebrationDuration: 500 } as const;
 export const layout = {
   contentMaxWidth: 480,
-  activities: { emptyIllustrationSize: 120 },
+  userAgenda: { navigationMaxWidth: 256 },
+  deviceLink: { illustrationWidth: 208, illustrationHeight: 132, qrSize: 208, quietZone: 16 },
+  activities: { emptyIllustrationSize: 120, iconSize: 64, iconTileSize: 88,
+    sectionIconSize: 36, sectionIconRadius: 8, suggestionTileSize: 72 },
   profiles: { avatarSize: 80, detailAvatarSize: 168, confirmationAvatarSize: 200, emptyIllustrationRatio: 1536 / 1024 },
   carer: { accountHeroHeight: 314, codeHeroHeight: 396, illustrationWidth: 248,
     profileHeroHeight: 336, avatarSize: 152, avatarOptionSize: 56,
@@ -45,6 +50,7 @@ export const layout = {
     curveHeight: 32, stepDot: 12, stepGap: 28, codeCellHeight: 60 },
   welcome: { heroHeight: 280, illustrationWidth: 248, illustrationRatio: 234 / 197, curveHeight: 32,
     roleIllustrationHeight: 96, roleMinHeight: 216, stackBelowWidth: 340, stackAboveFontScale: 1.35 },
+  userOnboarding: { illustrationRatio: 1378 / 1141, errorIllustrationWidth: 308 },
 } as const;
 
 export type SemanticColors = {
@@ -54,6 +60,7 @@ export type SemanticColors = {
   action: { primary: string; pressed: string; onPrimary: string; disabled: string };
   border: { decorative: string; control: string; selected: string };
   status: { error: string; errorSurface: string; success: string; successSurface: string };
+  destructive: { default: string; surface: string; onDefault: string };
   profiles: { information: string; cards: readonly string[] };
   onboarding: {
     activities: { icon: string; surface: string };
@@ -71,6 +78,7 @@ export const themes: Record<'light' | 'dark', AppTheme> = {
     scheme: 'light',
     colors: {
       background: colors.background,
+      destructive: colors.destructive,
       surface: { default: colors.background.primary, elevated: colors.background.primary },
       text: colors.text,
       action: { primary: colors.purple.default, pressed: colors.purple.dark, onPrimary: colors.background.primary, disabled: colors.purple.stroke },
@@ -92,6 +100,7 @@ export const themes: Record<'light' | 'dark', AppTheme> = {
     scheme: 'dark',
     colors: {
       background: { primary: d.background, yellow: d.surface, purple: d.elevated },
+      destructive: colors.destructive,
       surface: { default: d.surface, elevated: d.elevated },
       text: { primary: d.text, secondary: d.secondaryText, disabled: d.disabledText },
       action: { primary: d.primary, pressed: d.primaryPressed, onPrimary: d.onPrimary, disabled: d.decorativeBorder },

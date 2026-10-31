@@ -3,9 +3,9 @@ import { AppState } from 'react-native';
 
 import { sessionManager } from '@/services/session';
 const Context = createContext<typeof sessionManager | null>(null);
-export function SessionProvider({ children }: { children: ReactNode }) {
+export function SessionProvider({ children, autoRestore = true }: { children: ReactNode; autoRestore?: boolean }) {
   useEffect(() => {
-    void sessionManager.restore();
+    if (autoRestore) void sessionManager.restore();
     const listener = AppState.addEventListener('change', value => {
       if (value === 'active') void sessionManager.flushRevocations().catch(() => undefined);
     });
@@ -13,7 +13,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       if (AppState.currentState === 'active') void sessionManager.flushRevocations().catch(() => undefined);
     }, 30_000);
     return () => { listener.remove(); clearInterval(revocations); };
-  }, []);
+  }, [autoRestore]);
   return <Context.Provider value={sessionManager}>{children}</Context.Provider>;
 }
 export function useSession() {

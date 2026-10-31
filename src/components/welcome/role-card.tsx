@@ -28,8 +28,8 @@ export function RoleCard({ title, description, illustration, variant, selected, 
         <Text style={[styles.description, { color: colors.text.secondary }]}>{description}</Text>
       </Pressable>
       <Pressable accessibilityRole="button"
-        accessibilityLabel={onContinue ? (selected ? 'Continuar como cuidador' : 'Seleccionar Soy cuidador') : 'Seleccionar Soy usuario'}
-        accessibilityHint={onContinue && selected ? 'Abre el Paso 1 de la cuenta de cuidador.' : undefined}
+        accessibilityLabel={onContinue ? (selected ? (variant === 'user' ? 'Continuar como usuario' : 'Continuar como cuidador') : (variant === 'user' ? 'Seleccionar Soy usuario' : 'Seleccionar Soy cuidador')) : 'Seleccionar Soy usuario'}
+        accessibilityHint={onContinue && selected ? (variant === 'user' ? 'Abre la bienvenida de tu agenda.' : 'Abre el Paso 1 de la cuenta de cuidador.') : undefined}
         onPress={onContinue && selected ? onContinue : onSelect}
         style={[styles.arrow, { backgroundColor: selected ? colors.action.primary
         : variant === 'user' ? colors.welcome.userAction : colors.welcome.carerAction }]}>

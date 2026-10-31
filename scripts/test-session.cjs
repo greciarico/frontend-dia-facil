@@ -194,6 +194,7 @@ test('actual Step 3 persists the session before navigating, without losing its r
   let stateIndex = 0;
   const cleanup = [];
   const screen = loadComponent('app/cuidador/paso-3.tsx', {
+    '@/components/forms/keyboard-aware-form': { KeyboardAwareTextInput: 'TextInput' },
     react: { useState: initial => [stateIndex++ === 0 ? 'Grecia' : initial, () => {}],
       useRef: current => ({ current }), useCallback: fn => fn, useEffect: fn => fn() },
     'expo-router': { Redirect: 'Redirect', router: { replace: route => navigations.push(route) },

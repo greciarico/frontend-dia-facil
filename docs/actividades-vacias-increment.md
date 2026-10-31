@@ -1,5 +1,7 @@
 # Actividades de PerfilUsuario — estado vacío
 
+> **Alcance hist?rico.** Informe hist?rico del estado vac?o. Nueva actividad, creaci?n persistente, listado y FAB ya est?n implementados en [C/D](crear-actividad.md); el contrato actual incluye hora/codigoIcono. Los resultados de pruebas y pendientes f?sicos inferiores pertenecen a ese incremento, no a una nueva validaci?n.
+
 Mis perfiles → Perfil → Crear sus actividades → Actividades del perfil.
 La pantalla obtiene por ID el perfil real y después consulta
 GET /api/perfiles/{idPerfilUsuario}/actividades con el mismo cliente privado.

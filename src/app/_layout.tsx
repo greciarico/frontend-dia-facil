@@ -9,14 +9,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { spacing, typography } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';
 import { SessionProvider, useSession } from '@/context/session';
+import { DeviceAccessProvider, useDeviceAccess } from '@/context/device-access';
 
 void SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 export default function RootLayout() {
-  return <SessionProvider><AppLayout /></SessionProvider>;
+  return <SessionProvider autoRestore={false}><DeviceAccessProvider><AppLayout /></DeviceAccessProvider></SessionProvider>;
 }
 function AppLayout() {
   const session = useSession();
+  const device = useDeviceAccess();
+  const booting = device.status === 'booting' || device.status === 'unlinked' && session.status === 'booting';
   const theme = useAppTheme();
   // Direct files keep unapproved weights and italic variants out of the mobile bundle.
   const [loaded, error] = useFonts({
@@ -26,11 +29,11 @@ function AppLayout() {
     [typography.family.bold]: require('@expo-google-fonts/nunito/700Bold/Nunito_700Bold.ttf'),
   });
   useEffect(() => {
-    if ((loaded && session.status !== 'booting') || error) void SplashScreen.hideAsync().catch(() => undefined);
-  }, [loaded, error, session.status]);
+    if ((loaded && !booting) || error) void SplashScreen.hideAsync().catch(() => undefined);
+  }, [loaded, error, booting]);
   useEffect(() => {
-    if (loaded && session.status === 'anonymous') router.replace('/');
-  }, [loaded, session.status]);
+    if (loaded && device.status === 'unlinked' && session.status === 'anonymous') router.replace('/');
+  }, [loaded, session.status, device.status]);
   if (!loaded && !error) return null;
   if (error) {
     return (
@@ -55,10 +58,16 @@ function AppLayout() {
       <StatusBar style={theme.scheme === 'dark' ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.colors.background.primary } }}>
         <Stack.Screen name="index" />
-        <Stack.Protected guard={session.status === 'authenticated' && session.stage === 'ready'}>
+        <Stack.Protected guard={device.status === 'pending' || device.status === 'unlinked' && session.status === 'anonymous' || device.status === 'linked' && device.stage === 'confirmation'}>
+          <Stack.Screen name="usuario" />
+        </Stack.Protected>
+        <Stack.Protected guard={device.status === 'linked' && device.stage === 'ready'}>
+          <Stack.Screen name="(usuario-autenticado)" />
+        </Stack.Protected>
+        <Stack.Protected guard={device.status === 'unlinked' && session.status === 'authenticated' && session.stage === 'ready'}>
           <Stack.Screen name="(cuidador-autenticado)" />
         </Stack.Protected>
-        <Stack.Protected guard={session.status === 'anonymous' || session.status === 'authenticated' && session.stage !== 'ready'}>
+        <Stack.Protected guard={device.status === 'unlinked' && (session.status === 'anonymous' || session.status === 'authenticated' && session.stage !== 'ready')}>
           <Stack.Screen name="cuidador" />
         </Stack.Protected>
       </Stack>

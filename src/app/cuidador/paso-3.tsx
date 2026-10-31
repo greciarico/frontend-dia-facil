@@ -1,6 +1,7 @@
 import { Redirect, router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Keyboard, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAwareTextInput } from '@/components/forms/keyboard-aware-form';
 
 import { AccountAvatar } from '@/components/carer/account-avatar';
 import { AccountLayout, accountStyles } from '@/components/carer/account-layout';
@@ -78,7 +79,7 @@ export default function CarerPersonalizationScreen() {
   </>}>
     <View style={styles.form}>
       <Text style={[accountStyles.body, styles.label, { color: colors.text.primary }]}>Nombre</Text>
-      <TextInput ref={input} value={name} editable={!blocked} autoComplete="name" textContentType="name"
+      <KeyboardAwareTextInput ref={input} value={name} editable={!blocked} autoComplete="name" textContentType="name"
         autoCapitalize="words" autoCorrect={false} returnKeyType="done" placeholder="¿Cómo te llamas?"
         placeholderTextColor={colors.text.secondary} accessibilityLabel="Nombre del cuidador" accessibilityHint={fieldError || 'Obligatorio para crear tu cuenta.'}
         onChangeText={value => { setName(value); setFieldError(undefined); setError(undefined); }}

@@ -1,5 +1,7 @@
 # Sesión persistente y Paso 4
 
+> **Alcance hist?rico.** Informe hist?rico del incremento de sesi?n. La ra?z temporal fue sustituida por Mis perfiles, y existen m?s endpoints privados. Ver [estado actual](../../documentacion-dia-facil/ESTADO_ACTUAL_PROYECTO.md); no repetir Sesi?n activa/Comprobar sesi?n como UI principal. Los resultados de pruebas y pendientes f?sicos inferiores pertenecen a ese incremento, no a una nueva validaci?n.
+
 ## Resultado
 
 - Access/refresh opacos aleatorios de 256 bits; hashes SHA-256 BINARY(32) en BD.

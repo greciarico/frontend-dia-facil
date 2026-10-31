@@ -1,5 +1,7 @@
 # Incremento del Paso 2 del cuidador
 
+> **Alcance hist?rico.** Informe hist?rico del incremento OTP. El flujo actual contin?a con registro, sesi?n y Paso 4; consultar [sesi?n](carer-session-increment.md) y [contrato vigente](../../backend_dia_facil/docs/auth-http.md). Los resultados de pruebas y pendientes f?sicos inferiores pertenecen a ese incremento, no a una nueva validaci?n.
+
 Ingreso de seis dígitos, verificación y reenvío real, contador y estado confirmado.
 El flujo termina en Paso 2; no se crean rutas de Paso 3, JWT o sesiones.
 

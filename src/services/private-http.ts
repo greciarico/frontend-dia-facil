@@ -14,10 +14,12 @@ export class PrivateHttpError extends Error {
 }
 function safeHttpError(error: { response?: { status?: number; data?: { codigo?: unknown; errores?: unknown } } }) {
   const data = error.response?.data;
-  const allowed = ['SOLICITUD_INVALIDA', 'LIMITE_PERFILES_ALCANZADO', 'PERFIL_NO_ENCONTRADO', 'SERVICIO_NO_DISPONIBLE', 'ERROR_INTERNO', 'ACCESO_DENEGADO'];
+  const allowed = ['SOLICITUD_INVALIDA', 'LIMITE_PERFILES_ALCANZADO', 'PERFIL_NO_ENCONTRADO', 'SERVICIO_NO_DISPONIBLE', 'ERROR_INTERNO', 'ACCESO_DENEGADO',
+    'CODIGO_VINCULACION_CAMBIADO', 'RENOVACION_PREMATURA', 'ICONO_NO_ENCONTRADO', 'PICTOGRAMA_INVALIDO', 'CONFLICTO_CREACION', 'PICTOGRAMAS_NO_DISPONIBLES'];
   const codigo = typeof data?.codigo === 'string' && allowed.includes(data.codigo) ? data.codigo : undefined;
   const fields = Array.isArray(data?.errores) ? [...new Set(data.errores.flatMap(field =>
-    field && typeof field === 'object' && ['nombre', 'avatar'].includes(field.campo) ? [field.campo as string] : []))] : [];
+    field && typeof field === 'object' && (['nombre', 'avatar', 'hora', 'codigoIcono', 'pasos'].includes(field.campo)
+      || /^pasos\[\d+\]\.descripcion$/.test(field.campo)) ? [field.campo as string] : []))] : [];
   return new PrivateHttpError(error.response?.status, codigo, fields);
 }
 let client: ReturnType<typeof create> | undefined;
