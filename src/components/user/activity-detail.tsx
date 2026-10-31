@@ -1,6 +1,10 @@
+import { AppText as Text } from '@/components/app-text';
 import { Image } from 'expo-image';
 import { useLayoutEffect, useRef, useState } from 'react';
-import { StyleSheet, Text, View, useWindowDimensions, type TextLayoutEvent } from 'react-native';
+import { StyleSheet, View, type TextLayoutEvent } from 'react-native';
+import { useEffectiveFontScale, useProfileAppearance } from '@/theme/profile-appearance';
+import type { useContentSpeech } from '@/hooks/use-content-speech';
+import { ContentSpeechControl } from './content-speech-control';
 import { AreaIcon } from '@/components/carer/area-icon';
 import { ContinueButton } from '@/components/carer/continue-button';
 import { resolveActivityIcon } from '@/constants/activity-icons';
@@ -20,11 +24,13 @@ function ActivityPicture({ code }: { code: string | null }) {
   </View>;
 }
 
-export function UserActivityDetailContent({ detail, onStart, onDirect, disabled = false, busy = false }: {
+export function UserActivityDetailContent({ detail, onStart, onDirect, speech, disabled = false, busy = false }: {
   detail: UserActivityDetail; onStart?: () => void; onDirect?: () => void; disabled?: boolean; busy?: boolean;
+  speech?: ReturnType<typeof useContentSpeech>;
 }) {
-  const { colors } = useAppTheme();
-  const { fontScale } = useWindowDimensions();
+  const { colors, highContrast } = useAppTheme();
+  const fontScale = useEffectiveFontScale();
+  const preferences = useProfileAppearance();
   const activity = detail.actividad;
   const [hour, minute] = activity.hora.split(':').map(Number);
   const time = formatActivityTime(hour * 60 + minute);
@@ -54,9 +60,9 @@ export function UserActivityDetailContent({ detail, onStart, onDirect, disabled 
           En progreso
         </Text>}
       </View>
-      <View accessible style={[styles.reading, { backgroundColor: colors.profiles.information }]}>
-        <AreaIcon name="audio" color={colors.action.primary} />
-        <Text style={[styles.body, styles.emphasis, styles.flexText, { color: colors.text.primary }]}>Es hora de {activity.nombre}</Text>
+      <View style={[styles.reading, { backgroundColor: colors.profiles.information }]}>
+        {preferences?.lecturaVoz !== false && speech && <ContentSpeechControl speech={speech} label="Volver a escuchar el mensaje" compact />}
+        <Text style={[styles.body, styles.emphasis, styles.readingText, { color: colors.text.primary }]}>Es hora de {activity.nombre}</Text>
       </View>
     </View>
     <View onLayout={event => {
@@ -93,7 +99,7 @@ export function UserActivityDetailContent({ detail, onStart, onDirect, disabled 
         </View>
       </View>
       <ContinueButton label="Ver paso a paso" appearance="solid-purple" busy={busy} disabled={disabled || !onStart} onPress={onStart}
-        leadingIcon={<AreaIcon name="steps" color={palette.background.primary} />} />
+        leadingIcon={<AreaIcon name="steps" color={highContrast ? colors.action.onPrimary : palette.background.primary} />} />
       {!completed && activity.guiaInicialCompletada && <ContinueButton label="Ya lo hice" variant="secondary" busy={busy} disabled={disabled || !eligibleForDirectCompletion(activity) || !onDirect} onPress={onDirect}
         leadingIcon={<AreaIcon name="check" color={colors.action.primary} />} />}
     </View>
@@ -112,7 +118,8 @@ const styles = StyleSheet.create({
   emphasis: { fontFamily: typography.family.semibold },
   small: { fontFamily: typography.family.regular, fontSize: typography.size.sm, lineHeight: typography.lineHeight.sm },
   centered: { textAlign: 'center' }, flexText: { flexShrink: 1 },
-  reading: { alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md, borderRadius: radii.control },
+  reading: { alignSelf: 'center', maxWidth: '100%', flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.md, borderRadius: radii.control },
+  readingText: { flexGrow: 0, flexShrink: 1, minWidth: 0 },
   metadata: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, padding: spacing.lg, borderRadius: radii.control, borderWidth: borders.default },
   stacked: { flexDirection: 'column', alignItems: 'stretch' },
   metadataItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minWidth: 0 },

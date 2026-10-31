@@ -1,6 +1,7 @@
+import { AppText as Text } from '@/components/app-text';
 import { Redirect, router } from 'expo-router';
 import { useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { useDeviceAccess } from '@/context/device-access';
 import { deviceAccess } from '@/services/device-access';
 import { useUserAgenda } from '@/hooks/use-user-agenda';

@@ -2,6 +2,8 @@ import Svg, { Path } from 'react-native-svg';
 import { sizes } from '@/theme/tokens';
 
 const paths = {
+  textSize: 'm3 19 5-14 5 14M5 14h6m4 5 3-8 3 8m-5-3h4',
+  contrast: 'M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm0 0v20',
   audio: 'M11 4 6 8H3v8h3l5 4ZM15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14',
   copy: 'M9 9h12v13H9ZM15 9V2H3v14h6',
   refresh: 'M21 10a9 9 0 1 0 0 5M21 3v7h-7',
@@ -34,6 +36,7 @@ const paths = {
 } as const;
 export function AreaIcon({ name, color, size = sizes.icon }: { name: keyof typeof paths; color: string; size?: number }) {
   return <Svg width={size} height={size} viewBox="0 0 24 24" accessible={false}>
+    {name === 'contrast' && <Path d="M12 2a10 10 0 0 0 0 20Z" fill={color} />}
     <Path d={paths[name]} fill="none" stroke={color} strokeWidth={sizes.stroke} strokeLinecap="round" strokeLinejoin="round" />
   </Svg>;
 }

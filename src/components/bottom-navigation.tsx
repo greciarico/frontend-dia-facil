@@ -1,12 +1,14 @@
+import { AppText as Text } from '@/components/app-text';
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { useEffectiveFontScale } from '@/theme/profile-appearance';
 import { borders, layout, radii, shadows, sizes, spacing, typography } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';
 
 export type NavigationItem = { id: string; label: string; selected: boolean; onPress?: () => void; icon: (color: string) => ReactNode };
 export function BottomNavigation({ items, appearance = 'default' }: { items: NavigationItem[]; appearance?: 'default' | 'user' }) {
   const { colors } = useAppTheme();
-  const { fontScale } = useWindowDimensions();
+  const fontScale = useEffectiveFontScale();
   const user = appearance === 'user';
   return <View style={[styles.bar, user && fontScale <= layout.welcome.stackAboveFontScale && styles.userBar,
     { backgroundColor: user ? colors.surface.default : colors.surface.elevated, borderColor: colors.border.decorative, shadowColor: colors.shadow }]}>

@@ -1,6 +1,6 @@
 ﻿const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),test=require('node:test'),ts=require('typescript');
 const jsx=(type,props)=>({type,props});
-function load(file,modules={}){const out={};new Function('require','exports',ts.transpileModule(fs.readFileSync(path.join(__dirname,'../src',file),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText)(id=>{assert.ok(id in modules,'Missing adapter '+id);return modules[id];},out);return out;}
+function load(file,modules={}){const out={};new Function('require','exports',ts.transpileModule(fs.readFileSync(path.join(__dirname,'../src',file),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText)(id=>{if(id==='./content-speech-control')return {ContentSpeechControl:'SpeechControl'};if(id==='@/hooks/use-content-speech')return {useContentSpeech:()=>({enabled:true,speaking:false,error:false,repeat(){}})};if(id==='@/services/step-speech')return load('services/step-speech.ts');if(id==='react'&&!modules[id])return {};if(id==='@/context/device-access')return {};if(id==='@/services/device-access')return {};if(id==='@/context/user-accessibility')return {};if(id==='@/components/app-text')return {AppText:'Text'};if(id==='@/theme/profile-appearance')return modules[id]||{useProfileAppearance:()=>null,useEffectiveFontScale:()=>modules['react-native']?.useWindowDimensions?.().fontScale??1};assert.ok(id in modules,'Missing adapter '+id);return modules[id];},out);return out;}
 const tokens=load('theme/tokens.ts'),activities=load('utils/activities.ts');
 const agenda=load('utils/user-agenda.ts',{'./activities':activities,'./profiles':{parseProfile:v=>v}});
 const utils=load('utils/user-activity.ts',{'./activities':activities,'./user-agenda':agenda});
@@ -98,7 +98,7 @@ test('detail query differentiates not-found, rechecks on day change/foreground a
 });
 
 test('Usuario stack anchors deep links at Mi agenda and Android back pops the detail to that anchor',()=>{
- const layout=load('app/(usuario-autenticado)/_layout.tsx',{...styling,'expo-router':{Stack:'Stack'},'react-native-safe-area-context':{SafeAreaView:'SafeArea'},'@/components/user/area-navigation':{UserAreaNavigation:'Navigation'}});
+ const layout=load('app/(usuario-autenticado)/_layout.tsx',{...styling,'expo-status-bar':{StatusBar:'StatusBar'},'expo-router':{Stack:'Stack'},'react-native-safe-area-context':{SafeAreaView:'SafeArea'},'@/components/user/area-navigation':{UserAreaNavigation:'Navigation'}});
  assert.equal(layout.unstable_settings.anchor,'mi-agenda');
  const expoRoot=path.dirname(require.resolve('expo-router/package.json'));
  const context=()=>({default:()=>null,unstable_settings:layout.unstable_settings});
