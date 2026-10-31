@@ -1,6 +1,7 @@
+import { AppText as Text } from '@/components/app-text';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { AreaIcon } from '@/components/carer/area-icon';
 import { ContinueButton } from '@/components/carer/continue-button';
 import { UserActivityDetailContent } from '@/components/user/activity-detail';
@@ -9,6 +10,8 @@ import { useExecutionAction } from '@/hooks/use-execution-action';
 import { startGuideOperation, finishDirectOperation } from '@/services/user-execution';
 import { guideHref, type ExecutionFinished } from '@/utils/user-execution';
 import { useUserActivity } from '@/hooks/use-user-activity';
+import { useContentSpeech } from '@/hooks/use-content-speech';
+import { activitySpeechMessage } from '@/services/step-speech';
 import { validActivityId } from '@/utils/user-activity';
 import { layout, sizes, spacing, typography } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';
@@ -19,6 +22,8 @@ export default function UserActivityScreen() {
   const { state, reload } = useUserActivity(id);
   const action = useExecutionAction();
   const [finished, setFinished] = useState<ExecutionFinished>();
+  const speech = useContentSpeech(`detalle:${id}`, !finished && state.status === 'ready' && state.detail.actividad.idActividad === id
+    ? { key: `actividad:${id}`, text: activitySpeechMessage(state.detail.actividad.nombre) } : undefined);
   const { colors } = useAppTheme();
   const back = () => router.dismissTo('/mi-agenda');
   if (finished) return <ExecutionSuccess result={finished} />;
@@ -27,7 +32,7 @@ export default function UserActivityScreen() {
       <AreaIcon name="back" color={colors.text.primary} />
     </Pressable>
     {state.status === 'ready' ? <>
-      <UserActivityDetailContent detail={state.detail} busy={action.busy} disabled={action.blocked || !!action.code}
+      <UserActivityDetailContent detail={state.detail} speech={speech} busy={action.busy} disabled={action.blocked || !!action.code}
         onStart={() => { if (!id) return;
           if (state.detail.actividad.estado === 'COMPLETADA') { router.push(guideHref(id)); return; }
           void action.run(startGuideOperation(id, state.detail.fecha), () => {

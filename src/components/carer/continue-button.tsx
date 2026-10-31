@@ -1,5 +1,6 @@
+import { AppText as Text } from '@/components/app-text';
 import type { ReactNode } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, } from 'react-native';
 
 import { borders, colors as palette, radii, sizes, spacing, typography } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';
@@ -9,18 +10,18 @@ export function ContinueButton({ label, onPress, loading = false, busy = false, 
   variant?: 'primary' | 'secondary' | 'destructive' | 'destructive-outline'; size?: 'screen' | 'modal';
   busy?: boolean; appearance?: 'default' | 'solid-purple';
 }) {
-  const { colors } = useAppTheme();
+  const { colors, highContrast } = useAppTheme();
   const outlined = variant === 'secondary' || variant === 'destructive-outline';
   const destructive = variant === 'destructive' || variant === 'destructive-outline';
   const solid = appearance === 'solid-purple' && variant === 'primary';
-  const foreground = solid ? palette.background.primary : destructive ? (outlined ? colors.destructive.default : colors.destructive.onDefault)
+  const foreground = solid ? highContrast ? colors.action.onPrimary : palette.background.primary : destructive ? (outlined ? colors.destructive.default : colors.destructive.onDefault)
     : outlined ? colors.action.primary : colors.action.onPrimary;
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={loading ? loadingLabel : label}
       accessibilityState={{ disabled: disabled || loading || busy, busy: loading || busy }} disabled={disabled || loading || busy}
       onPress={onPress} style={({ pressed }) => [styles.button, size === 'modal' && styles.modal, {
         backgroundColor: disabled && !loading ? colors.action.disabled
-          : solid ? palette.purple.default : outlined ? (pressed ? (destructive ? colors.destructive.surface : colors.welcome.intro) : colors.surface.elevated)
+          : solid ? highContrast ? colors.action.primary : palette.purple.default : outlined ? (pressed ? (destructive ? colors.destructive.surface : colors.welcome.intro) : colors.surface.elevated)
           : variant === 'destructive' ? colors.destructive.default : pressed ? colors.action.pressed : colors.action.primary,
         ...(outlined ? { borderWidth: borders.default, borderColor: disabled ? colors.border.decorative : destructive ? colors.destructive.default : colors.action.primary } : {}),
         opacity: solid && pressed && !disabled ? 0.92 : variant === 'destructive' && pressed && !disabled ? 0.8 : 1 }]}>

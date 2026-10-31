@@ -1,6 +1,7 @@
+import { AppText as Text } from '@/components/app-text';
 import type { ReactNode } from 'react';
 import { useRef } from 'react';
-import { AccessibilityInfo, findNodeHandle, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, findNodeHandle, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { layout, radii, sizes, spacing, typography } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';
@@ -14,7 +15,7 @@ export function ActivityDialog({ title, onClose, children, description, centered
 }) {
   const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
-  const heading = useRef<Text>(null);
+  const heading = useRef<import('react-native').Text>(null);
   const content = <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scroll}>
     <View accessibilityViewIsModal onAccessibilityEscape={onClose} style={[styles.card, compact && styles.compact, { backgroundColor: colors.surface.elevated }]}>
       {showClose && <Pressable accessibilityRole="button" accessibilityLabel={closeLabel} onPress={onClose}

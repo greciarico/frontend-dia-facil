@@ -1,6 +1,6 @@
 ﻿const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),test=require('node:test'),ts=require('typescript');
 const jsx=(type,props)=>({type,props});
-function load(file,modules={}){const out={};new Function('require','exports',ts.transpileModule(fs.readFileSync(path.join(__dirname,'../src',file),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText)(id=>{if(id.startsWith('@/assets/'))return id;assert.ok(id in modules,'Missing adapter '+id);return modules[id];},out);return out;}
+function load(file,modules={}){const out={};new Function('require','exports',ts.transpileModule(fs.readFileSync(path.join(__dirname,'../src',file),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText)(id=>{if(id==='@/components/app-text')return {AppText:'Text'};if(id==='@/theme/profile-appearance')return modules[id]||{useProfileAppearance:()=>null,useEffectiveFontScale:()=>modules['react-native']?.useWindowDimensions?.().fontScale??1};if(id.startsWith('@/assets/'))return id;assert.ok(id in modules,'Missing adapter '+id);return modules[id];},out);return out;}
 const tokens=load('theme/tokens.ts'), avatars=load('constants/carer-avatars.ts'),profiles=load('utils/profiles.ts',{'@/constants/carer-avatars':avatars});
 const activities=load('utils/activities.ts');const utils=load('utils/user-agenda.ts',{'./activities':activities,'./profiles':profiles});
 const detailUtils=load('utils/user-activity.ts',{'./activities':activities,'./user-agenda':utils});

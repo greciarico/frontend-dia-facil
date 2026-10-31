@@ -376,3 +376,31 @@ Evitar valores hardcodeados cuando exista un token equivalente.
 Los design tokens **no son variables de entorno**. Las variables de entorno se reservan para configuraciones que cambian según el entorno, como la URL del backend.
 
 Las imágenes de `design/` son la referencia visual de las pantallas y la documentación (documentacion-dia-facil) define su comportamiento funcional.
+
+## Accesibilidad por PerfilUsuario (30/10/2026)
+
+`ProfileAppearanceContext` y `AppText` se aplican solo al área Usuario autenticada.
+Los tres tamaños semánticos usan factores .9 / 1 / 1.25 sobre tamaños y alturas
+de línea explícitos, con fuente base mínima 12 y escalado nativo sin limitar.
+Texto anidado sin tamaño hereda; no vuelve a escalarse. Los componentes compartidos
+conservan su apariencia fuera de ese contexto (Cuidador y onboarding).
+
+**Refinamiento 31/10/2026:** `highContrastTheme` reutiliza `themes.dark` para dar
+una presentación oscura y menos luminosa al Usuario cuando altoContraste=true,
+incluso con el teléfono en claro. Reemplaza la interpretación previa de contraste
+en ambos modos. Sin la preferencia se conserva el tema normal. El Cuidador no
+hereda el contexto. Superficies oscuras diferenciadas, texto claro, acción lila,
+bordes decorativos sutiles y contornos fuertes solo donde comunican control/estado.
+`highContrastActivityFamilies` deriva tintes oscuros de las cinco familias
+originales; sigue index%5 sin persistencia de color. PNG/ARASAAC no se recolorean.
+Tokens `switch` y `guide` centralizan pistas/pulgar y posiciones de la guía.
+El selector de texto usa un solo contenedor y opción seleccionada rellena.
+Su indicador seleccionado es un círculo blanco con check morado de marca, sin
+cambiar el espacio reservado ni el layout aprobado. El control de voz conserva
+su icono junto al mensaje/instrucción, se oculta al desactivar lecturaVoz y repite
+la lectura desde el principio; ver el documento de accesibilidad para autoplay.
+El botón solid-purple usa los roles de acción al activar contraste; normal conserva
+la presentación aprobada. Detalle Hora/Fecha, navegación y acciones de modal
+consideran el factor de perfil junto al fontScale nativo para adaptar su layout.
+
+Ver [arquitectura, voz y matriz de validación](accesibilidad-perfil.md).
