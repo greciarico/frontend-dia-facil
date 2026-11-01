@@ -8,6 +8,32 @@ AppearanceContext de cuenta y ProfileAppearanceContext de Usuario mantienen
 identidades/estado separados. El contexto Usuario conserva exclusivamente su voz.
 TextSizeSelector comparte el selector aprobado sin cambiar layout ni geometría
 del check. Sin provider, los componentes conservan el aspecto normal existente.
+
+«Accesibilidad en DiaFácil» reutiliza AppText, AreaHeader, ActivityDialog y los
+iconos existentes. Hero con user-account.png y contain; seis tarjetas de altura
+natural, sin avance automático ni HTML/WebView. En tema normal y Alto contraste
+utiliza las familias existentes de Mi agenda (light/stroke/hover), sin sustituirlas
+por gris cuando highContrast=true. En oscuro normal mantiene superficies semánticas.
+Las seis posiciones siguen amarillo/verde/naranja/azul/morado/amarillo. Los botones +
+y flechas conservan targets de 48. Los videos locales usan páginas completas,
+radios existentes y contain; el video es la acción accesible de pausa/reanudación.
+Play central discreto solo en pausa/final o inicio manual con movimiento reducido,
+sin botón externo permanente ni cambios de layout 16:9. Reintentar solo ante error. Sin sonido,
+loop ni fullscreen. Foto editorial horizontal sin recorte, con texto escalable.
+Con movimiento reducido no hay autoplay. Ver [multimedia](accesibilidad-multimedia.md).
+Ver [Mi perfil e información](mi-perfil-cuidador.md).
+
+Las demostraciones informativas usan assets/vectores locales y, exclusivamente
+en Paso a paso, dos miniaturas ARASAAC aprobadas (2443/5549), con caché/fallback. Apoyo
+visual, Paso a paso y Solicitar ayuda son composiciones compactas horizontales;
+no convierten los iconos 3D en pictogramas ni apilan mini pantallas. Texto
+adaptable y comparación de contraste conservan su escalado y presentación.
+Las ondas de voz tienen un único pulso decorativo, sin audio;
+respetan movimiento reducido y se cancelan al ocultarse, perder foco o background.
+Apoyo visual muestra bread/open-book/run locales sin apariencia de botones.
+Texto adaptable mantiene sus Aa y layout; solo la tarjeta activa reproduce
+un pulso secuencial 1 → 1.06 → 1 mediante transform, con 180 ms por tramo,
+sin bucle y con cleanup/movimiento reducido. En su modal permanece estático.
 Las descripciones de entregas B o pantallas temporales inferiores se actualizan
 con los módulos vigentes; los prototipos no deben restaurar reglas antiguas.
 

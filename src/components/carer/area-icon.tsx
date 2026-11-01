@@ -8,6 +8,7 @@ const paths = {
   textSize: 'm3 19 5-14 5 14M5 14h6m4 5 3-8 3 8m-5-3h4',
   contrast: 'M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm0 0v20',
   audio: 'M11 4 6 8H3v8h3l5 4ZM15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14',
+  play: 'M8 5v14l11-7Z',
   copy: 'M9 9h12v13H9ZM15 9V2H3v14h6',
   refresh: 'M21 10a9 9 0 1 0 0 5M21 3v7h-7',
   shield: 'M12 2 3 6v6c0 6 9 10 9 10s9-4 9-10V6ZM8 12l3 3 5-6',

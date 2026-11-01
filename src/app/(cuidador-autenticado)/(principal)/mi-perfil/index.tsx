@@ -29,11 +29,12 @@ export default function MyAccountScreen() {
         <AppText style={[styles.small, { color: colors.text.secondary }]}>Tamaño del texto y alto contraste.</AppText></View>
       <AreaIcon name="chevron" color={colors.action.primary} />
     </Pressable>
-    <Pressable accessibilityRole="button" disabled accessibilityState={{ disabled: true }} accessibilityLabel="Accesibilidad en Día Fácil. No disponible todavía."
+    <Pressable accessibilityRole="button" accessibilityLabel="Accesibilidad en DiaFácil" onPress={() => router.push('/mi-perfil/accesibilidad-diafacil')}
       style={[styles.card, { backgroundColor: colors.surface.elevated, borderColor: colors.border.decorative, shadowColor: colors.shadow }]}>
       <View style={[styles.icon, { backgroundColor: colors.welcome.iconSurface }]}><AreaIcon name="accessibilityPerson" color={colors.action.primary} /></View>
-      <View style={styles.text}><AppText style={[styles.label, { color: colors.text.primary }]}>Accesibilidad en Día Fácil</AppText>
-        <AppText style={[styles.small, { color: colors.text.secondary }]}>No disponible todavía.</AppText></View>
+      <View style={styles.text}><AppText style={[styles.label, { color: colors.text.primary }]}>Accesibilidad en DiaFácil</AppText>
+        <AppText style={[styles.small, { color: colors.text.secondary }]}>Conoce cómo acompaña la app.</AppText></View>
+      <AreaIcon name="chevron" color={colors.action.primary} />
     </Pressable>
     <Pressable ref={trigger} accessibilityRole="button" accessibilityLabel="Cerrar sesión" onPress={() => setLogout(true)}
       style={[styles.card, { backgroundColor: colors.surface.elevated, borderColor: colors.border.decorative, shadowColor: colors.shadow }]}>

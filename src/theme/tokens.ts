@@ -36,7 +36,7 @@ export const sizes = { touchTarget: 48, icon: 24, iconSmall: 20, stroke: 2 } as 
 export const borders = { default: 1, selected: 2 } as const;
 export const shadows = { card: { offsetY: 3, opacity: 0.12, radius: 3, elevation: 3 } } as const;
 export const motion = { carerSuccessDuration: 700, carerTiltDuration: 175, carerTiltDegrees: 4,
-  userConnectionTransitionDuration: 1200, userCelebrationDuration: 500 } as const;
+  userConnectionTransitionDuration: 1200, userCelebrationDuration: 500, accessibilityTextPulseDuration: 180 } as const;
 export const layout = {
   contentMaxWidth: 480,
   userAgenda: { navigationMaxWidth: 256 },
