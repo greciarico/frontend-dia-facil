@@ -18,7 +18,9 @@ Las versiones completas est?n en package.json/package-lock.json.
   Mi agenda real, detalle, gu?a/reanudaci?n, finalizaci?n y consulta posterior.
 - Mi perfil del Cuidador y sus preferencias propias: [pantallas y provider](docs/mi-perfil-cuidador.md).
 - Accesibilidad por PerfilUsuario y voz: [configuración y TTS](docs/accesibilidad-perfil.md).
-- Apoyo, notificaciones, pantalla informativa de accesibilidad y E2 siguen pendientes.
+- Accesibilidad en DiaFácil: pantalla informativa desde Mi perfil, con capacidades,
+  [dos videos locales y fotografía editorial](docs/accesibilidad-multimedia.md).
+- Apoyo funcional, notificaciones y E2 siguen pendientes.
 - Desarrollo/validaci?n principalmente Android f?sico con Expo Go. No se afirma
   validaci?n f?sica iOS ni compatibilidad Web por existir configuraci?n web.
 

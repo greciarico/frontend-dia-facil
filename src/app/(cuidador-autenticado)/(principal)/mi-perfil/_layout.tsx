@@ -9,5 +9,7 @@ export default function MyAccountLayout() {
     <Stack.Screen name="index" options={{ header: () => <AreaHeader title="Mi perfil" showNotifications={false} /> }} />
     <Stack.Screen name="accesibilidad" options={{ header: () => <AreaHeader title="Configurar accesibilidad" showNotifications={false}
       backLabel="Volver a Mi perfil" onBack={() => router.dismissTo('/mi-perfil')} /> }} />
+    <Stack.Screen name="accesibilidad-diafacil" options={{ header: () => <AreaHeader title="Accesibilidad en DiaFácil" showNotifications={false}
+      backLabel="Volver a Mi perfil" onBack={() => router.dismissTo('/mi-perfil')} /> }} />
   </Stack>;
 }
