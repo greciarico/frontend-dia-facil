@@ -48,6 +48,35 @@ test('approved Desayunar template populates all five image references without an
 });
 const pictogramFixture = (idArasaac = 123) => ({ fuente: 'ARASAAC', idArasaac, nombre: 'Acción de prueba',
   urlImagen: `https://static.arasaac.org/pictograms/${idArasaac}/${idArasaac}_300.png` });
+test('all six curated base routines preserve pictograms from suggestion through draft to creation without mutating the catalogue', () => {
+  const base = JSON.parse(fs.readFileSync(path.join(__dirname, '../../backend_dia_facil/src/main/resources/db/datos-base.json'), 'utf8'));
+  const snapshot = JSON.stringify(base);
+  assert.equal(base.pictogramas.length, 18);
+  assert.equal(new Set(base.pictogramas.map(p => p.idArasaac)).size, 18);
+  assert.ok(base.plantillas.every(t => t.pasos.every(p => p.pictograma !== null)));
+  const byReference = new Map(base.pictogramas.map(p => [`arasaac:${p.idArasaac}`, p]));
+  assert.equal(base.plantillas.length, 6);
+  for (const [index, template] of base.plantillas.entries()) {
+    const parsed = draftUtils.parseActivityTemplate({ plantilla: { idPlantillaActividad: index + 90, nombre: template.nombre,
+      pasos: template.pasos.map(step => {
+        const pic = byReference.get(step.pictograma);
+        return { orden: step.orden, descripcion: step.descripcion, pictograma: pic ? pictogramFixture(pic.idArasaac) : null };
+      }) } });
+    const draft = draftUtils.stepsDraftReducer(draftUtils.initialStepsDraft, { type: 'apply', template: parsed });
+    const icon = base.iconos.find(i => i.codigo === template.icono);
+    const input = createUtils.createActivityInput(template.nombre, 8 * 60, icon, draft.steps);
+    assert.deepEqual(draft.steps.map(s => s.orden), template.pasos.map(s => s.orden));
+    assert.deepEqual(input.pasos, template.pasos.map(step => ({ descripcion: step.descripcion,
+      idArasaac: byReference.get(step.pictograma)?.idArasaac ?? null })));
+    assert.ok(draft.steps.every(s => s.key));
+    assert.ok(input.pasos.every(s => !('key' in s) && !('orden' in s)));
+    const edited = draftUtils.stepsDraftReducer(draft, { type: 'save', key: draft.steps[0].key,
+      description: draft.steps[0].descripcion, pictograma: pictogramFixture(2349) });
+    assert.equal(edited.steps[0].pictograma.idArasaac, 2349);
+    assert.equal(JSON.stringify(base), snapshot);
+    assert.deepEqual(parsed.pasos.map(s => s.pictograma?.idArasaac ?? null), input.pasos.map(s => s.idArasaac));
+  }
+});
 const tokens = load('theme/tokens.ts');
 const navigation = load('utils/profile-navigation.ts');
 const styling = { '@/theme/tokens': tokens, '@/theme/use-theme': { useAppTheme: () => tokens.themes.light },
