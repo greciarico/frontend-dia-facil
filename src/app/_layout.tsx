@@ -10,6 +10,7 @@ import { spacing, typography } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';
 import { SessionProvider, useSession } from '@/context/session';
 import { DeviceAccessProvider, useDeviceAccess } from '@/context/device-access';
+import { CarerPushProvider } from '@/context/carer-push';
 
 void SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
@@ -56,6 +57,7 @@ function AppLayout() {
       heavy: { ...navigation.fonts.heavy, fontFamily: typography.family.bold },
     } }}>
       <StatusBar style={theme.scheme === 'dark' ? 'light' : 'dark'} />
+      <CarerPushProvider>
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.colors.background.primary } }}>
         <Stack.Screen name="index" />
         <Stack.Protected guard={device.status === 'pending' || device.status === 'unlinked' && session.status === 'anonymous' || device.status === 'linked' && device.stage === 'confirmation'}>
@@ -71,6 +73,7 @@ function AppLayout() {
           <Stack.Screen name="cuidador" />
         </Stack.Protected>
       </Stack>
+      </CarerPushProvider>
     </ThemeProvider>
   );
 }

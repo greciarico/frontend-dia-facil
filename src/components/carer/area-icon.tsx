@@ -2,6 +2,7 @@ import Svg, { Path } from 'react-native-svg';
 import { sizes } from '@/theme/tokens';
 
 const paths = {
+  phone: 'M5 3h4l2 5-3 2a15 15 0 0 0 6 6l2-3 5 2v4a2 2 0 0 1-2 2C10 21 3 14 3 5a2 2 0 0 1 2-2Z',
   accessibilityPerson: 'M14 4a2 2 0 1 1-4 0 2 2 0 0 1 4 0ZM3 8l9 2 9-2m-9 2v5m0 0-4 7m4-7 4 7',
   logout: 'M9 3H4v18h5m6-15 6 6-6 6M8 12h13',
   settings: 'm9 3-1 3-3 1v4l3 1 1 3h4l1-3 3-1V7l-3-1-1-3ZM13 9a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z',

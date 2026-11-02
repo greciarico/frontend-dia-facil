@@ -32,6 +32,7 @@ const profileNavigation = load('utils/profile-navigation.ts');
 const activityUtils = load('utils/activities.ts');
 const tokens = load('theme/tokens.ts');
 const styling = { '@/context/device-access': { DeviceAccessProvider: 'DeviceProvider', useDeviceAccess: () => ({ status: 'unlinked', stage: 'ready' }) },
+  '@/context/carer-push': { CarerPushProvider: 'PushProvider' },
   '@/components/user/device-access-boundary': { DeviceAccessBoundary: 'DeviceBoundary' }, '@/theme/tokens': tokens, '@/theme/use-theme': { useAppTheme: () => tokens.themes.light },
   '@/utils/profile-navigation': profileNavigation,
   '@/components/carer/account-layout': { accountStyles: {} },
@@ -149,7 +150,7 @@ test('optional creation callback enables the button; profile access and future m
     '@/components/carer/profile-avatar': { ProfileAvatar: 'Avatar' } }).ProfileCard;
   assert.equal(card({ profile: profile(), surface: 'token' }).props.disabled, true);
   const navigation = load('constants/carer-navigation.ts').carerDestinations;
-  assert.deepEqual(navigation.filter(item => item.href).map(item => item.href), ['/perfiles', '/mi-perfil']);
+  assert.deepEqual(navigation.filter(item => item.href).map(item => item.href), ['/perfiles', '/notificaciones', '/mi-perfil']);
 });
 
 test('root routes only ready sessions to profiles and preserves immediate OTP/onboarding and restoration UI', () => {

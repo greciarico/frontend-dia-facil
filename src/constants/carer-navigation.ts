@@ -5,6 +5,6 @@ export type CarerDestination = { id: string; label: string; icon: 'profiles' | '
 export const carerDestinations: CarerDestination[] = [
   { id: 'profiles', label: 'Perfiles', icon: 'profiles', href: '/perfiles' },
   { id: 'support', label: 'Apoyo', icon: 'support' },
-  { id: 'notifications', label: 'Notificación', icon: 'bell' },
+  { id: 'notifications', label: 'Notificación', icon: 'bell', href: '/notificaciones' },
   { id: 'account', label: 'Mi perfil', icon: 'account', href: '/mi-perfil' },
 ];
