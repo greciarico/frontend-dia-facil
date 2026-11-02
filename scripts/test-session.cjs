@@ -120,7 +120,7 @@ test('private Axios retries a rejected GET only once and never retries 403 or an
   await assert.rejects(failure({ config: { ...config, _retried: false }, response: { status: 403 } }));
   assert.equal(refreshCalls, 1); assert.equal(replayCalls, 1);
   await assert.rejects(request({ ...config, url: 'https://other.invalid' }));
-  assert.equal(response({ status: 200 }).status, 200);
+  assert.equal(response({ status: 200, config }).status, 200);
 });
 
 test('access expiring during interrupted startup renews once without discarding a valid refresh', async () => {
@@ -279,4 +279,16 @@ test('private client retries opted-in POST only after renewable 401 and keeps sa
   }
   await assert.rejects(failure({ config, code: 'ECONNABORTED' }));
   assert.equal(renewals, 1); assert.equal(replays, 1);
+});
+
+
+test('push exit cleanup runs synchronously before session revocation without delaying offline logout', async () => {
+  const f = fixture({ revoke: async () => { throw new SessionFailure('network'); } });
+  await f.manager.establish(grant(), 'ready');
+  const before = f.manager.revision(), observed = [];
+  const off = f.manager.onExit(() => observed.push([f.manager.revision(), f.manager.getSnapshot().status]));
+  const logout = f.manager.logout(); assert.deepEqual(observed, [[before, 'authenticated']]);
+  assert.equal(f.manager.revision(), before + 1); await logout;
+  assert.equal(f.manager.getSnapshot().status, 'anonymous');
+  assert.deepEqual(JSON.parse(f.raw()).pendingRevocations, [grant().sesion.refreshToken]); off();
 });

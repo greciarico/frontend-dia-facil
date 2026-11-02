@@ -28,6 +28,8 @@ export class SessionManager {
   private pendingGrant: { grant: SessionGrant; stage: SessionSnapshot['stage']; skipped: boolean } | null = null;
   private pendingLogout = false;
   private listeners = new Set<() => void>();
+  private exitListeners = new Set<() => void>();
+  onExit(listener: () => void) { this.exitListeners.add(listener); return () => { this.exitListeners.delete(listener); }; }
   private snapshot: SessionSnapshot = { status: 'booting', caregiver: null, stage: 'ready', skippedAvatar: false };
   constructor(private readonly deps: Dependencies) {}
   getSnapshot = () => this.snapshot;
@@ -148,6 +150,8 @@ export class SessionManager {
     }
   }
   async logout() {
+    // Observers start cleanup with the current identity; never delay offline logout.
+    this.exitListeners.forEach(listener => { try { listener(); } catch { /* Cleanup is best effort. */ } });
     this.epoch++; this.pendingLogout = true;
     const unpersisted = this.pendingGrant?.grant.sesion.refreshToken;
     this.grant = null; this.pendingGrant = null;

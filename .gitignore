@@ -44,3 +44,17 @@ example
 # generated native folders
 /ios
 /android
+
+# Push setup: real Firebase client config and private service credentials
+/google-services.json
+/firebase-service-account*.json
+/credentials.json
+/credentials/
+/*firebase-adminsdk*.json
+/*service-account*.json
+
+# Private environment files; retain sanitized templates
+!.env.example
+!.env.*.example
+!*.example.env
+config.bat

@@ -22,6 +22,11 @@
           "backgroundColor": "#FFFFFF",
           "dark": {
             "backgroundColor": "#121116"
+          },
+          "android": {
+            "drawable": {
+              "icon": "./assets/splash/splashscreen_logo.xml"
+            }
           }
         }
       ],
@@ -37,11 +42,23 @@
           "recordAudioAndroid": false,
           "barcodeScannerEnabled": true
         }
-      ]
+      ],
+      "expo-build-properties"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "push": {
+        "enabled": false,
+        "androidChannelId": "diafacil-cuidador-v1"
+      },
+      "router": {},
+      "eas": {
+        "projectId": "1795613d-b14f-45f4-947a-96dabcbf71a0"
+      }
+    },
+    "owner": "jhonatanvasquez"
   }
 }

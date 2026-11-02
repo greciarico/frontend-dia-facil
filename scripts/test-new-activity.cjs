@@ -28,7 +28,7 @@ const draftUtils = load('utils/activity-draft.ts');
 const createUtils = load('utils/create-activity.ts', { './activity-draft': draftUtils,
   './activity-icon-options': load('utils/activity-icon-options.ts') });
 test('approved Desayunar template populates all five image references without any per-step lookup', () => {
-  const source = JSON.parse(fs.readFileSync(path.join(__dirname, '../../backend_dia_facil/src/main/resources/db/datos-base.json'), 'utf8'));
+  const source = JSON.parse(fs.readFileSync(path.join(__dirname, '../../backend-dia-facil/src/main/resources/db/datos-base.json'), 'utf8'));
   const template = source.plantillas[0];
   const byReference = new Map(source.pictogramas.map(p => [`arasaac:${p.idArasaac}`, p]));
   const response = { plantilla: { idPlantillaActividad: 90, nombre: template.nombre,
