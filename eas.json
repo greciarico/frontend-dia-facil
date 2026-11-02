@@ -1,0 +1,13 @@
+{
+  "build": {
+    "production": {
+      "environment": "production",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://52-6-141-216.sslip.io"
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    }
+  }
+}

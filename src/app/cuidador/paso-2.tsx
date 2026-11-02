@@ -117,7 +117,7 @@ function CodeScreen({ email, initialDeadline }: { email: string; initialDeadline
   const canResend = !locked && !resendBlocked && seconds === 0;
   return (
     <>
-      <View style={styles.page} importantForAccessibility={modal ? 'no-hide-descendants' : 'auto'}>
+      <View collapsable={false} style={styles.page} importantForAccessibility={modal ? 'no-hide-descendants' : 'auto'}>
         <AccountLayout step={2} hero={<>
           <Text accessibilityRole="header" style={[accountStyles.title, { color: colors.text.primary }]}>
             Verifica tu <Text style={{ color: colors.action.primary }}>correo</Text>
