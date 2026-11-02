@@ -11,7 +11,7 @@ function guide(reached=1,total=5,initial=false){return{fecha:'2026-10-24',zonaHo
 function completed(reached=5,total=5,mode='GUIADA'){const g=guide(reached,total,true);g.estado='COMPLETADA';g.modoFinalizacion=mode;if(reached===total)g.pasos.forEach(p=>p.completado=true);return g;}
 function fixture(){let remote=guide();const calls=[];const client={get:async(...args)=>{calls.push(['GET',...args]);return{data:remote};},post:async(...args)=>{calls.push(['POST',...args]);return{data:remote};},put:async(...args)=>{calls.push(['PUT',...args]);return{data:remote};}};
  const api=load('services/user-execution.ts',{'./device-access':{createUserHttpClient:()=>client},'./device-access-manager':{DeviceFailure},'@/utils/user-execution':utils});return{api,client,calls,set:v=>{remote=v;}};}
-const styling={'react/jsx-runtime':{jsx,jsxs:jsx},'react-native':{StyleSheet:{create:v=>v},View:'View',Text:'Text',Pressable:'Pressable',ScrollView:'Scroll',ActivityIndicator:'Spinner',FlatList:'List',useWindowDimensions:()=>({width:390,fontScale:1})},'@/theme/tokens':tokens,'@/theme/use-theme':{useAppTheme:()=>tokens.themes.light}};
+const styling={'react/jsx-runtime':{jsx,jsxs:jsx},'react-native':{StyleSheet:{create:v=>v},View:'View',Text:'Text',Pressable:'Pressable',ScrollView:'Scroll',ActivityIndicator:'Spinner',FlatList:'List',useWindowDimensions:()=>({width:390,fontScale:1})},'@/theme/tokens':tokens,'@/theme/use-theme':{useAppTheme:()=>tokens.themes.light},'@/components/user/help-request-dialog':{HelpRequestDialog:'HelpDialog'}};
 function nodes(n){if(Array.isArray(n))return n.flatMap(nodes);return n&&typeof n==='object'?[n,...nodes(n.props?.children)]:[];}
 function text(n){if(Array.isArray(n))return n.map(text).join('');return n&&typeof n==='object'?text(n.props?.children):n==null?'':String(n);}
 
@@ -84,6 +84,9 @@ test('guide screen uses step pictograms and exposes initial-guide next/final plu
   '@/hooks/use-user-guide':{useUserGuide:()=>query},'@/hooks/use-execution-action':{useExecutionAction:()=>({busy:false,blocked:false,run:(op,success)=>{operations.push({op,success});}})},
   '@/services/user-execution':ops,'@/utils/user-execution':utils,'@/utils/user-activity':activityUtils}).default;
  const render=()=>{cursor=0;return screen();};let tree=render();assert.equal(nodes(tree).filter(n=>n.type==='Pictogram').length,1);
+ const phone=nodes(tree).find(n=>n.props?.accessibilityLabel==='Pedir ayuda a mi cuidador');assert.ok(phone);phone.props.onPress();tree=render();
+ const help=nodes(tree).find(n=>n.type==='HelpDialog');assert.deepEqual(help.props.context,{idActividad:7,idEjecucion:3,idPasoActividad:1});
+ assert.equal(operations.length,0);assert.equal(nodes(tree).find(n=>n.type==='Steps').props.current,0);help.props.onClose();tree=render();
  let buttons=nodes(tree).filter(n=>n.type==='Button');assert.deepEqual(buttons.map(b=>b.props.label),['Siguiente paso']);buttons[0].props.onPress();assert.equal(operations[0].op.kind,'advance');assert.equal(operations[0].op.args[2],1);
  operations[0].success(guide(3));tree=render();nodes(tree).find(n=>n.type==='Steps').props.onSelect(1);tree=render();assert.equal(nodes(tree).find(n=>n.type==='Steps').props.current,0);
  model=guide(5);nodes(tree).find(n=>n.type==='Steps').props.onSelect(5);tree=render();assert.deepEqual(nodes(tree).filter(n=>n.type==='Button').map(b=>b.props.label),['Finalizar actividad']);

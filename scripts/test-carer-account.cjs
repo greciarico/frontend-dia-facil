@@ -109,7 +109,7 @@ test('Mi perfil shows real identity, opens accessibility information, and keeps 
   const h = harness(), paths = []; const caregiver = { idCuidador: 3, nombre: 'Nombre real', avatarId: 'person-01' };
   const Screen = load('app/(cuidador-autenticado)/(principal)/mi-perfil/index.tsx', { ...styling, react: h.react, 'expo-router': { router: { push: path => paths.push(path) } },
     'react-native': { ...rn, AccessibilityInfo: { setAccessibilityFocus() {} }, findNodeHandle: () => null },
-    '@/context/session': { useSession: () => ({ caregiver }) }, '@/components/carer/account-avatar': { AccountAvatar: 'Avatar' }, '@/components/carer/logout-dialog': { LogoutDialog: 'Logout' } }).default;
+    '@/context/carer-push': { useCarerPush: () => ({ status: 'unsupported' }) }, '@/components/carer/continue-button': { ContinueButton: 'Continue' }, '@/context/session': { useSession: () => ({ caregiver }) }, '@/components/carer/account-avatar': { AccountAvatar: 'Avatar' }, '@/components/carer/logout-dialog': { LogoutDialog: 'Logout' } }).default;
   const render = () => h.render(Screen); let tree = render(); const avatar = nodes(tree).find(n => n.type === 'Avatar');
   assert.equal(avatar.props.name, caregiver.nombre); assert.equal(avatar.props.avatarId, caregiver.avatarId);
   const buttons = nodes(tree).filter(n => n.type === 'Pressable'); assert.equal(buttons.length, 3);
@@ -148,14 +148,57 @@ test('logout dialog calls the existing manager once, cancellation has no effect 
   actions.props.onConfirm(); actions.props.onConfirm(); assert.equal(calls, 1); actions.props.onCancel(); assert.equal(closed, 1);
   h.unmount(); const before = h.changes(); d.resolve(); await tick(); assert.equal(h.changes(), before);
 });
-test('caregiver navigation selects Mi perfil for its settings and leaves Apoyo and Notificacion disabled', () => {
+test('caregiver navigation preserves Mi perfil, enables Notificacion and leaves caregiver Apoyo disabled', () => {
   const destinations = load('constants/carer-navigation.ts');
   const Navigation = load('components/carer/area-navigation.tsx', { ...styling,
     'expo-router': { usePathname: () => '/mi-perfil/accesibilidad', router: {} }, '@/constants/carer-navigation': destinations,
     '@/context/session': { useSession: () => ({ caregiver: {} }) }, '@/utils/profile-navigation': { isProfilesDestination: path => path.startsWith('/perfiles') },
     '@/components/bottom-navigation': { BottomNavigation: 'Navigation' }, './account-avatar': { AccountAvatar: 'Avatar' }, './area-icon': { AreaIcon: 'Icon' } }).AreaNavigation;
   const items = Navigation().props.items; assert.deepEqual(items.filter(i => i.selected).map(i => i.id), ['account']);
-  assert.equal(items.find(i => i.id === 'support').onPress, undefined); assert.equal(items.find(i => i.id === 'notifications').onPress, undefined);
+  assert.equal(items.find(i => i.id === 'support').onPress, undefined); assert.equal(typeof items.find(i => i.id === 'notifications').onPress, 'function');
+});
+
+test('Mi perfil notification switch reflects confirmed state and exposes activation, revocation and Android settings separately', () => {
+  const h = harness(), actions = [];
+  let state = { status: 'enabled', enabled: true, busy: false };
+  const Screen = load('app/(cuidador-autenticado)/(principal)/mi-perfil/index.tsx', { ...styling, react: h.react, 'expo-router': { router: { push() {} } },
+    'react-native': { ...rn, AccessibilityInfo: {}, findNodeHandle: () => null },
+    '@/context/session': { useSession: () => ({ caregiver: { nombre: 'Ana' } }) },
+    '@/context/carer-push': { useCarerPush: () => ({ ...state, activate: () => actions.push('on'), deactivate: () => actions.push('off'), settings: () => actions.push('settings'), refresh: () => actions.push('refresh') }) },
+    '@/components/carer/continue-button': { ContinueButton: 'Continue' }, '@/components/carer/account-avatar': { AccountAvatar: 'Avatar' }, '@/components/carer/logout-dialog': { LogoutDialog: 'Logout' },
+  }).default;
+  const render = () => h.render(Screen);
+  let tree = render(), toggle = nodes(tree).find(n => n.type === 'Switch');
+  assert.equal(toggle.props.accessibilityLabel, 'Notificaciones'); assert.equal(toggle.props.value, true);
+  toggle.props.onValueChange(false); assert.deepEqual(actions, ['off']);
+  state = { status: 'disabled', enabled: false, busy: false }; tree = render();
+  toggle = nodes(tree).find(n => n.type === 'Switch'); assert.equal(toggle.props.value, false); toggle.props.onValueChange(true);
+  assert.deepEqual(actions, ['off', 'on']);
+  state = { status: 'checking', enabled: true, busy: true }; toggle = nodes(render()).find(n => n.type === 'Switch');
+  assert.equal(toggle.props.disabled, true); toggle.props.onValueChange(false); assert.equal(actions.length, 2);
+  state = { status: 'denied', enabled: false, busy: false }; tree = render();
+  nodes(tree).find(n => n.type === 'Continue' && n.props.label === 'Abrir Ajustes').props.onPress(); assert.equal(actions.at(-1), 'settings');
+  state = { status: 'disable-pending', enabled: false, busy: false }; tree = render();
+  assert.ok(nodes(tree).some(n => n.type === 'Text' && String(n.props.children).includes('pendiente')));
+  nodes(tree).find(n => n.type === 'Continue' && n.props.label === 'Reintentar').props.onPress(); assert.equal(actions.at(-1), 'off');
+  assert.equal(nodes(tree).filter(n => n.type === 'Switch').length, 1); h.unmount();
+});
+
+test('notification highlight changes only its background and preserves help borders and read accessibility', () => {
+  const { NotificationCard } = load('components/carer/notification-card.tsx', { ...styling,
+    react: { useState: value => [value, () => {}] }, 'expo-image': { Image: 'Image' }, './area-icon': { AreaIcon: 'Icon' },
+    '@/constants/activity-icons': { resolveActivityIcon: () => null }, '@/utils/help-notifications': { notificationDate: value => value },
+  });
+  for (const tipo of ['AYUDA_GENERAL', 'AYUDA_CONTEXTUAL', 'ACTIVIDAD_COMPLETADA']) {
+    const item = { tipo, idNotificacion: 1, leida: false, titulo: 'Aviso', mensaje: 'Mensaje', fechaCreacion: 'today', codigoIcono: null };
+    const normal = NotificationCard({ item, busy: false, onPress() {} });
+    const highlighted = NotificationCard({ item, busy: false, highlighted: true, onPress() {} });
+    const before = flatten(normal.props.style({ pressed: false }));
+    const during = flatten(highlighted.props.style({ pressed: false }));
+    assert.equal(before.borderColor, during.borderColor); assert.equal(before.borderWidth, during.borderWidth);
+    assert.equal(normal.props.accessibilityLabel, highlighted.props.accessibilityLabel);
+    assert.notEqual(before.backgroundColor, during.backgroundColor);
+  }
 });
 
 function informationFixture(theme = tokens.themes.light) {
@@ -174,17 +217,17 @@ function informationFixture(theme = tokens.themes.light) {
   return { h, components, focus };
 }
 
-test('accessibility information distinguishes activity icons, step pictograms and the planned support feature', () => {
+test('accessibility information distinguishes activity icons, step pictograms and the integrated help feature', () => {
   const capabilities = informationData.accessibilityCapabilities;
   assert.deepEqual(capabilities.map(c => c.id), ['visual', 'steps', 'voice', 'text', 'contrast', 'help']);
-  assert.deepEqual(capabilities.filter(c => c.planned).map(c => c.id), ['help']);
+  assert.deepEqual(capabilities.filter(c => c.planned).map(c => c.id), []);
   assert.match(capabilities[0].description, /iconos.*actividades.*pictogramas.*pasos/);
   assert.match(capabilities[2].benefits.join(' '), /No incluye lectura de voz en el área del Cuidador/);
-  assert.match(capabilities[5].description, /prevista.*próximo incremento/);
-  assert.match(capabilities[5].benefits.join(' '), /todavía no están disponibles/);
+  assert.match(capabilities[5].description, /puede avisarte/);
+  assert.match(capabilities[5].benefits.join(' '), /notificaciones dentro de DiaFácil/);
   assert.equal(capabilities[5].title, 'Solicitar ayuda');
   assert.equal(capabilities[5].summary, 'Permite que la persona usuaria te avise cuando necesita ayuda durante una actividad.');
-  assert.match(capabilities[5].description, /Podrás saber en qué actividad y paso/);
+  assert.match(capabilities[5].description, /Puedes saber en qué actividad y paso/);
 });
 
 test('information preserves its hero, orders local media and editorial photo, suspends video for details and keeps six accessible dialogs', () => {
@@ -258,7 +301,7 @@ test('all six cards preserve the agenda family surfaces in high contrast, includ
       assert.equal(flatten(scene.props.style).backgroundColor, expected.hover);
       assert.equal(scene.props.children.props.active, index === 0);
       assert.equal(scene.props.children.props.animateText, index === 0);
-      if (index === 5) assert.ok(nodes(rendered).some(n => n.props?.children === 'Próximamente'));
+      assert.equal(nodes(rendered).some(n => n.props?.children === 'Próximamente'), card.props.capability.planned);
     }
     assert.equal(families.getActivityVisualFamily(0, theme.highContrast).light, families.getActivityVisualFamily(5, theme.highContrast).light);
   }

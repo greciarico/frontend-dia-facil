@@ -39,9 +39,9 @@ export const accessibilityCapabilities = [
   {
     id: 'help', title: 'Solicitar ayuda', category: 'Acompañamiento', icon: 'support',
     summary: 'Permite que la persona usuaria te avise cuando necesita ayuda durante una actividad.', headline: 'Acompañar cuando hace falta',
-    description: 'Esta función está prevista para un próximo incremento. La persona usuaria podrá avisarte cuando necesite ayuda. Podrás saber en qué actividad y paso necesita acompañamiento.',
-    benefits: ['La persona usuaria podrá solicitarte ayuda sin redactar mensajes.', 'Podrás conocer la actividad y el paso en los que necesita acompañamiento.', 'El envío de solicitudes y las notificaciones al cuidador todavía no están disponibles.'],
-    planned: true,
+    description: 'La persona usuaria puede avisarte cuando necesita ayuda. Puedes saber en qué actividad y paso necesita acompañamiento.',
+    benefits: ['La persona usuaria puede solicitarte ayuda sin redactar mensajes.', 'Puedes conocer la actividad y el paso en los que necesita acompañamiento.', 'Las solicitudes quedan disponibles en tus notificaciones dentro de DiaFácil.'],
+    planned: false,
   },
 ] as const;
 

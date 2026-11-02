@@ -68,7 +68,12 @@
       "router": {},
       "eas": {
         "projectId": "9625ba7e-e2ca-4f45-8ba6-f24f2abdb39e"
+      },
+      "push": {
+        "enabled": false,
+        "androidChannelId": "diafacil-cuidador-v1"
       }
-    }
+    },
+    "owner": "rico999"
   }
 }

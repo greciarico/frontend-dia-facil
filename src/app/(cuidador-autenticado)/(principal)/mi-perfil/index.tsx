@@ -1,17 +1,20 @@
 import { useRef, useState } from 'react';
 import { router } from 'expo-router';
-import { AccessibilityInfo, findNodeHandle, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, findNodeHandle, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { AppText } from '@/components/app-text';
 import { AccountAvatar } from '@/components/carer/account-avatar';
 import { AreaIcon } from '@/components/carer/area-icon';
 import { LogoutDialog } from '@/components/carer/logout-dialog';
 import { useSession } from '@/context/session';
+import { useCarerPush } from '@/context/carer-push';
+import { ContinueButton } from '@/components/carer/continue-button';
 import { useAppTheme } from '@/theme/use-theme';
 import { layout, radii, shadows, sizes, spacing, typography } from '@/theme/tokens';
 
 export default function MyAccountScreen() {
   const { caregiver } = useSession(), { colors } = useAppTheme();
   const [logout, setLogout] = useState(false), trigger = useRef<View>(null);
+  const push = useCarerPush();
   const name = caregiver?.nombre?.trim() || 'Nombre no disponible';
   return <ScrollView contentContainerStyle={styles.page}>
     <View style={styles.profile}>
@@ -36,6 +39,20 @@ export default function MyAccountScreen() {
         <AppText style={[styles.small, { color: colors.text.secondary }]}>Conoce cómo acompaña la app.</AppText></View>
       <AreaIcon name="chevron" color={colors.action.primary} />
     </Pressable>
+    {push.status !== 'unsupported' && <View style={[styles.card, { backgroundColor: colors.surface.elevated, borderColor: colors.border.decorative, shadowColor: colors.shadow }]}>
+      <View style={[styles.icon, { backgroundColor: colors.welcome.iconSurface }]}><AreaIcon name="bell" color={colors.action.primary} /></View>
+      <View style={styles.text}>
+        <AppText style={[styles.label, { color: colors.text.primary }]}>Notificaciones</AppText>
+        <AppText accessibilityLiveRegion="polite" style={[styles.small, { color: colors.text.secondary }]}>
+          {push.busy ? 'Actualizando avisos…' : push.status === 'disable-pending' ? 'Desactivación pendiente. Conéctate y reintenta.' : push.status === 'denied' ? 'Android bloquea los avisos. Puedes habilitarlos en Ajustes.' : push.status === 'error' ? 'No pudimos confirmar los avisos. Inténtalo de nuevo.' : push.enabled ? 'Recibir avisos en este dispositivo.' : 'Las notificaciones internas seguirán disponibles.'}
+        </AppText>
+        {push.status === 'denied' && <ContinueButton label="Abrir Ajustes" variant="secondary" onPress={push.settings} />}
+        {(push.status === 'error' || push.status === 'disable-pending') && <ContinueButton label="Reintentar" variant="secondary" onPress={push.status === 'disable-pending' ? push.deactivate : push.refresh} />}
+      </View>
+      <Switch accessibilityLabel="Notificaciones" accessibilityState={{ disabled: push.busy, busy: push.busy }}
+        disabled={push.busy} value={push.enabled} trackColor={{ true: colors.switch.on, false: colors.switch.off }} thumbColor={colors.switch.thumb}
+        onValueChange={enabled => { if (!push.busy) { if (enabled) push.activate(); else push.deactivate(); } }} />
+    </View>}
     <Pressable ref={trigger} accessibilityRole="button" accessibilityLabel="Cerrar sesión" onPress={() => setLogout(true)}
       style={[styles.card, { backgroundColor: colors.surface.elevated, borderColor: colors.border.decorative, shadowColor: colors.shadow }]}>
       <View style={[styles.icon, { backgroundColor: colors.destructive.surface }]}><AreaIcon name="logout" color={colors.destructive.default} /></View>

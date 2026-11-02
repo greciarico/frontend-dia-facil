@@ -43,6 +43,9 @@ export const deviceAccess = new DeviceAccessManager({
 });
 
 /** Usuario APIs receive the profile exclusively from the device principal. */
+export class HelpHttpError extends Error {
+  constructor(readonly status?: number, readonly code?: string, readonly retryAfter = 60) { super('No pudimos registrar la ayuda.'); }
+}
 export function createUserHttpClient() {
   const client = create({ baseURL: getApiUrl(), timeout: 20_000 });
   const revisions = new WeakMap<object, number>();
@@ -57,6 +60,15 @@ export function createUserHttpClient() {
   client.interceptors.response.use(response => response, async error => {
     if (isAxiosError(error) && error.response?.status === 401 && error.config
       && revisions.get(error.config) === deviceAccess.revision()) await deviceAccess.invalidate();
+    if (isAxiosError(error) && error.config?.url?.startsWith('/api/usuario/solicitudes-ayuda')) {
+      if (revisions.get(error.config) !== deviceAccess.revision()) throw new DeviceFailure('canceled');
+      const code = error.response?.data?.codigo;
+      const allowed = ['SOLICITUD_NO_ENCONTRADA', 'AYUDA_PREMATURA', 'SOLICITUD_INVALIDA', 'DIA_AGENDA_CAMBIADO', 'EJECUCION_NO_ENCONTRADA', 'ACCESO_DENEGADO'];
+      const raw = error.response?.headers?.['retry-after'];
+      const seconds = typeof raw === 'string' && /^\d+$/.test(raw) ? Number(raw) : 60;
+      throw new HelpHttpError(error.response?.status, allowed.includes(code) ? code : undefined,
+        Number.isSafeInteger(seconds) && seconds > 0 ? seconds : 60);
+    }
     return failure(error);
   });
   return client;

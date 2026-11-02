@@ -3,10 +3,22 @@
     "production": {
       "environment": "production",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://52-6-141-216.sslip.io"
+        "EXPO_PUBLIC_API_URL": "https://52-6-141-216.sslip.io",
+        "EXPO_PUBLIC_PUSH_ENABLED": "false"
       },
       "android": {
         "buildType": "apk"
+      }
+    },
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "environment": "development",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_PUSH_ENABLED": "false"
       }
     }
   }
