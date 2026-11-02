@@ -3,13 +3,22 @@
     "name": "diafacil",
     "slug": "diafacil",
     "version": "1.0.0",
+    "icon": "./assets/icon.png",
     "orientation": "portrait",
     "scheme": "diafacil",
     "userInterfaceStyle": "automatic",
     "ios": {},
     "android": {
       "softwareKeyboardLayoutMode": "resize",
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA"
+      ],
+      "package": "com.rico999.diafacil",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#EAE3F4"
+      }
     },
     "web": {
       "output": "static"
@@ -22,6 +31,11 @@
           "backgroundColor": "#FFFFFF",
           "dark": {
             "backgroundColor": "#121116"
+          },
+          "android": {
+            "drawable": {
+              "icon": "./assets/splash/transparent.xml"
+            }
           }
         }
       ],
@@ -49,6 +63,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "9625ba7e-e2ca-4f45-8ba6-f24f2abdb39e"
+      }
     }
   }
 }
