@@ -40,55 +40,44 @@ test('unknown codes never become paths, network requests or inherited object pro
     '/assets/activity-icons/bread.png', 'https://example.invalid/bread.png']) assert.equal(resolveActivityIcon(code), undefined);
 });
 
-test('historical SQL references remain consistent without becoming the initializer source', () => {
-  const catalog = sql.match(/-- BEGIN DIAFACIL_ACTIVITY_ICON_CATALOG([\s\S]*?)-- END DIAFACIL_ACTIVITY_ICON_CATALOG/)[1];
-  const rows = [...catalog.matchAll(/\('([^']+)', '([^']+)'\)/g)].map(m => [m[1], m[2]]);
-  assert.equal(rows.length, 52); assert.ok(rows.every(([code]) => codes.includes(code)));
+test('functional icon catalogue matches the historical incremental seed', () => {
   const incremental = read('backend_dia_facil/docs/sql/seed-iconos-actividad.sql');
   const pairs = [...incremental.split('INSERT INTO palabra_clave_icono_actividad')[0]
     .matchAll(/SELECT '([^']+)'(?: AS codigo)?, '([^']+)'(?: AS nombre)?/g)].map(m => [m[1], m[2]]);
-  assert.deepEqual(pairs, rows);
-  const freshWords = [...sql.match(/INSERT INTO palabra_clave_icono_actividad \([\s\S]*?;/)[0]
-    .matchAll(/WHERE codigo = '([^']+)'\), '([^']+)'/g)].map(m => [m[1], m[2]]);
-  const incrementalWords = [...incremental.split('INSERT INTO palabra_clave_icono_actividad')[1]
-    .matchAll(/SELECT '([^']+)'(?: AS codigo)?, '([^']+)'(?: AS palabra)?/g)].map(m => [m[1], m[2]]);
-  assert.deepEqual(incrementalWords, freshWords);
-  assert.ok(rows.every(([code, name]) => code.length <= 60 && name.trim() && name.length <= 80));
-  assert.ok(!catalog.includes('/assets/') && !catalog.includes('.png'));
+  assert.deepEqual(pairs, base.iconos.map(icon => [icon.codigo, icon.nombre]));
+  assert.ok(pairs.every(([code, name]) => code.length <= 60 && name.trim() && name.length <= 80));
+  assert.ok(!pairs.some(([code]) => code.includes('/') || code.includes('.png')));
 });
 
-test('only activity/template representative images switch to icons; step pictogram relations remain', () => {
-  for (const name of ['actividad', 'plantilla_actividad']) {
-    const ddl = table(name);
-    assert.ok(ddl.includes('id_icono_actividad INT NULL'));
-    assert.ok(ddl.includes('REFERENCES icono_actividad (id_icono_actividad)'));
-    assert.ok(ddl.includes('ON DELETE SET NULL')); assert.ok(!ddl.includes('id_pictograma'));
+test('current JPA separates activity icons from step pictograms while SQL v7 remains historical', () => {
+  const entity = name => read('backend_dia_facil/src/main/java/dia_facil/backend/persistence/entity/' + name + '.java');
+  for (const name of ['Actividad', 'PlantillaActividad']) {
+    assert.match(entity(name), /name\s*=\s*"id_icono_actividad"/);
+    assert.match(entity(name), /IconoActividad\s+iconoActividad/);
   }
-  for (const name of ['paso_actividad', 'plantilla_paso']) {
-    assert.ok(table(name).includes('REFERENCES pictograma (id_pictograma)'));
-    assert.ok(!table(name).includes('id_icono_actividad'));
+  for (const name of ['PasoActividad', 'PlantillaPaso']) {
+    assert.match(entity(name), /name\s*=\s*"id_pictograma"/);
+    assert.ok(!entity(name).includes('id_icono_actividad'));
   }
-  assert.ok(table('palabra_clave_actividad').includes('REFERENCES plantilla_actividad'));
-  assert.ok(table('palabra_clave_pictograma').includes('REFERENCES pictograma'));
-  assert.ok(table('palabra_clave_icono_actividad').includes('UNIQUE KEY uq_palabra_icono_actividad (id_icono_actividad, palabra)'));
+  // The original SQL snapshot predates the documented icon/ARASAAC transitions.
+  assert.ok(table('paso_actividad').includes('REFERENCES pictograma'));
+  assert.ok(table('plantilla_paso').includes('REFERENCES pictograma'));
 });
 
-test('Desayunar, all five ordered steps and action keywords survive the seed separation', () => {
-  const pictures = sql.match(/INSERT INTO pictograma \([\s\S]*?;/)[0];
+test('executable Desayunar data keeps approved ARASAAC IDs, order, instructions and keywords', () => {
   const expected = ['enjabonar las manos', 'poner la mesa', 'servir', 'comer', 'secar'];
-  const arasaacIds = [2443, 5549, 36965, 2349, 8688];
-  assert.deepEqual([...pictures.matchAll(/\('([^']+)',/g)].map(m => m[1]), expected);
-  const template = sql.match(/INSERT INTO plantilla_actividad \([\s\S]*?;/)[0];
-  assert.ok(template.includes("'Desayunar'")); assert.ok(template.includes("WHERE codigo = 'bread'"));
-  const steps = sql.match(/INSERT INTO plantilla_paso \([\s\S]*?;/)[0];
-  const rows = [...steps.matchAll(/WHERE id_arasaac = (\d+)\s*\)\s*,\s*(\d+)\s*,\s*'([^']+)'/g)].map(m => [Number(m[1]), Number(m[2]), m[3]]);
-  assert.deepEqual(rows, arasaacIds.map((id, index) => [id, index + 1,
-    ['Lávate las manos', 'Prepara la mesa', 'Sirve la comida', 'Come', 'Limpia y recoge'][index]]));
-  const actionWords = sql.match(/INSERT INTO palabra_clave_pictograma \([\s\S]*?;/)[0];
-  for (const id of arasaacIds) assert.ok(actionWords.includes(`WHERE id_arasaac = ${id}`));
-  for (const name of ['Pan', 'Libros', 'Almuerzo', 'Caminar', 'Dormir']) assert.ok(!actionWords.includes(`WHERE nombre = '${name}'`));
-  const templateWords = sql.match(/INSERT INTO palabra_clave_actividad \([\s\S]*?;/)[0];
-  for (const word of ['desayuno', 'desayunar', 'desayunando']) assert.ok(templateWords.includes(`'${word}'`));
-  const iconWords = sql.match(/INSERT INTO palabra_clave_icono_actividad \([\s\S]*?;/)[0];
-  for (const word of ['cenar', 'cena', 'colegio', 'descansar', 'desayunar']) assert.ok(iconWords.includes(`'${word}'`));
+  const ids = [2443, 5549, 36965, 2349, 8688];
+  assert.deepEqual(ids.map(id => base.pictogramas.find(p => p.idArasaac === id)?.nombre), expected);
+  const templatePictogramIds = ids.filter(id => base.pictogramas.some(p => p.idArasaac === id));
+  assert.deepEqual(templatePictogramIds, ids);
+  const template = base.plantillas.find(p => p.nombre === 'Desayunar');
+  assert.ok(template); assert.equal(template.icono, 'bread');
+  assert.deepEqual(template.pasos.map(p => p.orden), [1, 2, 3, 4, 5]);
+  assert.deepEqual(template.pasos.map(p => p.pictograma), ids.map(id => 'arasaac:' + id));
+  assert.deepEqual(template.pasos.map(p => p.descripcion), ['L\u00e1vate las manos', 'Prepara la mesa', 'Sirve la comida', 'Come', 'Limpia y recoge']);
+  assert.deepEqual(template.palabras, ['desayuno', 'desayunar', 'desayunando']);
+  assert.ok(ids.every(id => {
+    const pictogram = base.pictogramas.find(p => p.idArasaac === id);
+    return pictogram.palabras.length > 0 && pictogram.palabras.every(w => w.trim());
+  }));
 });

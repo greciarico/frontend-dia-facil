@@ -1,4 +1,4 @@
-﻿const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),test=require('node:test'),ts=require('typescript');
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),test=require('node:test'),ts=require('typescript');
 const jsx=(type,props)=>({type,props});
 function load(file,modules={}){const out={};new Function('require','exports',ts.transpileModule(fs.readFileSync(path.join(__dirname,'../src',file),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText)(id=>{if(id==='@/components/app-text')return {AppText:'Text'};if(id==='@/theme/profile-appearance')return modules[id]||{useProfileAppearance:()=>null,useEffectiveFontScale:()=>modules['react-native']?.useWindowDimensions?.().fontScale??1};if(id.startsWith('@/assets/'))return id;assert.ok(id in modules,'Missing adapter '+id);return modules[id];},out);return out;}
 const tokens=load('theme/tokens.ts'), avatars=load('constants/carer-avatars.ts'),profiles=load('utils/profiles.ts',{'@/constants/carer-avatars':avatars});
@@ -27,12 +27,13 @@ test('agenda transport only calls the Usuario private endpoint, passes cancellat
  assert.deepEqual(calls,[['/api/usuario/agenda',{signal:controller.signal}]]);fail=true;await assert.rejects(api.getUserAgenda(controller.signal));
 });
 
-test('user navigation contains only Agenda and disabled Apoyo and shares caregiver visual primitives',()=>{
+test('user navigation enables Agenda and Apoyo with the current route selected',()=>{
  const bottom=load('components/bottom-navigation.tsx',styling).BottomNavigation;let destination;
- const bar=load('components/user/area-navigation.tsx',{...styling,'expo-router':{router:{dismissTo:v=>{destination=v;}}},'@/components/bottom-navigation':{BottomNavigation:bottom},'@/components/carer/area-icon':{AreaIcon:'Icon'}}).UserAreaNavigation;
+ let pathname='/mi-agenda';const bar=load('components/user/area-navigation.tsx',{...styling,'expo-router':{usePathname:()=>pathname,router:{dismissTo:v=>{destination=v;},push:v=>{destination=v;}}},'@/components/bottom-navigation':{BottomNavigation:bottom},'@/components/carer/area-icon':{AreaIcon:'Icon'}}).UserAreaNavigation;
  const tree=bar();const tabs=nodes(tree.type(tree.props)).filter(n=>n.props?.accessibilityRole==='tab');
  assert.deepEqual(tabs.map(n=>n.props.accessibilityLabel),['Agenda','Apoyo']);assert.equal(tabs[0].props.accessibilityState.selected,true);
- assert.equal(tabs[1].props.disabled,true);assert.equal(tabs[1].props.onPress,undefined);tabs[0].props.onPress();assert.equal(destination,'/mi-agenda');
+ assert.equal(tabs[1].props.disabled,false);tabs[1].props.onPress();assert.equal(destination,'/apoyo');tabs[0].props.onPress();assert.equal(destination,'/mi-agenda');
+ pathname='/apoyo';const next=bar();const selected=nodes(next.type(next.props)).filter(n=>n.props?.accessibilityRole==='tab');assert.equal(selected[1].props.accessibilityState.selected,true);assert.equal(selected[0].props.accessibilityState.selected,false);
 });
 
 test('agenda card status is informative, with safe missing-icon fallback and no completion callback or checkbox',()=>{

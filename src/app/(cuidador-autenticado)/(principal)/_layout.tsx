@@ -11,6 +11,7 @@ export default function PrincipalLayout() {
   return <CarerAreaLayout title="Mis perfiles" showHeader={false}><Stack screenListeners={listeners} screenOptions={{ headerShown: true,
     header: () => <AreaHeader title="Mis perfiles" />, contentStyle: { backgroundColor: colors.background.primary } }}>
     <Stack.Screen name="perfiles" />
+    <Stack.Screen name="notificaciones" options={{ header: () => <AreaHeader title="Notificaciones" showNotifications={false} /> }} />
     <Stack.Screen name="mi-perfil" options={{ headerShown: false }} />
     <Stack.Screen name="perfiles/[idPerfilUsuario]" options={{ headerShown: false }} />
   </Stack></CarerAreaLayout>;

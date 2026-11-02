@@ -4,8 +4,8 @@ import { getApiUrl } from '@/config/env';
 import { sessionManager } from './session';
 import { SessionFailure } from './session-manager';
 
-type PrivateConfig = InternalAxiosRequestConfig & { _retried?: boolean; _access?: string; _epoch?: number; authReplaySafe?: boolean };
-export type PrivateRequestOptions = AxiosRequestConfig & { authReplaySafe?: boolean };
+type PrivateConfig = InternalAxiosRequestConfig & { _retried?: boolean; _access?: string; _epoch?: number; expectedRevision?: number; authReplaySafe?: boolean };
+export type PrivateRequestOptions = AxiosRequestConfig & { authReplaySafe?: boolean; expectedRevision?: number };
 /** Deliberately drops server detail, Axios config, headers and request/response bodies. */
 export class PrivateHttpError extends Error {
   constructor(readonly status?: number, readonly codigo?: string, readonly fields: string[] = []) {
@@ -31,13 +31,19 @@ export function getAuthenticatedHttpClient() {
     // Never attach credentials to an absolute URL supplied by a caller.
     if (!config.url?.startsWith('/') || config.url.startsWith('//')) throw new SessionFailure('invalid');
     config.baseURL = getApiUrl();
+    if (config.expectedRevision !== undefined && config.expectedRevision !== sessionManager.revision()) throw new SessionFailure('canceled');
     const access = await sessionManager.access();
+    if (config.expectedRevision !== undefined && config.expectedRevision !== sessionManager.revision()) throw new SessionFailure('canceled');
     config._access = access; config._epoch = sessionManager.revision();
     config.headers.set('Authorization', 'Bearer ' + access); return config;
   });
-  client.interceptors.response.use(response => response, async error => {
+  client.interceptors.response.use(response => {
+    const config = response.config as PrivateConfig;
+    if (config.expectedRevision !== undefined && config.expectedRevision !== sessionManager.revision()) throw new SessionFailure('canceled');
+    return response;
+  }, async error => {
     const config = error.config as PrivateConfig | undefined;
-    if (config && config._epoch !== sessionManager.revision()) throw new SessionFailure('canceled');
+    if (config && (config._epoch !== sessionManager.revision() || (config.expectedRevision !== undefined && config.expectedRevision !== sessionManager.revision()))) throw new SessionFailure('canceled');
     if (error.response?.status !== 401 || !config) throw safeHttpError(error);
     const renewable = error.response.data?.codigo === 'SESION_REQUIERE_RENOVACION';
     if (!renewable) await sessionManager.recoverRejected(config._access || '', false);

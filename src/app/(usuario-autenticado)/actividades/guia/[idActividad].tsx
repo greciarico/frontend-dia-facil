@@ -10,6 +10,8 @@ import { StepPictogramImage } from '@/components/carer/step-pictogram';
 import { GuideSteps } from '@/components/user/guide-steps';
 import { ExecutionSuccess } from '@/components/user/execution-success';
 import { ContentSpeechControl } from '@/components/user/content-speech-control';
+import { HelpRequestDialog } from '@/components/user/help-request-dialog';
+import type { HelpContext } from '@/utils/help-notifications';
 import { useContentSpeech } from '@/hooks/use-content-speech';
 import { stepSpeechMessage } from '@/services/step-speech';
 import { useUserGuide } from '@/hooks/use-user-guide';
@@ -24,6 +26,7 @@ export default function GuideScreen() {
   const params = useLocalSearchParams<{ idActividad?: string }>(), id = validActivityId(params.idActividad);
   const query = useUserGuide(id), action = useExecutionAction(), { colors } = useAppTheme(), { width } = useWindowDimensions();
   const [selected, setSelected] = useState<number>(), [confirm, setConfirm] = useState(false), [finished, setFinished] = useState<ExecutionFinished>();
+  const [help, setHelp] = useState<{ context: HelpContext; description: string }>(), [helpVisible, setHelpVisible] = useState(false);
   const back = () => router.dismissTo(id ? userActivityHref(id) : '/mi-agenda');
   const guide = query.state.status === 'ready' ? query.state.guide : undefined;
   const unavailable = query.state.status === 'unavailable' || guide?.estado === 'PENDIENTE';
@@ -42,7 +45,14 @@ export default function GuideScreen() {
     setConfirm(false); void action.run(finishGuideOperation(id, guide.idEjecucion, step.idPasoActividad, guide.fecha), setFinished, query.apply);
   };
   return <ScrollView style={{ backgroundColor: colors.background.primary }} contentContainerStyle={styles.page}>
-    <Pressable accessibilityRole="button" accessibilityLabel="Volver al detalle de la actividad" onPress={back} style={styles.back}><AreaIcon name="back" color={colors.text.primary} /></Pressable>
+    <View style={styles.header}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Volver al detalle de la actividad" onPress={back} style={styles.back}><AreaIcon name="back" color={colors.text.primary} /></Pressable>
+      {ready && !consultation && !dayChanged && !blocked && step && guide.idEjecucion && <Pressable accessibilityRole="button" accessibilityLabel="Pedir ayuda a mi cuidador"
+        style={styles.back} onPress={() => {
+          setHelp({ context: { idActividad: guide.actividad.idActividad, idEjecucion: guide.idEjecucion!, idPasoActividad: step.idPasoActividad },
+            description: `Tu cuidador sabrá que necesitas ayuda en el paso ${step.posicion} de ${guide.actividad.nombre}.` }); setHelpVisible(true);
+        }}><AreaIcon name="phone" color={colors.action.primary} /></Pressable>}
+    </View>
     {query.state.status === 'loading' ? <ActivityIndicator accessibilityLabel="Cargando pasos" color={colors.action.primary} />
       : !ready || dayChanged ? <View style={styles.message}>
         <Text accessibilityRole="alert" style={[styles.copy, { color: colors.text.primary }]}>{dayChanged ? 'Comenzó un nuevo día. Vuelve al detalle de la actividad.'
@@ -74,9 +84,12 @@ export default function GuideScreen() {
     {confirm && ready && !consultation && <ActivityDialog title={`¿Ya terminaste ${guide.actividad.nombre}?`} description="La actividad se marcará como completada sin recorrer los pasos restantes." centered showClose respectSafeArea onClose={() => setConfirm(false)}>
       <StepDialogActions label="Sí, finalizar" onCancel={() => setConfirm(false)} onConfirm={finish} disabled={action.busy} />
     </ActivityDialog>}
+    {help && <HelpRequestDialog key={`${help.context.idEjecucion}:${help.context.idPasoActividad}`} visible={helpVisible}
+      onClose={() => setHelpVisible(false)} context={help.context} description={help.description} />}
   </ScrollView>;
 }
 const styles = StyleSheet.create({
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   page: { flexGrow: 1, padding: spacing.xl, gap: spacing.lg, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' },
   back: { width: sizes.touchTarget, minHeight: sizes.touchTarget, alignItems: 'center', justifyContent: 'center' },
   title: { fontFamily: typography.family.bold, fontSize: typography.size['2xl'], lineHeight: typography.lineHeight['2xl'], textAlign: 'center' },

@@ -40,12 +40,12 @@ function contrast(a, b) {
 }
 test('profile contrast selects the existing dark readable palette regardless of system theme, without altering normal themes', () => {
   let scheme = 'light', preferences = null;
-  const { useAppTheme } = load('theme/use-theme.ts', { 'react-native': { useColorScheme: () => scheme }, './tokens': tokens,
+  const { useAppTheme: getTestTheme } = load('theme/use-theme.ts', { 'react-native': { useColorScheme: () => scheme }, './tokens': tokens,
     './profile-appearance': { useAppearance: () => preferences } });
-  assert.equal(useAppTheme(), tokens.themes.light);
+  assert.equal(getTestTheme(), tokens.themes.light);
   preferences = { ...initial, altoContraste: true };
   for (scheme of ['light', 'dark']) {
-    const theme = useAppTheme(), c = theme.colors;
+    const theme = getTestTheme(), c = theme.colors;
     assert.equal(theme.scheme, 'dark'); assert.equal(theme.highContrast, true);
     assert.equal(theme, tokens.highContrastTheme);
     assert.notEqual(c.surface.default, c.background.primary);
@@ -56,7 +56,7 @@ test('profile contrast selects the existing dark readable palette regardless of 
     assert.ok(contrast(c.action.primary, c.action.onPrimary) >= 7);
     assert.ok(contrast(c.border.control, c.surface.default) >= 3);
   }
-  preferences = null; assert.equal(useAppTheme(), tokens.themes.dark);
+  preferences = null; assert.equal(getTestTheme(), tokens.themes.dark);
 });
 const { AccessibilityEditor } = load('services/accessibility-editor.ts');
 test('autosave blocks duplicates, updates only chosen field and reset uses one operation', async () => {
