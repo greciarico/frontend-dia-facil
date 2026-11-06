@@ -54,7 +54,8 @@ example
 /*service-account*.json
 
 # Private environment files; retain sanitized templates
+.env
+.env.*
 !.env.example
 !.env.*.example
 !*.example.env
-config.bat
