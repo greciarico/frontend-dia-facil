@@ -75,3 +75,7 @@ aplican migraciones; se conservan cambios anteriores del workspace.
 5. Probar red fallida y Reintentar; IDs no disponibles deben mostrar feedback seguro.
 6. Con datos existentes en una BD de prueba, comprobar que no se muestra vacío y
    que perfiles ajenos/inactivos no pueden consultarse. No se sembraron esos datos.
+
+## Capacidad de la rutina (DF-08)
+
+El listado muestra el total activo antes de las tarjetas, incluido el estado vacío. A partir de diez se deshabilita el botón flotante. Las rutinas que ya superaban diez muestran todas sus actividades. El contador representa capacidad, independiente del progreso diario.

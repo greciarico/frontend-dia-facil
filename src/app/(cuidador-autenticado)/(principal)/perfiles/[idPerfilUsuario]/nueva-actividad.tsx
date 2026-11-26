@@ -21,7 +21,8 @@ import { ProfileAvatar } from '@/components/carer/profile-avatar';
 import { useActivityIcons } from '@/hooks/use-activity-icons';
 import { useActivityTemplate } from '@/hooks/use-activity-template';
 import { initialStepsDraft, stepsDraftReducer } from '@/utils/activity-draft';
-import { useProfileDetail } from '@/hooks/use-profile-detail';
+import { useProfileActivities } from '@/hooks/use-profile-activities';
+import { activeActivityLimitMessage, maximumActiveActivities } from '@/utils/activities';
 import { borders, layout, radii, shadows, sizes, spacing, typography } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';
 import { activityNameError, type ActivityIconOption } from '@/utils/activity-icon-options';
@@ -30,16 +31,17 @@ import { activitiesHref, validProfileId } from '@/utils/profile-navigation';
 export default function NewActivityScreen() {
   const params = useLocalSearchParams<{ idPerfilUsuario?: string }>();
   const id = validProfileId(params.idPerfilUsuario);
-  const { state, reload } = useProfileDetail(id);
+  const { state, reload } = useProfileActivities(id);
   const { colors } = useAppTheme();
   const profile = state.status === 'ready' ? state.profile : undefined;
+  const atLimit = state.status === 'ready' && state.data.actividades.length >= maximumActiveActivities;
   const [success, setSuccess] = useState<{ id: number; name: string; leaving?: boolean } | null>(null);
   const successHandled = useRef(false);
   const confirmed = success?.id === id ? success : null;
   const finishSuccess = (another: boolean) => {
     if (!confirmed || successHandled.current) return;
     successHandled.current = true;
-    if (another) setSuccess(null);
+    if (another) { void reload(); setSuccess(null); }
     else { setSuccess({ ...confirmed, leaving: true }); router.dismissTo(activitiesHref(confirmed.id)); }
   };
   const back = useCallback(() => router.dismissTo(id ? activitiesHref(id) : '/perfiles'), [id]);
@@ -54,13 +56,16 @@ export default function NewActivityScreen() {
       </View> : undefined} /> }} />
     <GestureHandlerRootView style={styles.flex}>
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        {confirmed ? <View style={styles.flex} /> : state.status === 'ready' ? <ActivityForm key={state.profile.idPerfilUsuario} id={state.profile.idPerfilUsuario}
+        {confirmed ? <View style={styles.flex} /> : state.status === 'ready' && !atLimit ? <ActivityForm key={state.profile.idPerfilUsuario} id={state.profile.idPerfilUsuario}
           onCreated={() => { Keyboard.dismiss(); successHandled.current = false; setSuccess({ id: state.profile.idPerfilUsuario, name: state.profile.nombre }); }} /> : <ScrollView contentContainerStyle={styles.content}><View style={styles.feedback}>
-          {state.status === 'loading' ? <View accessible accessibilityLabel="Cargando perfil" accessibilityState={{ busy: true }}>
+          {state.status === 'loading' ? <View accessible accessibilityLabel="Cargando actividades" accessibilityState={{ busy: true }}>
             <ActivityIndicator color={colors.action.primary} />
-          </View> : <>
+          </View> : atLimit ? <>
+            <Text style={[accountStyles.body, { color: colors.text.secondary }]}>{activeActivityLimitMessage}</Text>
+            <ContinueButton label="Ver actividades" onPress={back} />
+          </> : <>
             <Text accessibilityRole="alert" style={[accountStyles.body, { color: colors.text.secondary }]}>
-              {state.status === 'not-found' ? 'No pudimos encontrar los datos de esta persona.' : 'No pudimos cargar el perfil. Inténtalo de nuevo.'}
+              {state.status === 'not-found' ? 'No pudimos encontrar los datos de esta persona.' : 'No pudimos cargar las actividades. Inténtalo de nuevo.'}
             </Text>
             {state.status === 'error' && <ContinueButton label="Reintentar" onPress={() => void reload()} />}
             <ContinueButton label={carerPeopleCopy.back} onPress={() => router.dismissTo('/perfiles')} />
@@ -83,8 +88,9 @@ function ActivityForm({ id, onCreated }: { id: number; onCreated: () => void }) 
   const creation = useCreateActivity(id, onCreated);
   const [confirmRetry, setConfirmRetry] = useState(false);
   const invalid = activityInputError(name, time, icon, steps.steps);
+  const atLimit = creation.error?.kind === 'limit';
   const submit = () => {
-    if (invalid || steps.editing || creation.sending) return;
+    if (invalid || steps.editing || creation.sending || atLimit) return;
     void creation.submit(createActivityInput(name, time, icon, steps.steps));
   };
   const template = useActivityTemplate(name);
@@ -119,12 +125,12 @@ function ActivityForm({ id, onCreated }: { id: number; onCreated: () => void }) 
       busy={creation.sending} displayName={data.query} formHeader={header} formActions={<View style={styles.feedback}>
         {invalid && <Text style={[accountStyles.small, { color: colors.text.secondary }]}>{invalid}</Text>}
         {creation.error && <>
-          <Text accessibilityRole="alert" style={[accountStyles.small, { color: colors.status.error }]}>{creation.error.message}</Text>
+          <Text accessibilityRole="alert" style={[accountStyles.small, { color: atLimit ? colors.text.secondary : colors.status.error }]}>{creation.error.message}</Text>
           {(creation.error.kind === 'uncertain' || creation.error.kind === 'not-found') && <ContinueButton variant="secondary"
             label="Ver actividades" onPress={() => router.dismissTo(activitiesHref(id))} />}
         </>}
         <ContinueButton label="Crear actividad" loadingLabel="Creando actividad…" loading={creation.sending}
-          disabled={!!invalid || steps.editing || creation.error?.kind === 'not-found'}
+          disabled={!!invalid || atLimit || steps.editing || creation.error?.kind === 'not-found'}
           onPress={() => creation.error?.kind === 'uncertain' ? setConfirmRetry(true) : submit()} />
       </View>} />
     {confirmRetry && <ActivityDialog title="¿Volver a intentar?" showClose onClose={() => setConfirmRetry(false)}>

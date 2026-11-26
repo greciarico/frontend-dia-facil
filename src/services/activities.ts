@@ -1,12 +1,13 @@
 import { getAuthenticatedHttpClient, PrivateHttpError } from './private-http';
 import { maximumActivitySteps } from '@/utils/activity-draft';
-import { parseActivities } from '@/utils/activities';
+import { activeActivityLimitMessage, parseActivities } from '@/utils/activities';
 import type { ActivityInput } from '@/utils/create-activity';
 import type { PrivateRequestOptions } from './private-http';
 
 export class CreateActivityError extends Error {
-  constructor(readonly kind: 'validation' | 'step-count' | 'not-found' | 'icon' | 'pictogram' | 'conflict' | 'unavailable' | 'uncertain' | 'access') {
-    super(kind === 'validation' ? 'Revisa el nombre, la hora, el ícono y los pasos.'
+  constructor(readonly kind: 'limit' | 'validation' | 'step-count' | 'not-found' | 'icon' | 'pictogram' | 'conflict' | 'unavailable' | 'uncertain' | 'access') {
+    super(kind === 'limit' ? activeActivityLimitMessage
+      : kind === 'validation' ? 'Revisa el nombre, la hora, el ícono y los pasos.'
       : kind === 'step-count' ? `Agrega entre 1 y ${maximumActivitySteps} pasos.`
       : kind === 'not-found' ? 'No pudimos encontrar los datos de esta persona.'
       : kind === 'icon' ? 'Selecciona un ícono del catálogo.'
@@ -31,6 +32,7 @@ export async function createActivity(id: number, input: ActivityInput, signal?: 
       if (error.status === 400 && error.codigo === 'SOLICITUD_INVALIDA') throw new CreateActivityError(error.fields?.includes('pasos') ? 'step-count' : 'validation');
       if (error.status === 400 && error.codigo === 'ICONO_NO_ENCONTRADO') throw new CreateActivityError('icon');
       if (error.status === 400 && error.codigo === 'PICTOGRAMA_INVALIDO') throw new CreateActivityError('pictogram');
+      if (error.status === 409 && error.codigo === 'LIMITE_ACTIVIDADES_ALCANZADO') throw new CreateActivityError('limit');
       if (error.status === 409 && error.codigo === 'CONFLICTO_CREACION') throw new CreateActivityError('conflict');
       if (error.status === 503 && error.codigo === 'PICTOGRAMAS_NO_DISPONIBLES') throw new CreateActivityError('unavailable');
       if (error.status === 401 || error.status === 403) throw new CreateActivityError('access');

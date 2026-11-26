@@ -9,6 +9,7 @@ import { AreaHeader } from '@/components/carer/area-header';
 import { ContinueButton } from '@/components/carer/continue-button';
 import { activityFabSize, CreateActivityButton } from '@/components/carer/create-activity-button';
 import { ProfileAvatar } from '@/components/carer/profile-avatar';
+import { activeActivityLimitMessage, maximumActiveActivities } from '@/utils/activities';
 import { useProfileActivities } from '@/hooks/use-profile-activities';
 import { layout, sizes, spacing, typography } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';
@@ -20,6 +21,8 @@ export default function ProfileActivitiesScreen() {
   const { state, reload } = useProfileActivities(id);
   const { colors } = useAppTheme();
   const profile = state.status === 'ready' ? state.profile : undefined;
+  const count = state.status === 'ready' ? state.data.actividades.length : undefined;
+  const atLimit = count !== undefined && count >= maximumActiveActivities;
   function back() { router.dismissTo(id ? profileHref(id) : '/perfiles'); }
   return <>
     <Stack.Screen options={{ title: profile ? `Actividades de ${profile.nombre}` : 'Actividades',
@@ -28,13 +31,20 @@ export default function ProfileActivitiesScreen() {
         rightContent={profile ? <View accessible accessibilityLabel={`Avatar de ${profile.nombre}`}>
           <ProfileAvatar name={profile.nombre} avatar={profile.avatar} size={sizes.touchTarget - spacing.sm} />
         </View> : undefined} /> }} />
+    {count !== undefined && <View style={styles.capacity}>
+      <View style={styles.capacityRow}>
+        <Text accessibilityRole="header" style={[styles.capacityTitle, { color: colors.text.primary }]}>Rutina diaria</Text>
+        <Text style={[accountStyles.small, { color: colors.action.primary }]}>{`${count} de ${maximumActiveActivities} actividades`}</Text>
+      </View>
+      {atLimit && <Text style={[accountStyles.small, { color: colors.text.secondary }]}>{activeActivityLimitMessage}</Text>}
+    </View>}
     {state.status === 'ready' && state.data.actividades.length > 0 ? <View style={styles.listArea}>
       <FlatList data={state.data.actividades} keyExtractor={activity => String(activity.idActividad)}
         renderItem={({ item, index }) => <ActivitySummaryCard activity={item} index={index} />} showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.populatedContent} style={styles.list} />
       <View pointerEvents="box-none" style={styles.fabRail}>
         <View style={styles.fab}><CreateActivityButton floating id={state.profile.idPerfilUsuario}
-          onCreateActivity={profileId => router.push(newActivityHref(profileId))} /></View>
+          onCreateActivity={atLimit ? undefined : profileId => router.push(newActivityHref(profileId))} /></View>
       </View>
     </View> : <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
       {state.status === 'loading' ? <View style={styles.feedback} accessible accessibilityLabel="Cargando actividades" accessibilityState={{ busy: true }}>
@@ -44,7 +54,7 @@ export default function ProfileActivitiesScreen() {
         <Text accessibilityRole="header" style={[styles.title, { color: colors.text.primary }]}>Aún no hay actividades</Text>
         <Text style={[styles.description, { color: colors.text.secondary }]}>Agrega las actividades que formarán su rutina diaria</Text>
         <View style={styles.create}><CreateActivityButton id={state.profile.idPerfilUsuario}
-          onCreateActivity={profileId => router.push(newActivityHref(profileId))} /></View>
+          onCreateActivity={atLimit ? undefined : profileId => router.push(newActivityHref(profileId))} /></View>
       </View> : <View style={styles.feedback}>
         <Text accessibilityRole="alert" style={[accountStyles.body, styles.center, { color: colors.text.secondary }]}>
           {state.status === 'not-found' ? 'No pudimos encontrar los datos de esta persona.' : 'No pudimos cargar las actividades. Inténtalo de nuevo.'}
@@ -57,6 +67,9 @@ export default function ProfileActivitiesScreen() {
   </>;
 }
 const styles = StyleSheet.create({
+  capacity: { width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center', paddingHorizontal: spacing.xl, paddingTop: spacing.sm, gap: spacing.xs },
+  capacityRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: spacing.xs },
+  capacityTitle: { flexShrink: 1, fontFamily: typography.family.bold, fontSize: typography.size.md, lineHeight: typography.lineHeight.md },
   listArea: { flex: 1, width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center' },
   list: { flex: 1 },
   populatedContent: { width: '100%', maxWidth: layout.contentMaxWidth, alignSelf: 'center', padding: spacing.xl,

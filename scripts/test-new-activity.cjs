@@ -282,7 +282,8 @@ test('new screen loads real profile, routes back to activities and keeps invalid
     '@/components/carer/activity-steps-editor': { ActivityStepsEditor: 'Steps' },
     '@/components/carer/area-header': { AreaHeader: 'Header' }, '@/components/carer/continue-button': { ContinueButton: 'Button' },
     '@/components/carer/profile-avatar': { ProfileAvatar: 'Avatar' },
-    '@/hooks/use-profile-detail': { useProfileDetail: id => { assert.equal(id, 12); return { state, reload: () => retried++ }; } },
+    '@/utils/activities': load('utils/activities.ts'),
+    '@/hooks/use-profile-activities': { useProfileActivities: id => { assert.equal(id, 12); return { state: state.status === 'ready' ? {data:{actividades:[]}, ...state} : state, reload: () => retried++ }; } },
     '@/hooks/use-activity-icons': { useActivityIcons: () => ({ catalogue: { status: 'ready', icons: [bread] }, suggestions: { status: 'ready', icons: [] } }) },
     '@/hooks/use-activity-template': { useActivityTemplate: () => ({ state: { status: 'ready', template: null }, retry() {} }) },
   }).default;
@@ -326,6 +327,17 @@ test('new screen loads real profile, routes back to activities and keeps invalid
   nodes(tree).find(node=>node.type==='Actions').props.onCancel();
   assert.equal(nodes(render()).find(node=>node.type==='Input').props.value,'Leer');
   assert.equal(nodes(render()).find(node=>node.type==='Steps').props.draft.steps[0].descripcion,'Mi paso');
+  creation.error = { kind: 'limit', message: 'Alcanzaste el máximo de 10 actividades.' };
+  tree = render();
+  assert.ok(nodes(tree).some(node => node.props?.accessibilityRole === 'alert' && node.props.children === creation.error.message));
+  assert.equal(nodes(tree).find(node => node.props?.label === 'Crear actividad').props.disabled, true);
+  assert.equal(nodes(tree).find(node => node.type === 'Input').props.value, 'Leer');
+  assert.equal(nodes(tree).find(node => node.type === 'Steps').props.draft.steps[0].descripcion, 'Mi paso');
+  const available = state;
+  state = { ...state, data: { actividades: Array(10).fill({}) } };
+  assert.ok(text(screen()).includes(creation.error.message));
+  assert.ok(!nodes(screen()).some(node => node.type === form));
+  state = available;
   completed();assert.equal(navigations.length,0);
   tree=screen();let modal=nodes(tree).find(node=>node.type==='CreatedModal');
   assert.equal(modal.props.profileName,'Persona real');
@@ -916,7 +928,7 @@ test('creation service posts once, validates 201, and treats transport/5xx/malfo
   assert.equal((await api.createActivity(12,input,signal)).idActividad,27);
   assert.deepEqual(calls[0],['/api/perfiles/12/actividades',input,{signal,authReplaySafe:true}]);
   for(const [status,codigo,kind] of [[400,'SOLICITUD_INVALIDA','validation'],[400,'ICONO_NO_ENCONTRADO','icon'],
-    [400,'PICTOGRAMA_INVALIDO','pictogram'],[404,'PERFIL_NO_ENCONTRADO','not-found'],[409,'CONFLICTO_CREACION','conflict'],
+    [400,'PICTOGRAMA_INVALIDO','pictogram'],[404,'PERFIL_NO_ENCONTRADO','not-found'],[409,'CONFLICTO_CREACION','conflict'],[409,'LIMITE_ACTIVIDADES_ALCANZADO','limit'],
     [503,'PICTOGRAMAS_NO_DISPONIBLES','unavailable'],[500,'ERROR_INTERNO','uncertain'],[401,'SESION_INVALIDA','access']]) {
     failure=new HttpError(status,codigo);const before=calls.length;
     await assert.rejects(api.createActivity(12,input),e=>e.kind===kind);assert.equal(calls.length,before+1);

@@ -85,3 +85,7 @@ temas; tarjeta/texto conservan sus tokens semánticos. FlatList pasa el índice 
 ActivitySummaryCard, sin usar ID, persistir color ni cambiar orden. La futura
 agenda puede reutilizar directamente esa función sin implementar ese módulo ahora.
 Validación del ajuste: 103 pruebas frontend, TypeScript y lint correctos.
+
+## Capacidad de la rutina (DF-08)
+
+Nueva actividad comprueba la capacidad al entrar y al elegir «Crear otra». Si otra sesión llena la rutina mientras el formulario está abierto, el rechazo por límite conserva el borrador y bloquea otro envío.

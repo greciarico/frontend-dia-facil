@@ -517,11 +517,13 @@ test('activities screen shows the intentional empty state only after loading, no
     '@/components/carer/activities-empty-illustration': { ActivitiesEmptyIllustration: 'Illustration' },
     '@/components/carer/activity-summary-card': { ActivitySummaryCard: 'ActivityCard' },
     '@/components/carer/create-activity-button': { CreateActivityButton: 'CreateActivity', activityFabSize: 56 },
+    '@/utils/activities': activityUtils,
     '@/hooks/use-profile-activities': { useProfileActivities: id => { assert.equal(id, 12); return { state, reload: () => retries++ }; } },
   }).default;
   assert.ok(textOf(screen()).includes('Cargando actividades'));
   assert.ok(!textOf(screen()).includes('Aún no hay')); assert.ok(!nodes(screen()).some(node => node.type === 'CreateActivity'));
   state = { status: 'ready', profile: profile(12), data: { actividades: [] } };
+  assert.ok(textOf(screen()).includes('0 de 10 actividades'));
   assert.ok(textOf(screen()).includes('Aún no hay actividades'));
   assert.ok(textOf(screen()).includes('Agrega las actividades que formarán su rutina diaria'));
   assert.equal(nodes(screen()).find(node => node.type === 'CreateActivity').props.id, 12);
@@ -548,6 +550,15 @@ test('activities screen shows the intentional empty state only after loading, no
   assert.equal(many.props.data.length,12);assert.equal(many.props.data[11].idActividad,12);
   assert.equal(many.props.renderItem({item:many.props.data[11],index:11}).props.index,11);
   assert.equal(nodes(screen()).filter(node=>node.type==='CreateActivity').length,1);
+  assert.ok(textOf(screen()).includes('12 de 10 actividades'));
+  assert.ok(textOf(screen()).includes('Alcanzaste el máximo de 10 actividades.'));
+  assert.equal(nodes(screen()).find(node => node.type === 'CreateActivity').props.onCreateActivity, undefined);
+  for (const count of [3, 6, 10]) {
+    state = { ...state, data: { actividades: many.props.data.slice(0, count) } };
+    assert.ok(textOf(screen()).includes(`${count} de 10 actividades`));
+    assert.equal(typeof nodes(screen()).find(node => node.type === 'CreateActivity').props.onCreateActivity,
+      count === 10 ? 'undefined' : 'function');
+  }
   state = { status: 'error' };
   assert.ok(!textOf(screen()).includes('Aún no hay'));
   nodes(screen()).find(node => node.props?.label === 'Reintentar').props.onPress(); assert.equal(retries, 1);
