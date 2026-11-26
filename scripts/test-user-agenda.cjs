@@ -20,6 +20,14 @@ test('agenda contract preserves all real states, validates dates/time/zone and r
  assert.equal(utils.parseUserAgenda({...response(),actividades:[{...response().actividades[0],codigoIcono:'unknown-icon'}]}).actividades[0].codigoIcono,'unknown-icon');
 });
 
+test('agenda keeps the whole day when kept executions take the total above ten', () => {
+ const raw = response();
+ raw.actividades = Array.from({ length: 12 }, (_, i) => ({
+   ...raw.actividades[0], idActividad: i + 1, estado: i < 10 ? 'PENDIENTE' : 'COMPLETADA',
+ }));
+ assert.deepEqual(utils.parseUserAgenda(raw).actividades, raw.actividades);
+});
+
 test('agenda transport only calls the Usuario private endpoint, passes cancellation and never substitutes errors with an empty agenda',async()=>{
  const calls=[];let fail=false;
  const api=load('services/user-agenda.ts',{'./device-access':{createUserHttpClient:()=>({get:async(...args)=>{calls.push(args);if(fail)throw new Error('network');return {data:response()};}})},'@/utils/user-agenda':utils,'@/utils/user-activity':detailUtils});

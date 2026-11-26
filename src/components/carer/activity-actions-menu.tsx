@@ -11,8 +11,8 @@ export type ActivityMenuAnchor = { x: number; y: number; width: number; height: 
 const pointerHeight = spacing.md / 2;
 const pointerWidth = spacing.md;
 
-export function ActivityActionsMenu({ anchor, onClose, onEdit }: {
-  anchor: ActivityMenuAnchor; onClose: () => void; onEdit: () => void;
+export function ActivityActionsMenu({ anchor, onClose, onEdit, onDelete }: {
+  anchor: ActivityMenuAnchor; onClose: () => void; onEdit: () => void; onDelete: () => void;
 }) {
   const { colors } = useAppTheme();
   const window = useWindowDimensions();
@@ -54,6 +54,11 @@ export function ActivityActionsMenu({ anchor, onClose, onEdit }: {
             <AreaIcon name="pencil" color={colors.action.primary} />
             <AppText style={{ color: colors.text.primary, flexShrink: 1 }}>Editar actividad</AppText>
           </Pressable>
+          <Pressable accessibilityRole="button" onPress={onDelete}
+            style={[styles.item, styles.separator, { borderColor: colors.border.decorative }]}>
+            <AreaIcon name="trash" color={colors.destructive.default} />
+            <AppText style={{ color: colors.destructive.default, flexShrink: 1 }}>Eliminar actividad</AppText>
+          </Pressable>
         </ScrollView>
         <Svg width={pointerWidth} height={pointerHeight + borders.default} viewBox="0 0 12 7"
           accessible={false} pointerEvents="none" style={[styles.pointer, { right: pointerRight,
@@ -71,5 +76,6 @@ const styles = StyleSheet.create({
   menu: { position: 'absolute', borderWidth: borders.default, borderRadius: radii.control, elevation: shadows.card.elevation,
     shadowOffset: { width: 0, height: shadows.card.offsetY }, shadowRadius: shadows.card.radius, shadowOpacity: shadows.card.opacity },
   item: { minHeight: sizes.touchTarget, padding: spacing.md, alignItems: 'center', flexDirection: 'row', gap: spacing.sm },
+  separator: { borderTopWidth: borders.default },
   pointer: { position: 'absolute' },
 });

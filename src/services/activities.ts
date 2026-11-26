@@ -48,9 +48,10 @@ export class ActivitiesError extends Error {
   }
 }
 
-export async function getActivities(id: number, signal?: AbortSignal) {
+export async function getActivities(id: number, signal?: AbortSignal, expectedRevision?: number) {
   try {
-    const response = await getAuthenticatedHttpClient().get(`/api/perfiles/${id}/actividades`, { signal });
+    const options: PrivateRequestOptions = expectedRevision === undefined ? { signal } : { signal, expectedRevision };
+    const response = await getAuthenticatedHttpClient().get(`/api/perfiles/${id}/actividades`, options);
     if (response.status !== 200) throw new ActivitiesError('invalid-response');
     try { return parseActivities(response.data); }
     catch { throw new ActivitiesError('invalid-response'); }

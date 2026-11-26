@@ -511,9 +511,10 @@ test('activities service uses private GET with cancellation and never converts f
 
 test('activities screen shows the intentional empty state only after loading, not on failures or existing data', () => {
   let state = { status: 'loading' }; let retries = 0; const navigations = [];
-  let openMenu;
-  const screen = load('app/(cuidador-autenticado)/(principal)/perfiles/[idPerfilUsuario]/actividades.tsx', { ...styling,
-    react: { useState: () => [openMenu, value => { openMenu = value; }] },
+  const slots = []; let hookIndex = 0;
+  const render = load('app/(cuidador-autenticado)/(principal)/perfiles/[idPerfilUsuario]/actividades.tsx', { ...styling,
+    react: { useState: () => { const index = hookIndex++; return [slots[index], value => { slots[index] = value; }]; } },
+    '@/components/carer/delete-activity-dialog': { DeleteActivityDialog: 'DeleteActivityDialog' },
     '@/components/carer/activity-actions-menu': { ActivityActionsMenu: 'ActivityActionsMenu' },
     'expo-router': { Stack: { Screen: 'Screen' }, router: { dismissTo: href => navigations.push(href), push: href => navigations.push(href) }, useLocalSearchParams: () => ({ idPerfilUsuario: '12' }) },
     '@/components/carer/area-header': { AreaHeader: 'Header' }, '@/components/carer/profile-avatar': { ProfileAvatar: 'Avatar' },
@@ -521,8 +522,14 @@ test('activities screen shows the intentional empty state only after loading, no
     '@/components/carer/activity-summary-card': { ActivitySummaryCard: 'ActivityCard' },
     '@/components/carer/create-activity-button': { CreateActivityButton: 'CreateActivity', activityFabSize: 56 },
     '@/utils/activities': activityUtils,
-    '@/hooks/use-profile-activities': { useProfileActivities: id => { assert.equal(id, 12); return { state, reload: () => retries++ }; } },
+    '@/hooks/use-profile-activities': { useProfileActivities: id => {
+      assert.equal(id, 12);
+      return { state, reload: () => retries++, confirmRemoval: activityId => {
+        state = { ...state, data: { actividades: state.data.actividades.filter(activity => activity.idActividad !== activityId) } };
+      } };
+    } },
   }).default;
+  const screen = () => { hookIndex = 0; return render(); };
   assert.ok(textOf(screen()).includes('Cargando actividades'));
   assert.ok(!textOf(screen()).includes('Aún no hay')); assert.ok(!nodes(screen()).some(node => node.type === 'CreateActivity'));
   state = { status: 'ready', profile: profile(12), data: { actividades: [] } };
@@ -570,6 +577,20 @@ test('activities screen shows the intentional empty state only after loading, no
   assert.deepEqual(navigations.pop(), { pathname: '/perfiles/[idPerfilUsuario]/editar-actividad',
     params: { idPerfilUsuario: '12', idActividad: '12' } });
   assert.ok(!nodes(screen()).some(node => node.type === 'ActivityActionsMenu'));
+  row.props.onActions({ x: 10, y: 20 });
+  nodes(screen()).find(node => node.type === 'ActivityActionsMenu').props.onDelete();
+  const deletion = nodes(screen()).find(node => node.type === 'DeleteActivityDialog');
+  assert.equal(deletion.props.person, 'Persona real');
+  assert.ok(textOf(screen()).includes('10 de 10 actividades'));
+  deletion.props.onClose();
+  assert.ok(textOf(screen()).includes('10 de 10 actividades'));
+  const currentList = nodes(screen()).find(node => node.type === 'List');
+  currentList.props.renderItem({ item: currentList.props.data[0], index: 0 }).props.onActions({ x: 10, y: 20 });
+  nodes(screen()).find(node => node.type === 'ActivityActionsMenu').props.onDelete();
+  nodes(screen()).find(node => node.type === 'DeleteActivityDialog').props.onRemoved('Actividad eliminada.');
+  assert.ok(textOf(screen()).includes('9 de 10 actividades'));
+  assert.ok(textOf(screen()).includes('Actividad eliminada.'));
+  assert.equal(typeof nodes(screen()).find(node => node.type === 'CreateActivity').props.onCreateActivity, 'function');
   state = { status: 'error' };
   assert.ok(!textOf(screen()).includes('Aún no hay'));
   nodes(screen()).find(node => node.props?.label === 'Reintentar').props.onPress(); assert.equal(retries, 1);

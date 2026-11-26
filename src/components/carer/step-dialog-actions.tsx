@@ -3,16 +3,17 @@ import { layout, spacing } from '@/theme/tokens';
 import { ContinueButton } from './continue-button';
 import { useEffectiveFontScale } from '@/theme/profile-appearance';
 
-export function StepDialogActions({ label, onConfirm, onCancel, disabled = false, destructive = false, secondaryLabel = 'Cancelar', secondaryVariant }: {
+export function StepDialogActions({ label, onConfirm, onCancel, disabled = false, loading = false, loadingLabel, destructive = false, secondaryLabel = 'Cancelar', secondaryVariant }: {
   label: string; onConfirm: () => void; onCancel: () => void; disabled?: boolean; destructive?: boolean; secondaryLabel?: string;
+  loading?: boolean; loadingLabel?: string;
   secondaryVariant?: 'secondary' | 'destructive-outline';
 }) {
   const { width } = useWindowDimensions();
   const fontScale = useEffectiveFontScale();
   const stacked = width < layout.welcome.stackBelowWidth || fontScale > layout.welcome.stackAboveFontScale;
   return <View style={[styles.actions, stacked && styles.stacked]}>
-    <View style={[styles.action, stacked && styles.stackedAction]}><ContinueButton size="modal" label={secondaryLabel} variant={secondaryVariant ?? (destructive ? 'destructive-outline' : 'secondary')} onPress={onCancel} /></View>
-    <View style={[styles.action, stacked && styles.stackedAction]}><ContinueButton size="modal" label={label} variant={destructive ? 'destructive' : 'primary'} disabled={disabled} onPress={onConfirm} /></View>
+    <View style={[styles.action, stacked && styles.stackedAction]}><ContinueButton size="modal" label={secondaryLabel} disabled={loading} variant={secondaryVariant ?? (destructive ? 'destructive-outline' : 'secondary')} onPress={onCancel} /></View>
+    <View style={[styles.action, stacked && styles.stackedAction]}><ContinueButton size="modal" label={label} variant={destructive ? 'destructive' : 'primary'} disabled={disabled} loading={loading} loadingLabel={loadingLabel} onPress={onConfirm} /></View>
   </View>;
 }
 const styles = StyleSheet.create({

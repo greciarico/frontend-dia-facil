@@ -1,5 +1,6 @@
 import { carerPeopleCopy } from '@/constants/carer-people-copy';
 import { AppText as Text } from '@/components/app-text';
+import { DeleteActivityDialog } from '@/components/carer/delete-activity-dialog';
 import { useState } from 'react';
 import { ActivityActionsMenu, type ActivityMenuAnchor } from '@/components/carer/activity-actions-menu';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
@@ -20,12 +21,14 @@ import { newActivityHref, profileHref, validProfileId } from '@/utils/profile-na
 export default function ProfileActivitiesScreen() {
   const params = useLocalSearchParams<{ idPerfilUsuario?: string }>();
   const id = validProfileId(params.idPerfilUsuario);
-  const { state, reload } = useProfileActivities(id);
+  const { state, reload, confirmRemoval } = useProfileActivities(id);
   const { colors } = useAppTheme();
   const profile = state.status === 'ready' ? state.profile : undefined;
   const count = state.status === 'ready' ? state.data.actividades.length : undefined;
   const atLimit = count !== undefined && count >= maximumActiveActivities;
   const [menu, setMenu] = useState<{ id: number; anchor: ActivityMenuAnchor }>();
+  const [deletion, setDeletion] = useState<{ profileId: number; activityId: number; person: string }>();
+  const [feedback, setFeedback] = useState<{ profileId: number; message: string }>();
   function back() { router.dismissTo(id ? profileHref(id) : '/perfiles'); }
   return <>
     <Stack.Screen options={{ title: profile ? `Actividades de ${profile.nombre}` : 'Actividades',
@@ -41,6 +44,8 @@ export default function ProfileActivitiesScreen() {
       </View>
       {atLimit && <Text style={[accountStyles.small, { color: colors.text.secondary }]}>{activeActivityLimitMessage}</Text>}
     </View>}
+    {feedback && feedback.profileId === id && state.status === 'ready' && <Text accessibilityLiveRegion="polite"
+      style={[styles.capacity, accountStyles.small, { color: colors.text.secondary }]}>{feedback.message}</Text>}
     {state.status === 'ready' && state.data.actividades.length > 0 ? <View style={styles.listArea}>
       <FlatList data={state.data.actividades} keyExtractor={activity => String(activity.idActividad)}
         renderItem={({ item, index }) => <ActivitySummaryCard activity={item} index={index} actionsOpen={menu?.id === item.idActividad}
@@ -68,10 +73,20 @@ export default function ProfileActivitiesScreen() {
           onPress={state.status === 'not-found' ? () => router.dismissTo('/perfiles') : back} />
       </View>}
     </ScrollView>}
-    {menu && id && <ActivityActionsMenu anchor={menu.anchor} onClose={() => setMenu(undefined)} onEdit={() => {
+    {menu && id && <ActivityActionsMenu anchor={menu.anchor} onClose={() => setMenu(undefined)} onDelete={() => {
+      if (profile) setDeletion({ profileId: id, activityId: menu.id, person: profile.nombre });
+      setFeedback(undefined);
+      setMenu(undefined);
+    }} onEdit={() => {
       setMenu(undefined);
       router.push({ pathname: '/perfiles/[idPerfilUsuario]/editar-actividad' as const, params: { idPerfilUsuario: String(id), idActividad: String(menu.id) } });
     }} />}
+    {deletion && deletion.profileId === id && <DeleteActivityDialog {...deletion} onClose={() => setDeletion(undefined)}
+      onRemoved={message => {
+        confirmRemoval(deletion.activityId);
+        setDeletion(undefined);
+        setFeedback({ profileId: deletion.profileId, message });
+      }} />}
   </>;
 }
 const styles = StyleSheet.create({
