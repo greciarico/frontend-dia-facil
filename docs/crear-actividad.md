@@ -5,7 +5,7 @@ El formulario conserva su diseño y estado local; pasos sugeridos/manuales,
 selección múltiple, modales, ARASAAC y drag siguen siendo el borrador de B.
 
 Crear requiere nombre válido, hora, icono y al menos un paso válido, sin modal o
-drag activo. No se impone un máximo funcional de pasos. Sin sugerencias también
+drag activo. DF-07 admite de uno a siete pasos al guardar, tanto sugeridos como manuales. Los círculos solo seleccionan para eliminar. Sin sugerencias también
 puede crearse. El payload copia solo definición final, idArasaac opcional y el
 orden del array; nunca claves locales, nombres/URL del proveedor, selección o
 identidad de plantilla. Una selección legacy no se pierde silenciosamente: hay

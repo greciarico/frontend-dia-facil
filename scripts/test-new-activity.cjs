@@ -555,6 +555,22 @@ test('step editor requires confirmation to replace/remove, provides accessible o
   assert.equal(actions.slice(beforeDelete).filter(a => a.type === 'removeMany').length, 1);
   assert.equal(actions.slice(beforeDelete).filter(a => a.type === 'remove').length, 0);
   assert.equal(state.steps.length, 0); assert.ok(button('Agregar paso'));
+  const counter = () => nodes(render()).find(n => n.type === 'Heading').props.trailing.props.children;
+  assert.equal(counter(), '0 de 7 pasos');
+  suggestion = { status: 'ready', template: template(13, Array(8).fill('Paso sugerido')) };
+  assert.equal(button('Usar pasos sugeridos'), undefined);
+  assert.equal(counter(), '0 de 7 pasos');
+  assert.ok(text(render()).includes('La sugerencia supera el máximo de 7 pasos.'));
+  state = draftUtils.stepsDraftReducer(state, { type: 'apply', template: template(14, Array(7).fill('Paso sugerido')) });
+  assert.equal(counter(), '7 de 7 pasos');
+  assert.equal(button('Agregar paso').props.disabled, true);
+  assert.ok(text(render()).includes('Alcanzaste el máximo de 7 pasos.'));
+  select(1);
+  assert.equal(counter(), '7 de 7 pasos');
+  button('Eliminar paso').props.onPress(); button('Eliminar').props.onPress();
+  assert.equal(counter(), '6 de 7 pasos');
+  assert.equal(button('Agregar paso').props.disabled, false);
+  assert.ok(!text(render()).includes('Alcanzaste el máximo de 7 pasos.'));
   state = draftUtils.stepsDraftReducer(state, { type: 'apply', template: template(12) });
   const create = button('Crear actividad'); assert.equal(create.props.disabled, true); assert.equal(create.props.onPress, undefined);
   list = nodes(render()).find(n => n.type === 'DragList'); list.props.onDragBegin(0);
@@ -859,24 +875,42 @@ test('dialog retains default presentation and accessible focus/back, with option
   assert.equal(closed, 5);
 });
 
-test('creation serializes only final definition data, requires one step, and accepts many steps without a product maximum', () => {
+test('creation serializes only final definition data, requires one step, and accepts seven steps and rejects eight', () => {
   const step = { key: 'temporary-99', orden: 20, descripcion: 'Texto final', pictograma: pictogramFixture(), selected: true };
   assert.deepEqual(createUtils.createActivityInput(' Desayuno ', 7 * 60, bread, [step]), {
     nombre: 'Desayuno', hora: '07:00', codigoIcono: 'bread', pasos: [{ descripcion: 'Texto final', idArasaac: 123 }],
   });
   assert.equal(createUtils.createActivityInput('A', 0, bread, [{ ...step, pictograma: null }]).hora, '00:00');
-  assert.equal(createUtils.createActivityInput('A', 1439, bread, Array(1000).fill(step)).pasos.length, 1000);
+  assert.equal(createUtils.createActivityInput('A', 1439, bread, Array(7).fill(step)).pasos.length, 7);
+  assert.throws(() => createUtils.createActivityInput('A', 0, bread, Array(8).fill(step)), /máximo 7 pasos/);
   for (const args of [['',0,bread,[step]],['A',null,bread,[step]],['A',1440,bread,[step]],['A',0,null,[step]],
     ['A',0,bread,[]],['A',0,bread,[{...step,descripcion:' '}]],['A',0,bread,[{...step,pictograma:{idPictograma:2,nombre:'Legacy'}}]]]) {
     assert.ok(createUtils.activityInputError(...args)); assert.throws(() => createUtils.createActivityInput(...args));
   }
 });
 
+test('step capacity protects both template paths and reopens after removal', () => {
+  const { initialStepsDraft, stepsDraftReducer: reduce } = draftUtils;
+  const step = { orden: 1, descripcion: 'Paso', pictograma: null };
+  const template = { idPlantillaActividad: 1, nombre: 'Rutina', pasos: Array(7).fill(step) };
+  const full = reduce(initialStepsDraft, { type: 'suggest', template });
+  assert.equal(full.steps.length, 7);
+  const longTemplate = { ...template, pasos: [...template.pasos, step] };
+  assert.equal(reduce(initialStepsDraft, { type: 'suggest', template: longTemplate }), initialStepsDraft);
+  assert.equal(reduce(full, { type: 'apply', template: longTemplate }), full);
+  const add = { type: 'save', description: 'Paso nuevo' };
+  assert.equal(reduce(full, add), full);
+  const key = full.steps[0].key;
+  assert.equal(reduce(full, { ...add, key }).steps.length, 7);
+  assert.equal(reduce(full, { type: 'move', key, direction: 1 }).steps.length, 7);
+  assert.equal(reduce(reduce(full, { type: 'removeMany', keys: [key] }), add).steps.length, 7);
+});
+
 test('creation service posts once, validates 201, and treats transport/5xx/malformed success as uncertain', async () => {
   class HttpError extends Error { constructor(status,codigo){super('safe');this.status=status;this.codigo=codigo;} }
   const input=createUtils.createActivityInput('A',0,bread,[{key:'one',orden:1,descripcion:'Paso',pictograma:null}]);
   let calls=[];let failure;let response={status:201,data:{idActividad:27,nombre:'A',hora:'00:00',codigoIcono:'bread'}};
-  const api=load('services/activities.ts',{'./private-http':{PrivateHttpError:HttpError,getAuthenticatedHttpClient:()=>({
+  const api=load('services/activities.ts',{'@/utils/activity-draft':draftUtils,'./private-http':{PrivateHttpError:HttpError,getAuthenticatedHttpClient:()=>({
     post:async(...args)=>{calls.push(args);if(failure)throw failure;return response;}})},'@/utils/activities':load('utils/activities.ts')});
   const signal=new AbortController().signal;
   assert.equal((await api.createActivity(12,input,signal)).idActividad,27);
@@ -887,6 +921,8 @@ test('creation service posts once, validates 201, and treats transport/5xx/malfo
     failure=new HttpError(status,codigo);const before=calls.length;
     await assert.rejects(api.createActivity(12,input),e=>e.kind===kind);assert.equal(calls.length,before+1);
   }
+  failure = Object.assign(new HttpError(400, 'SOLICITUD_INVALIDA'), {fields:['pasos']});
+  await assert.rejects(api.createActivity(12,input), e => e.kind === 'step-count' && e.message === 'Agrega entre 1 y 7 pasos.');
   failure=new Error('private body');await assert.rejects(api.createActivity(12,input),e=>e.kind==='uncertain'&&!e.message.includes('private'));
   failure=undefined;response={status:201,data:{}};await assert.rejects(api.createActivity(12,input),e=>e.kind==='uncertain');
   response={status:200,data:{}};await assert.rejects(api.createActivity(12,input),e=>e.kind==='uncertain');

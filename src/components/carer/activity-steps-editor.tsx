@@ -6,7 +6,7 @@ import { AccessibilityInfo, ActivityIndicator, Keyboard, Pressable, StyleSheet, 
 import type { TemplateState } from '@/hooks/use-activity-template';
 import { borders, layout, radii, shadows, sizes, spacing } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';
-import { maximumStepOrder, stepSelectionReducer, stepsDraftReducer, stepsMatchTemplate, templateFingerprint, type ActivityTemplate, type DraftStep, type StepsDraft, type StepPictogram } from '@/utils/activity-draft';
+import { maximumActivitySteps, stepSelectionReducer, stepsDraftReducer, stepsMatchTemplate, templateFingerprint, type ActivityTemplate, type DraftStep, type StepsDraft, type StepPictogram } from '@/utils/activity-draft';
 import { accountStyles } from './account-layout';
 import { ActivityDialog } from './activity-dialog';
 import { AreaIcon } from './area-icon';
@@ -35,7 +35,11 @@ export function ActivityStepsEditor({ draft, dispatch, suggestion, retry, displa
     active.current = true;
     return () => { active.current = false; gesture.current = null; dispatch({ type: 'editing', open: false }); };
   }, [dispatch]));
-  const candidate = suggestion.status === 'ready' ? suggestion.template : null;
+  const proposed = suggestion.status === 'ready' ? suggestion.template : null;
+  const oversized = proposed !== null && proposed.pasos.length > maximumActivitySteps;
+  const candidate = oversized ? null : proposed;
+  const count = draft.steps.length;
+  const atLimit = count >= maximumActivitySteps;
   useEffect(() => {
     if (!busy && candidate && !draft.personalized && !draft.editing && draft.source !== templateFingerprint(candidate)) {
       dispatch({ type: 'suggest', template: candidate });
@@ -119,10 +123,21 @@ export function ActivityStepsEditor({ draft, dispatch, suggestion, retry, displa
         <View style={styles.formHeader} pointerEvents={busy ? 'none' : 'auto'} accessibilityElementsHidden={busy}
           importantForAccessibility={busy ? 'no-hide-descendants' : 'auto'}>{formHeader}</View>
         <View style={[frame, styles.top]}>
-          <ActivitySectionHeading icon="steps" title="Paso a paso" />
+          <ActivitySectionHeading icon="steps" title="Paso a paso" trailing={
+            <Text accessibilityLiveRegion="polite" style={[accountStyles.small, { color: colors.action.primary }]}>
+              {`${count} de ${maximumActivitySteps} pasos`}
+            </Text>} />
           <Text accessibilityLiveRegion="polite" style={[accountStyles.small, { color: colors.text.secondary }]}>
             {intact ? `Pasos sugeridos para “${displayName}”.` : 'Puedes editar, eliminar, cambiar de orden o agregar pasos.'}
           </Text>
+          <View accessible={false} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden
+            style={[styles.capacityTrack, { backgroundColor: colors.welcome.intro }]}>
+            <View style={[styles.capacityFill, { backgroundColor: colors.action.primary,
+              width: `${Math.min(count / maximumActivitySteps, 1) * 100}%` }]} />
+          </View>
+          {oversized && <Text style={[accountStyles.small, { color: colors.text.secondary }]}>
+            {`La sugerencia supera el máximo de ${maximumActivitySteps} pasos. Puedes agregar tus propios pasos.`}
+          </Text>}
     {suggestion.status === 'loading' && <View style={styles.status} accessibilityState={{ busy: true }}>
       <ActivityIndicator color={colors.action.primary} /><Text style={[accountStyles.small, { color: colors.text.secondary }]}>Buscando pasos sugeridos…</Text>
     </View>}
@@ -134,7 +149,7 @@ export function ActivityStepsEditor({ draft, dispatch, suggestion, retry, displa
     </View>}
     {canApply && <ActivitySecondaryAction label={`Usar pasos sugeridos para “${displayName}”`} icon="sparkles" disabled={dragging || busy}
       onPress={() => show({ kind: 'apply', template: candidate!, displayName })} />}
-    {draft.steps.length === 0 && suggestion.status !== 'loading' && <Text style={[accountStyles.small, { color: colors.text.secondary }]}>
+    {count === 0 && !oversized && suggestion.status !== 'loading' && <Text style={[accountStyles.small, { color: colors.text.secondary }]}>
       {candidate ? 'Puedes agregar tus propios pasos.' : 'Aún no hay pasos sugeridos. Agrega tus propios pasos.'}
     </Text>}
         </View>
@@ -143,8 +158,11 @@ export function ActivityStepsEditor({ draft, dispatch, suggestion, retry, displa
         <View style={[frame, styles.bottom]}>
           {selectedSteps.length ? <ActivitySecondaryAction label={selectedSteps.length === 1 ? 'Eliminar paso' : `Eliminar ${selectedSteps.length} pasos`}
             icon="trash" destructive disabled={dragging || busy} onPress={() => show({ kind: 'remove', keys: selectedSteps.map(stepKey) })} />
-            : <ActivitySecondaryAction label="Agregar paso" icon="plus" disabled={dragging || busy || draft.steps.length >= maximumStepOrder}
+            : <ActivitySecondaryAction label="Agregar paso" icon="plus" disabled={dragging || busy || atLimit}
               onPress={() => show({ kind: 'edit', text: '', touched: false, pictogram: null })} />}
+          {atLimit && <Text style={[accountStyles.small, styles.limit, { color: colors.text.secondary }]}>
+            {`Alcanzaste el máximo de ${maximumActivitySteps} pasos.`}
+          </Text>}
         </View>
         <View style={styles.create}>{formActions ?? <ContinueButton label="Crear actividad" disabled />}</View>
       </View>} />
@@ -176,6 +194,9 @@ const styles = StyleSheet.create({
   rowFrame: { paddingHorizontal: spacing['2xl'] },
   bottom: { padding: spacing['2xl'], paddingTop: spacing.md, borderBottomWidth: borders.default,
     borderBottomLeftRadius: radii.card, borderBottomRightRadius: radii.card },
+  capacityTrack: { height: spacing.xs, borderRadius: radii.control, overflow: 'hidden' },
+  capacityFill: { height: '100%', borderRadius: radii.control },
+  limit: { marginTop: spacing.sm, textAlign: 'center' },
   create: { marginTop: spacing.xl },
   status: { gap: spacing.md },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, borderBottomWidth: borders.default, minHeight: sizes.touchTarget },

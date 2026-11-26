@@ -23,7 +23,8 @@ export type ActivityTemplate = { idPlantillaActividad: number; nombre: string; p
 export type DraftStep = TemplateStep & { key: string };
 export type StepsDraft = { steps: DraftStep[]; personalized: boolean; source: string | null; nextKey: number; editing: boolean };
 export const initialStepsDraft: StepsDraft = { steps: [], personalized: false, source: null, nextKey: 1, editing: false };
-export const maximumStepOrder = 65535; // SMALLINT UNSIGNED, not a product limit.
+export const maximumActivitySteps = 7;
+const maximumStepOrder = 65535; // SMALLINT UNSIGNED, not a product limit.
 export function stepDescriptionError(value: string): string | undefined {
   if (!value.trim()) return 'Escribe qué debe hacer en este paso.';
   if (value.length > 120) return 'El paso debe tener como máximo 120 caracteres.';
@@ -62,7 +63,7 @@ export function stepsDraftReducer(state: StepsDraft, action: DraftAction): Steps
   if (action.type === 'editing') return state.editing === action.open ? state : { ...state, editing: action.open };
   if (action.type === 'suggest' || action.type === 'apply') {
     const template = action.template;
-    if (!template || (action.type === 'suggest' && (state.personalized || state.editing || state.source === templateFingerprint(template)))) return state;
+    if (!template || template.pasos.length > maximumActivitySteps || (action.type === 'suggest' && (state.personalized || state.editing || state.source === templateFingerprint(template)))) return state;
     let nextKey = state.nextKey;
     return { ...state, source: templateFingerprint(template), nextKey: nextKey + template.pasos.length,
       steps: template.pasos.map((step, index) => ({ ...step, pictograma: step.pictograma ? { ...step.pictograma } : null,
@@ -91,7 +92,7 @@ export function stepsDraftReducer(state: StepsDraft, action: DraftAction): Steps
       if (steps[index].descripcion === description && sameStepPictogram(steps[index].pictograma, pictograma)) return state;
       steps[index] = { ...steps[index], descripcion: description, pictograma: pictograma ? { ...pictograma } : null };
     } else {
-      if (steps.length >= maximumStepOrder) return state;
+      if (steps.length >= maximumActivitySteps) return state;
       steps.push({ key: `step-${state.nextKey}`, descripcion: description, orden: steps.length + 1,
         pictograma: action.pictograma ? { ...action.pictograma } : null });
       return { ...state, steps, nextKey: state.nextKey + 1, personalized: true };

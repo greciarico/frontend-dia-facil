@@ -1,5 +1,5 @@
 import { activityNameError, type ActivityIconOption } from './activity-icon-options';
-import { stepDescriptionError, type DraftStep } from './activity-draft';
+import { maximumActivitySteps, stepDescriptionError, type DraftStep } from './activity-draft';
 
 export type ActivityInput = { nombre: string; hora: string; codigoIcono: string;
   pasos: { descripcion: string; idArasaac: number | null }[] };
@@ -8,6 +8,7 @@ export function activityInputError(name: string, time: number | null, icon: Acti
   if (time === null || !Number.isInteger(time) || time < 0 || time >= 24 * 60) return 'Selecciona una hora.';
   if (!icon || !/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(icon.codigo) || icon.codigo.length > 60) return 'Selecciona un ícono.';
   if (!steps.length) return 'Agrega al menos un paso.';
+  if (steps.length > maximumActivitySteps) return `Una actividad puede tener como máximo ${maximumActivitySteps} pasos.`;
   for (const step of steps) {
     if (stepDescriptionError(step.descripcion)) return 'Revisa los pasos: cada uno necesita una descripción de hasta 120 caracteres.';
     if (step.pictograma && (step.pictograma.fuente !== 'ARASAAC' || !Number.isInteger(step.pictograma.idArasaac)

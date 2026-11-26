@@ -493,7 +493,7 @@ test('activity contract distinguishes empty and real summaries, rejects invalid 
 
 test('activities service uses private GET with cancellation and never converts failure into an empty list', async () => {
   let called; let response = { status: 200, data: { actividades: [] } }; let failure;
-  const api = load('services/activities.ts', { './private-http': { PrivateHttpError: HttpError,
+  const api = load('services/activities.ts', { '@/utils/activity-draft': load('utils/activity-draft.ts'), './private-http': { PrivateHttpError: HttpError,
     getAuthenticatedHttpClient: () => ({ get: async (...args) => { called = args; if (failure) throw failure; return response; } }) },
     '@/utils/activities': activityUtils });
   const signal = new AbortController().signal;
