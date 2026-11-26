@@ -1,5 +1,7 @@
 import { carerPeopleCopy } from '@/constants/carer-people-copy';
 import { AppText as Text } from '@/components/app-text';
+import { useState } from 'react';
+import { ActivityActionsMenu, type ActivityMenuAnchor } from '@/components/carer/activity-actions-menu';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, FlatList, ScrollView, StyleSheet, View } from 'react-native';
 import { accountStyles } from '@/components/carer/account-layout';
@@ -23,6 +25,7 @@ export default function ProfileActivitiesScreen() {
   const profile = state.status === 'ready' ? state.profile : undefined;
   const count = state.status === 'ready' ? state.data.actividades.length : undefined;
   const atLimit = count !== undefined && count >= maximumActiveActivities;
+  const [menu, setMenu] = useState<{ id: number; anchor: ActivityMenuAnchor }>();
   function back() { router.dismissTo(id ? profileHref(id) : '/perfiles'); }
   return <>
     <Stack.Screen options={{ title: profile ? `Actividades de ${profile.nombre}` : 'Actividades',
@@ -40,7 +43,8 @@ export default function ProfileActivitiesScreen() {
     </View>}
     {state.status === 'ready' && state.data.actividades.length > 0 ? <View style={styles.listArea}>
       <FlatList data={state.data.actividades} keyExtractor={activity => String(activity.idActividad)}
-        renderItem={({ item, index }) => <ActivitySummaryCard activity={item} index={index} />} showsVerticalScrollIndicator={false}
+        renderItem={({ item, index }) => <ActivitySummaryCard activity={item} index={index} actionsOpen={menu?.id === item.idActividad}
+          onActions={anchor => setMenu({ id: item.idActividad, anchor })} />} showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.populatedContent} style={styles.list} />
       <View pointerEvents="box-none" style={styles.fabRail}>
         <View style={styles.fab}><CreateActivityButton floating id={state.profile.idPerfilUsuario}
@@ -64,6 +68,10 @@ export default function ProfileActivitiesScreen() {
           onPress={state.status === 'not-found' ? () => router.dismissTo('/perfiles') : back} />
       </View>}
     </ScrollView>}
+    {menu && id && <ActivityActionsMenu anchor={menu.anchor} onClose={() => setMenu(undefined)} onEdit={() => {
+      setMenu(undefined);
+      router.push({ pathname: '/perfiles/[idPerfilUsuario]/editar-actividad' as const, params: { idPerfilUsuario: String(id), idActividad: String(menu.id) } });
+    }} />}
   </>;
 }
 const styles = StyleSheet.create({

@@ -37,7 +37,7 @@ test('user navigation enables Agenda and Apoyo with the current route selected',
 });
 
 test('agenda card status is informative, with safe missing-icon fallback and no completion callback or checkbox',()=>{
- const card=load('components/carer/activity-summary-card.tsx',{...styling,'react':{useState:v=>[v,()=>{}]},'expo-image':{Image:'Image'},
+ const card=load('components/carer/activity-summary-card.tsx',{...styling,'react':{useRef:v=>({current:v}),useState:v=>[v,()=>{}]},'expo-image':{Image:'Image'},
   '@/constants/activity-icons':{resolveActivityIcon:()=>null},'@/utils/activity-draft':{formatActivityTime:()=> '7:00 a.m.'},
   '@/utils/activity-icon-surface':{getActivityIconSurface:()=> 'surface'},'./account-layout':{accountStyles:{}},'./area-icon':{AreaIcon:'Icon'}}).ActivitySummaryCard;
  for(const status of ['pendiente','en progreso','completada']){
@@ -97,7 +97,7 @@ test('agenda palette cycles by position; integrated cards use family tokens and 
  const families=[tokens.colors.yellow,tokens.colors.green,tokens.colors.orange,tokens.colors.blue,tokens.colors.purple];
  let theme=tokens.themes.light;
  const card=load('components/carer/activity-summary-card.tsx',{...styling,'@/theme/use-theme':{useAppTheme:()=>theme},
-  react:{useState:v=>[v,()=>{}]},'expo-image':{Image:'Image'},'@/constants/activity-icons':{resolveActivityIcon:()=> 'local-3d'},
+  react:{useRef:v=>({current:v}),useState:v=>[v,()=>{}]},'expo-image':{Image:'Image'},'@/constants/activity-icons':{resolveActivityIcon:()=> 'local-3d'},
   '@/utils/activity-draft':{formatActivityTime:()=> '7:00 a.m.'},'@/utils/activity-icon-surface':surfaces,
   './account-layout':{accountStyles:{}},'./area-icon':{AreaIcon:'Icon'}}).ActivitySummaryCard;
  for(let index=0;index<10;index++){

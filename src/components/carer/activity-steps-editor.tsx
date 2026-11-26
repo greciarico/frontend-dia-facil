@@ -161,7 +161,7 @@ export function ActivityStepsEditor({ draft, dispatch, suggestion, retry, displa
             : <ActivitySecondaryAction label="Agregar paso" icon="plus" disabled={dragging || busy || atLimit}
               onPress={() => show({ kind: 'edit', text: '', touched: false, pictogram: null })} />}
           {atLimit && <Text style={[accountStyles.small, styles.limit, { color: colors.text.secondary }]}>
-            {`Alcanzaste el máximo de ${maximumActivitySteps} pasos.`}
+            {count > maximumActivitySteps ? `Reduce la actividad a ${maximumActivitySteps} pasos para guardar.` : `Alcanzaste el máximo de ${maximumActivitySteps} pasos.`}
           </Text>}
         </View>
         <View style={styles.create}>{formActions ?? <ContinueButton label="Crear actividad" disabled />}</View>

@@ -422,7 +422,7 @@ test('installed Expo router history removes confirmation and Android back resolv
   const area = manifest.children.find(route => route.route === '(cuidador-autenticado)').children.find(route => route.route === '(principal)');
   const profileNode = area.children.find(route => route.route === 'perfiles/[idPerfilUsuario]');
   assert.equal(area.initialRouteName, 'perfiles'); assert.equal(profileNode.initialRouteName, 'index');
-  assert.deepEqual(profileNode.children.map(route => route.route).sort(), ['actividades', 'ajustes', 'index', 'nueva-actividad', 'vincular-dispositivo']);
+  assert.deepEqual(profileNode.children.map(route => route.route).sort(), ['actividades', 'ajustes', 'editar-actividad', 'index', 'nueva-actividad', 'vincular-dispositivo']);
   const childRouter = StackRouter({ initialRouteName: principal.unstable_settings.anchor });
   const childOptions = { routeNames: ['perfiles', 'perfiles/[idPerfilUsuario]'], routeParamList: {}, routeGetIdList: {} };
   const parentRouter = StackRouter({ initialRouteName: '(principal)' });
@@ -511,7 +511,10 @@ test('activities service uses private GET with cancellation and never converts f
 
 test('activities screen shows the intentional empty state only after loading, not on failures or existing data', () => {
   let state = { status: 'loading' }; let retries = 0; const navigations = [];
+  let openMenu;
   const screen = load('app/(cuidador-autenticado)/(principal)/perfiles/[idPerfilUsuario]/actividades.tsx', { ...styling,
+    react: { useState: () => [openMenu, value => { openMenu = value; }] },
+    '@/components/carer/activity-actions-menu': { ActivityActionsMenu: 'ActivityActionsMenu' },
     'expo-router': { Stack: { Screen: 'Screen' }, router: { dismissTo: href => navigations.push(href), push: href => navigations.push(href) }, useLocalSearchParams: () => ({ idPerfilUsuario: '12' }) },
     '@/components/carer/area-header': { AreaHeader: 'Header' }, '@/components/carer/profile-avatar': { ProfileAvatar: 'Avatar' },
     '@/components/carer/activities-empty-illustration': { ActivitiesEmptyIllustration: 'Illustration' },
@@ -559,6 +562,14 @@ test('activities screen shows the intentional empty state only after loading, no
     assert.equal(typeof nodes(screen()).find(node => node.type === 'CreateActivity').props.onCreateActivity,
       count === 10 ? 'undefined' : 'function');
   }
+  const row = many.props.renderItem({ item: many.props.data[11], index: 11 });
+  assert.ok(!nodes(screen()).some(node => node.type === 'ActivityActionsMenu'));
+  row.props.onActions({ x: 10, y: 20 });
+  const menu = nodes(screen()).find(node => node.type === 'ActivityActionsMenu');
+  menu.props.onEdit();
+  assert.deepEqual(navigations.pop(), { pathname: '/perfiles/[idPerfilUsuario]/editar-actividad',
+    params: { idPerfilUsuario: '12', idActividad: '12' } });
+  assert.ok(!nodes(screen()).some(node => node.type === 'ActivityActionsMenu'));
   state = { status: 'error' };
   assert.ok(!textOf(screen()).includes('Aún no hay'));
   nodes(screen()).find(node => node.props?.label === 'Reintentar').props.onPress(); assert.equal(retries, 1);

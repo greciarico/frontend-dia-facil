@@ -328,7 +328,7 @@ const flatten = value => Object.assign({}, ...[value].flat(Infinity).filter(Bool
 test('dark activity cards retain all five positional families, original image rendering and readable completed states', () => {
   const surfaces = load('utils/activity-icon-surface.ts', { '@/theme/tokens': tokens });
   const Card = load('components/carer/activity-summary-card.tsx', {
-    react: { useState: value => [value, () => {}] }, 'react/jsx-runtime': { jsx, jsxs: jsx },
+    react: { useRef: value => ({ current: value }), useState: value => [value, () => {}] }, 'react/jsx-runtime': { jsx, jsxs: jsx },
     'react-native': { View: 'View', Pressable: 'Pressable', StyleSheet: { create: x => x } },
     'expo-image': { Image: 'Image' }, '@/components/app-text': { AppText: 'Text' }, '@/constants/activity-icons': { resolveActivityIcon: () => 'original-png' },
     '@/utils/activity-draft': { formatActivityTime: () => '7:00 a. m.' }, '@/utils/activity-icon-surface': surfaces,
@@ -420,6 +420,17 @@ test('detail reading stays content-sized and bounded in every text size/theme; c
   const normal = Control({ speech, label: 'Volver a escuchar este paso' });
   assert.equal(flatten(nodes(normal).find(n => n.type === 'Pressable').props.style).width, undefined);
 });
+test('activity actions draw a circle centered on the unchanged three-dot glyph', () => {
+  const Icon = load('components/carer/area-icon.tsx', { 'react/jsx-runtime': { jsx, jsxs: jsx },
+    'react-native-svg': { default: 'Svg', Circle: 'Circle', Path: 'Path' }, '@/theme/tokens': tokens }).AreaIcon;
+  const normal = Icon({ name: 'more', color: '#6552B7' });
+  const active = Icon({ name: 'more', color: '#6552B7', backdrop: { size: 36, color: '#F8F3FA' } });
+  assert.equal(active.props.viewBox, '-6 -6 36 36');
+  assert.deepEqual(nodes(active).find(n => n.type === 'Circle').props, { cx: 12, cy: 12, r: 18, fill: '#F8F3FA' });
+  assert.deepEqual(nodes(active).find(n => n.type === 'Path').props, nodes(normal).find(n => n.type === 'Path').props);
+  assert.ok(!nodes(normal).some(n => n.type === 'Circle'));
+});
+
 test('contrast icon fills one half, and the user navigation theme/status bar use the effective palette with inherited fonts', () => {
   const Icon = load('components/carer/area-icon.tsx', { 'react/jsx-runtime': { jsx, jsxs: jsx }, 'react-native-svg': { default: 'Svg', Path: 'Path' }, '@/theme/tokens': tokens }).AreaIcon;
   const icon = Icon({ name: 'contrast', color: '#6552B7' });

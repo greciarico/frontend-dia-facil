@@ -1,6 +1,6 @@
 import { AppText as Text } from '@/components/app-text';
 import { Image } from 'expo-image';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { resolveActivityIcon } from '@/constants/activity-icons';
 import type { ActivitySummary } from '@/utils/activities';
@@ -11,9 +11,12 @@ import { useAppTheme } from '@/theme/use-theme';
 import { accountStyles } from './account-layout';
 import { AreaIcon } from './area-icon';
 
-export function ActivitySummaryCard({ activity, index, status, appearance = 'summary', onPress }: {
+export function ActivitySummaryCard({ activity, index, status, appearance = 'summary', onPress, onActions, actionsOpen = false }: {
   activity: ActivitySummary; index: number; status?: 'pendiente' | 'en progreso' | 'completada'; appearance?: 'summary' | 'agenda'; onPress?: () => void;
+  onActions?: (anchor: { x: number; y: number; width: number; height: number; trigger: View }) => void;
+  actionsOpen?: boolean;
 }) {
+  const trigger = useRef<View>(null);
   const { colors, scheme, highContrast } = useAppTheme();
   const agenda = appearance === 'agenda';
   const family = agenda ? getActivityVisualFamily(index, highContrast) : undefined;
@@ -25,7 +28,7 @@ export function ActivitySummaryCard({ activity, index, status, appearance = 'sum
   const [hour, minute] = activity.hora.split(':').map(Number);
   const time = formatActivityTime(hour * 60 + minute);
   const Container = onPress ? Pressable : View;
-  return <Container accessible accessibilityLabel={`${activity.nombre}, ${time}${status ? `, ${status}` : ''}`}
+  return <Container accessible={!onActions} accessibilityLabel={onActions ? undefined : `${activity.nombre}, ${time}${status ? `, ${status}` : ''}`}
     accessibilityRole={onPress ? 'button' : undefined} accessibilityHint={onPress ? 'Ver detalle de la actividad.' : undefined} onPress={onPress}
     style={[styles.card, agenda && styles.agendaCard, { backgroundColor: familySurface ? family!.light : colors.surface.default,
       borderColor: border, shadowColor: colors.shadow }]}>
@@ -36,18 +39,29 @@ export function ActivitySummaryCard({ activity, index, status, appearance = 'sum
       {source && !failed ? <Image source={source} contentFit="contain" style={[styles.icon, agenda && styles.agendaIcon]} onError={() => setFailed(true)} />
         : <AreaIcon name="steps" color={colors.text.secondary} />}
     </View>
-    <View style={[styles.text, agenda && styles.agendaText]}>
+    <View accessible={onActions ? true : undefined} accessibilityLabel={onActions ? `${activity.nombre}, ${time}` : undefined} style={[styles.text, agenda && styles.agendaText]}>
       <Text style={[accountStyles.body, styles.name, { color: colors.text.primary }]}>{activity.nombre}</Text>
       <Text style={[accountStyles.small, styles.left, agenda && styles.agendaTime, { color: colors.text.secondary }]}>{time}</Text>
       {status === 'en progreso' && <Text style={[accountStyles.small, styles.left, { color: colors.text.secondary }]}>En progreso</Text>}
     </View>
+    {onActions && <Pressable ref={trigger} style={styles.actions} accessibilityRole="button"
+      accessibilityLabel={`Acciones de ${activity.nombre}`} accessibilityState={{ expanded: actionsOpen }} onPress={() => {
+        const node = trigger.current;
+        node?.measureInWindow((x, y, width, height) => onActions({ x, y, width, height, trigger: node }));
+      }}>
+      {({ pressed }) => <AreaIcon name="more" color={colors.action.primary}
+        backdrop={pressed || actionsOpen ? { size: actionCircleSize, color: colors.welcome.intro } : undefined} />}
+    </Pressable>}
     {status && <View accessible={false} importantForAccessibility="no-hide-descendants" style={[styles.state, agenda && styles.agendaState, {
       borderColor: status === 'completada' ? stateColor : highContrast ? colors.border.control : agenda ? colors.text.disabled : colors.border.control,
       backgroundColor: status === 'completada' ? highContrast || agenda ? stateColor : colors.status.successSurface : 'transparent',
     }]}>{status === 'completada' && <AreaIcon name="check" color={highContrast ? colors.action.onPrimary : agenda ? palette.background.primary : colors.status.success} size={sizes.iconSmall} />}</View>}
   </Container>;
 }
+const actionCircleSize = sizes.touchTarget - spacing.md;
+
 const styles = StyleSheet.create({
+  actions: { width: sizes.touchTarget, height: sizes.touchTarget, alignSelf: 'flex-start', alignItems: 'center', justifyContent: 'center' },
   state: { width: sizes.icon, height: sizes.icon, borderRadius: sizes.icon / 2, borderWidth: borders.selected, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   card: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, padding: spacing.lg, borderRadius: radii.card, borderWidth: borders.default,
     shadowOffset: { width: 0, height: shadows.card.offsetY }, shadowOpacity: shadows.card.opacity, shadowRadius: shadows.card.radius, elevation: shadows.card.elevation },

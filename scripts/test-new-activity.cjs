@@ -259,11 +259,11 @@ test('new screen loads real profile, routes back to activities and keeps invalid
     Keyboard: { dismiss() {} },
     KeyboardAvoidingView: 'Keyboard', ScrollView: 'Scroll', TextInput: 'Input', Platform: { OS: 'android' },
     BackHandler: { addEventListener: (_event, callback) => { hardware = callback; return { remove() {} }; } } };
-  const Screen = load('app/(cuidador-autenticado)/(principal)/perfiles/[idPerfilUsuario]/nueva-actividad.tsx', { ...styling,
+  const adapters = { ...styling,
     'react-native': native,
     'react-native-gesture-handler': { GestureHandlerRootView: 'GestureRoot' },
     react: { useCallback: fn => fn, useRef: initial => {const i=cursor++;if(!(i in values))values[i]={current:initial};return values[i];},
-      useState: initial => { const i = cursor++; const store=values; if (!(i in store)) store[i] = initial;
+      useState: initial => { const i = cursor++; const store=values; if (!(i in store)) store[i] = typeof initial === 'function' ? initial() : initial;
       return [store[i], value => { store[i] = value; }]; },
       useReducer: (reducer, initial) => { const i = cursor++; const store=values;if (!(i in store)) store[i] = initial;
         return [store[i], action => { store[i] = reducer(store[i], action); }]; } },
@@ -286,7 +286,11 @@ test('new screen loads real profile, routes back to activities and keeps invalid
     '@/hooks/use-profile-activities': { useProfileActivities: id => { assert.equal(id, 12); return { state: state.status === 'ready' ? {data:{actividades:[]}, ...state} : state, reload: () => retried++ }; } },
     '@/hooks/use-activity-icons': { useActivityIcons: () => ({ catalogue: { status: 'ready', icons: [bread] }, suggestions: { status: 'ready', icons: [] } }) },
     '@/hooks/use-activity-template': { useActivityTemplate: () => ({ state: { status: 'ready', template: null }, retry() {} }) },
-  }).default;
+  };
+  const editUtils = load('utils/activity-edit.ts', {'./activities': load('utils/activities.ts'), './activity-draft': draftUtils});
+  const forms = load('components/carer/activity-definition-form.tsx', {...adapters, '@/utils/activity-edit': editUtils});
+  const Screen = load('app/(cuidador-autenticado)/(principal)/perfiles/[idPerfilUsuario]/nueva-actividad.tsx',
+    {...adapters, '@/components/carer/activity-definition-form': forms}).default;
   const screen=()=>{cursor=0;values=parentValues;return Screen();};
   assert.ok(!nodes(screen()).some(node => node.type === 'Input'));
   state = { status: 'error' }; nodes(screen()).find(node => node.props?.label === 'Reintentar').props.onPress(); assert.equal(retried, 1);
@@ -297,7 +301,7 @@ test('new screen loads real profile, routes back to activities and keeps invalid
   assert.deepEqual(navigations.pop(), navigation.activitiesHref(12));
   const form = nodes(tree).find(node => typeof node.type === 'function').type;
   const formProps=nodes(tree).find(node=>node.type===form).props;
-  const render = () => { cursor = 0;values=formValues;return form(formProps); };
+  const render = () => { cursor = 0; values = formValues; return forms.ActivityDefinitionForm(form(formProps).props); };
   const headings = nodes(render()).filter(node => node.type === 'SectionHeading');
   assert.deepEqual(headings.map(node => [node.props.icon, node.props.title]), [['pencil', 'Nombre de la actividad'], ['clock', 'Hora'], ['imagePlus', 'Elige un ícono']]);
   const iconHeading = headings[2];
@@ -353,6 +357,31 @@ test('new screen loads real profile, routes back to activities and keeps invalid
   modal.props.onViewActivities();modal.props.onViewActivities();
   assert.equal(navigations.length,1);assert.deepEqual(navigations.pop(),navigation.activitiesHref(12));
   assert.ok(!nodes(screen()).some(node=>node.type==='CreatedModal'||node.type===form));
+
+  const initial = editUtils.parseEditableActivity({
+    idActividad: 7, revision: 2, nombre: 'Rutina guardada', hora: '18:15', codigoIcono: 'bread',
+    estadoHoy: 'EN_PROGRESO', pasos: Array.from({ length: 8 }, (_, index) => ({
+      idPasoActividad: index + 1, descripcion: 'Paso ' + (index + 1),
+      pictograma: index ? null : { idPictograma: 11, nombre: 'Imagen anterior' },
+    })),
+  }, 7);
+  const editingValues = [];
+  let editInput;
+  const renderEdit = () => {
+    cursor = 0; values = editingValues;
+    return forms.ActivityDefinitionForm({ initial, busy: false, actions: input => { editInput = input; } });
+  };
+  tree = renderEdit();
+  assert.equal(nodes(tree).find(node => node.type === 'Input').props.value, 'Rutina guardada');
+  assert.equal(nodes(tree).find(node => node.type === 'Time').props.value, 1095);
+  assert.equal(nodes(tree).find(node => node.type === 'Selector').props.value.codigo, 'bread');
+  assert.equal(nodes(tree).find(node => node.type === 'Steps').props.draft.personalized, true);
+  assert.equal(editInput, null);
+  nodes(tree).find(node => node.type === 'Steps').props.dispatch({ type: 'removeMany', keys: ['saved-8'] });
+  renderEdit();
+  assert.equal(editInput.pasos.length, 7);
+  assert.equal(editInput.pasos[0].conservarPictogramaDePaso, 1);
+  assert.equal(initial.pasos.length, 8);
 });
 
 const template = (id = 4, descriptions = ['Lávate las manos', 'Prepara la mesa']) => ({ idPlantillaActividad: id, nombre: 'Desayunar',
@@ -967,7 +996,7 @@ test('activity cards show real name/time and local icon fallback without complet
   const surfaces=load('utils/activity-icon-surface.ts',{'@/theme/tokens':tokens});
   const component=load('components/carer/activity-summary-card.tsx',{...styling,
     './account-layout':{accountStyles:{body:{textAlign:'center'},small:{}}},
-    react:{useState:initial=>[initial,()=>{}]},'@/constants/activity-icons':{resolveActivityIcon:code=>code==='bread'?'local-bread':undefined},
+    react:{useRef:initial=>({current:initial}),useState:initial=>[initial,()=>{}]},'@/constants/activity-icons':{resolveActivityIcon:code=>code==='bread'?'local-bread':undefined},
     '@/utils/activity-draft':draftUtils,'./area-icon':{AreaIcon:'Icon'},
     '@/utils/activity-icon-surface':surfaces,
   }).ActivitySummaryCard;
