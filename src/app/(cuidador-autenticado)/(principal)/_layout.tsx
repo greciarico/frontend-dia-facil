@@ -1,3 +1,4 @@
+import { carerPeopleCopy } from '@/constants/carer-people-copy';
 import { Stack } from 'expo-router';
 import { CarerAreaLayout } from '@/components/carer/area-layout';
 import { AreaHeader } from '@/components/carer/area-header';
@@ -8,8 +9,8 @@ export const unstable_settings = { anchor: 'perfiles' };
 
 export default function PrincipalLayout() {
   const { colors } = useAppTheme(), listeners = useCarerAccessibilityFocusListeners();
-  return <CarerAreaLayout title="Mis perfiles" showHeader={false}><Stack screenListeners={listeners} screenOptions={{ headerShown: true,
-    header: () => <AreaHeader title="Mis perfiles" />, contentStyle: { backgroundColor: colors.background.primary } }}>
+  return <CarerAreaLayout title={carerPeopleCopy.title} showHeader={false}><Stack screenListeners={listeners} screenOptions={{ headerShown: true,
+    header: () => <AreaHeader title={carerPeopleCopy.title} />, contentStyle: { backgroundColor: colors.background.primary } }}>
     <Stack.Screen name="perfiles" />
     <Stack.Screen name="notificaciones" options={{ header: () => <AreaHeader title="Notificaciones" showNotifications={false} /> }} />
     <Stack.Screen name="mi-perfil" options={{ headerShown: false }} />

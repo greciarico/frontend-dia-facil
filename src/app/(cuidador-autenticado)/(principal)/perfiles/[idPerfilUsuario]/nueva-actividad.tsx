@@ -1,3 +1,4 @@
+import { carerPeopleCopy } from '@/constants/carer-people-copy';
 import { AppTextInput as TextInput } from '@/components/app-text-input';
 import { AppText as Text } from '@/components/app-text';
 import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
@@ -59,10 +60,10 @@ export default function NewActivityScreen() {
             <ActivityIndicator color={colors.action.primary} />
           </View> : <>
             <Text accessibilityRole="alert" style={[accountStyles.body, { color: colors.text.secondary }]}>
-              {state.status === 'not-found' ? 'No pudimos encontrar este perfil.' : 'No pudimos cargar el perfil. Inténtalo de nuevo.'}
+              {state.status === 'not-found' ? 'No pudimos encontrar los datos de esta persona.' : 'No pudimos cargar el perfil. Inténtalo de nuevo.'}
             </Text>
             {state.status === 'error' && <ContinueButton label="Reintentar" onPress={() => void reload()} />}
-            <ContinueButton label="Volver a Mis perfiles" onPress={() => router.dismissTo('/perfiles')} />
+            <ContinueButton label={carerPeopleCopy.back} onPress={() => router.dismissTo('/perfiles')} />
           </>}
         </View></ScrollView>}
     </KeyboardAvoidingView>

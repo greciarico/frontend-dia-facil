@@ -27,10 +27,10 @@ export default function ProfileSettings() {
     </View>}
     {profile.state.status === 'error' && <View style={styles.feedback}>
       <Text accessibilityRole="alert" style={[styles.copy, { color: colors.text.primary }]}>No pudimos cargar los datos del perfil.</Text>
-      <ContinueButton label="Reintentar perfil" variant="secondary" onPress={() => void profile.reload()} />
+      <ContinueButton label="Reintentar" variant="secondary" onPress={() => void profile.reload()} />
     </View>}
     {state.status === 'loading' && <ActivityIndicator accessibilityLabel="Cargando ajustes" color={colors.action.primary} />}
-    {state.status === 'not-found' && <Text accessibilityRole="alert" style={[styles.copy, { color: colors.text.primary }]}>No pudimos encontrar este perfil.</Text>}
+    {state.status === 'not-found' && <Text accessibilityRole="alert" style={[styles.copy, { color: colors.text.primary }]}>No pudimos encontrar los datos de esta persona.</Text>}
     {!!state.message && <View style={styles.feedback}>
       <Text accessibilityRole="alert" style={[styles.copy, { color: colors.text.primary }]}>{state.message}</Text>
       <ContinueButton label="Consultar ajustes" variant="secondary" disabled={state.busy} onPress={() => void editor.load()} />

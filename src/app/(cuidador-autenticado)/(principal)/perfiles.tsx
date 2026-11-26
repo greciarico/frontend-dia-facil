@@ -17,11 +17,11 @@ export default function ProfilesScreen() {
   const { colors } = useAppTheme();
   const openCreation = () => router.push('/crear-perfil');
   const openProfile = (id: number) => router.push(profileHref(id));
-  if (state.status === 'loading') return <View style={styles.feedback} accessible accessibilityLabel="Cargando perfiles" accessibilityState={{ busy: true }}>
-    <ActivityIndicator color={colors.action.primary} /><Text style={[accountStyles.body, { color: colors.text.secondary }]}>Cargando perfiles…</Text>
+  if (state.status === 'loading') return <View style={styles.feedback} accessible accessibilityLabel="Cargando personas" accessibilityState={{ busy: true }}>
+    <ActivityIndicator color={colors.action.primary} /><Text style={[accountStyles.body, { color: colors.text.secondary }]}>Cargando personas…</Text>
   </View>;
   if (state.status === 'error') return <View style={styles.feedback}>
-    <Text accessibilityRole="alert" style={[accountStyles.body, { color: colors.text.secondary }]}>No pudimos cargar tus perfiles. Revisa tu conexión e inténtalo de nuevo.</Text>
+    <Text accessibilityRole="alert" style={[accountStyles.body, { color: colors.text.secondary }]}>No pudimos cargar la lista. Revisa tu conexión e inténtalo de nuevo.</Text>
     <ContinueButton label="Reintentar" onPress={() => void reload()} />
   </View>;
   const { perfiles, maximoPerfilesActivos: maximum } = state.data;
@@ -33,20 +33,20 @@ export default function ProfilesScreen() {
     <View style={styles.content}>
       {empty ? <>
         <Text accessibilityRole="header" style={[accountStyles.title, { color: colors.text.primary }]}>Aún no tienes{ '\n' }<Text style={{ color: colors.action.primary }}>usuarios</Text> a tu cargo</Text>
-        <Text style={[accountStyles.small, styles.center, { color: colors.text.secondary }]}>Crea el perfil de la persona a quien acompañarás. Podrás preparar sus actividades, personalizar su agenda y conectar sus dispositivos.</Text>
-        <View style={styles.action}><CreateProfileButton first onCreateProfile={openCreation} /></View>
+        <Text style={[accountStyles.small, styles.center, { color: colors.text.secondary }]}>Agrega a la primera persona que acompañas. Podrás preparar sus actividades, personalizar su agenda y conectar sus dispositivos.</Text>
+        <View style={styles.action}><CreateProfileButton onCreateProfile={openCreation} /></View>
         <View style={[styles.information, { backgroundColor: colors.profiles.information }]}>
           <View style={[styles.infoIcon, { backgroundColor: colors.background.purple }]}><AreaIcon name="info" color={colors.action.primary} /></View>
-          <View style={styles.infoText}><Text style={[accountStyles.small, { color: colors.text.primary }]}>¿Cuántos perfiles puedo crear?</Text>
-            <Text style={[accountStyles.small, { color: colors.text.secondary }]}>Puedes crear hasta {maximum} perfiles de usuarios a tu cargo.</Text></View>
+          <View style={styles.infoText}><Text style={[accountStyles.small, { color: colors.text.primary }]}>¿Cuántas personas puedo agregar?</Text>
+            <Text style={[accountStyles.small, { color: colors.text.secondary }]}>Puedes agregar hasta {maximum} personas.</Text></View>
         </View>
       </> : <>
-        <Text style={[accountStyles.body, { color: colors.text.secondary }]}>Personas que acompañas</Text>
+        <Text style={[accountStyles.body, { color: colors.text.secondary }]}>Organiza sus rutinas y acompaña su progreso.</Text>
         <View style={styles.list}>{perfiles.map((profile, index) => <ProfileCard key={profile.idPerfilUsuario} profile={profile}
           surface={colors.profiles.cards[index % colors.profiles.cards.length]} onOpenProfile={openProfile} />)}</View>
         {perfiles.length < maximum && <CreateProfileButton onCreateProfile={openCreation} />}
-        <Text style={[accountStyles.small, styles.center, { color: colors.text.secondary }]}>Puedes crear hasta {maximum} perfiles.{ '\n' }({perfiles.length} de {maximum})</Text>
-        {perfiles.length >= maximum && <Text style={[accountStyles.small, styles.center, { color: colors.text.secondary }]}>Has alcanzado el límite de perfiles activos.</Text>}
+        <Text style={[accountStyles.small, styles.center, { color: colors.text.secondary }]}>Puedes agregar hasta {maximum} personas.{ '\n' }({perfiles.length} de {maximum})</Text>
+        {perfiles.length >= maximum && <Text style={[accountStyles.small, styles.center, { color: colors.text.secondary }]}>Ya alcanzaste el límite de personas a tu cargo.</Text>}
       </>}
     </View>
   </ScrollView>;

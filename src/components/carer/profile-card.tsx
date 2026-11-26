@@ -12,7 +12,7 @@ export function ProfileCard({ profile, surface, onOpenProfile, details }: {
 }) {
   const { colors } = useAppTheme();
   return <Pressable disabled={!onOpenProfile} onPress={() => onOpenProfile?.(profile.idPerfilUsuario)} accessibilityRole="button"
-    accessibilityLabel={profile.nombre} accessibilityHint={!onOpenProfile ? 'Acceso al perfil disponible próximamente.' : 'Abrir este perfil.'}
+    accessibilityLabel={profile.nombre} accessibilityHint={!onOpenProfile ? 'Acceso al perfil disponible próximamente.' : 'Abrir perfil'}
     accessibilityState={{ disabled: !onOpenProfile }} style={[styles.card, { backgroundColor: surface }]}>
     <View importantForAccessibility="no-hide-descendants"><ProfileAvatar name={profile.nombre} avatar={profile.avatar} /></View>
     <View style={styles.text}><Text style={[styles.name, { color: colors.text.primary }]}>{profile.nombre}</Text>{details}</View>

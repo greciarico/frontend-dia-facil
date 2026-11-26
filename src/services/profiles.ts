@@ -5,10 +5,10 @@ import type { CarerAvatarId } from '@/constants/carer-avatars';
 
 export class CreateProfileError extends Error {
   constructor(readonly kind: 'validation' | 'limit' | 'uncertain' | 'access', readonly field?: string) {
-    super(kind === 'limit' ? 'Ya tienes el máximo de perfiles activos. Revisa Mis perfiles.'
+    super(kind === 'limit' ? 'Ya alcanzaste el límite de personas a tu cargo.'
       : kind === 'validation' ? field === 'avatar' ? 'Selecciona un avatar del catálogo o utiliza la inicial.' : 'Revisa el nombre. Es obligatorio y admite hasta 60 caracteres.'
         : kind === 'access' ? 'No pudimos verificar tu acceso. Vuelve a intentarlo.'
-          : 'No pudimos confirmar si el perfil se creó. Revisa Mis perfiles antes de intentarlo de nuevo.');
+          : 'No pudimos confirmar si se guardaron los datos. Revisa la lista antes de intentarlo de nuevo.');
   }
 }
 
@@ -38,7 +38,7 @@ export async function getProfiles(signal?: AbortSignal) {
 
 export class ProfileDetailError extends Error {
   constructor(readonly kind: 'not-found' | 'network') {
-    super(kind === 'not-found' ? 'No pudimos encontrar este perfil.' : 'No pudimos cargar el perfil. Revisa tu conexión e inténtalo de nuevo.');
+    super(kind === 'not-found' ? 'No pudimos encontrar los datos de esta persona.' : 'No pudimos cargar el perfil. Revisa tu conexión e inténtalo de nuevo.');
   }
 }
 

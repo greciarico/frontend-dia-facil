@@ -16,7 +16,7 @@ function load(file, modules = {}) {
   };
   new Function('require', 'exports', ts.transpileModule(fs.readFileSync(path.join(__dirname, '../src', file), 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
-  }).outputText)(id => {if(id==='@/components/app-text-input')return {AppTextInput:'Input'};if(id==='@/context/carer-accessibility')return {useCarerAccessibilityFocusListeners:()=>({})};
+  }).outputText)(id => { if (id === '@/constants/carer-people-copy') return load('constants/carer-people-copy.ts');if(id==='@/components/app-text-input')return {AppTextInput:'Input'};if(id==='@/context/carer-accessibility')return {useCarerAccessibilityFocusListeners:()=>({})};
     if (id.startsWith('@/assets/') || id.includes('Nunito_')) return id;
     if(id==='@/components/app-text')return {AppText:'Text'};
     if(id==='@/theme/profile-appearance')return {useEffectiveFontScale:()=>1};
@@ -91,25 +91,25 @@ test('screen distinguishes loading, recoverable error, empty and real profiles w
   const navigations = [];
   const screen = load('app/(cuidador-autenticado)/(principal)/perfiles.tsx', { ...styling, 'expo-router': { router: { push: value => navigations.push(value) } },
     '@/hooks/use-profiles': { useProfiles: () => ({ state, reload: () => retried++ }) } }).default;
-  assert.ok(textOf(screen()).includes('Cargando perfiles'));
+  assert.ok(textOf(screen()).includes('Cargando personas'));
   state = { status: 'error' };
   const error = screen(); assert.ok(!textOf(error).includes('Aún no tienes'));
   nodes(error).find(node => node.type === 'Button').props.onPress(); assert.equal(retried, 1);
   state = { status: 'ready', data: response() };
   assert.ok(textOf(screen()).includes('Aún no tienes'));
-  assert.equal(nodes(screen()).find(node => node.type === 'CreateButton').props.first, true);
+  assert.ok(nodes(screen()).some(node => node.type === 'CreateButton'));
   nodes(screen()).find(node => node.type === 'CreateButton').props.onCreateProfile();
   state = { status: 'ready', data: { perfiles: [profile()], maximoPerfilesActivos: 2 } };
   assert.equal(nodes(screen()).filter(node => node.type === 'Card').length, 1);
   assert.ok(nodes(screen()).some(node => node.type === 'CreateButton'));
   nodes(screen()).find(node => node.type === 'CreateButton').props.onCreateProfile();
   assert.deepEqual(navigations, ['/crear-perfil', '/crear-perfil']);
-  assert.ok(textOf(screen()).includes('hasta 2 perfiles'));
+  assert.ok(textOf(screen()).includes('hasta 2 personas'));
   assert.ok(!textOf(screen()).includes('actividades hoy'));
   assert.equal(nodes(screen()).find(node => node.type === 'Card').props.details, undefined);
   state = { status: 'ready', data: { perfiles: [profile(1), profile(2)], maximoPerfilesActivos: 2 } };
   assert.ok(!nodes(screen()).some(node => node.type === 'CreateButton'));
-  assert.ok(textOf(screen()).includes('Has alcanzado el límite'));
+  assert.ok(textOf(screen()).includes('Ya alcanzaste el límite'));
 });
 
 function hookFixture() {
@@ -142,7 +142,7 @@ test('focused loader coalesces requests, retries errors and ignores late respons
 
 test('optional creation callback enables the button; profile access and future modules remain unavailable', () => {
   const create = load('components/carer/create-profile-button.tsx', styling).CreateProfileButton;
-  assert.equal(nodes(create({ first: true })).find(node => node.type === 'Button').props.disabled, true);
+  assert.equal(nodes(create({})).find(node => node.type === 'Button').props.disabled, true);
   assert.equal(nodes(create({})).find(node => node.type === 'Button').props.disabled, true);
   const navigate = () => {};
   assert.equal(nodes(create({ onCreateProfile: navigate })).find(node => node.type === 'Button').props.disabled, false);
@@ -265,7 +265,7 @@ test('uncertain creation cannot submit again; late completion after leaving neve
   f.requests[0].reject(new f.errors.CreateProfileError('uncertain')); await new Promise(r => setImmediate(r));
   assert.ok(textOf(f.render()).includes('No pudimos confirmar'));
   f.submit(); assert.equal(f.requests.length, 1);
-  nodes(f.render()).find(node => node.type === 'Button' && node.props.label === 'Revisar Mis perfiles').props.onPress();
+  nodes(f.render()).find(node => node.type === 'Button' && node.props.label === 'Revisar Personas').props.onPress();
   assert.deepEqual(f.navigations, ['/perfiles']); f.cleanup();
   const late = creationScreenFixture(); late.enter('Persona'); late.submit(); late.cleanup();
   assert.ok(late.requests[0].args[2].aborted);
@@ -342,7 +342,7 @@ test('detail screen renders real data only after GET, handles recovery/404 and h
   nodes(screen()).find(node => node.type === 'Actions').props.onCreateActivities(12);
   assert.deepEqual(navigations.pop(), profileNavigation.activitiesHref(12));
   state = { status: 'error' }; nodes(screen()).find(node => node.type === 'Button' && node.props.label === 'Reintentar').props.onPress(); assert.equal(retries, 1);
-  state = { status: 'not-found' }; assert.ok(textOf(screen()).includes('No pudimos encontrar este perfil.'));
+  state = { status: 'not-found' }; assert.ok(textOf(screen()).includes('No pudimos encontrar los datos de esta persona.'));
   assert.ok(!nodes(screen()).some(node => node.type === 'Button' && node.props.label === 'Reintentar'));
   nodes(screen()).find(node => node.type === 'Button').props.onPress(); assert.deepEqual(navigations, ['/perfiles']);
 });
@@ -388,9 +388,9 @@ test('bottom navigation keeps Perfiles selected inside detail and still allows r
     './account-avatar': { AccountAvatar: 'Avatar' },
     '@/components/bottom-navigation': load('components/bottom-navigation.tsx',styling),
   }).AreaNavigation;
-  let tab = nodes(bar().type(bar().props)).find(node => node.props?.accessibilityLabel === 'Perfiles');
+  let tab = nodes(bar().type(bar().props)).find(node => node.props?.accessibilityLabel === 'Personas');
   assert.equal(tab.props.accessibilityState.selected, true); tab.props.onPress(); assert.deepEqual(navigations, ['/perfiles']);
-  pathname = '/perfiles'; tab = nodes(bar().type(bar().props)).find(node => node.props?.accessibilityLabel === 'Perfiles'); tab.props.onPress(); assert.equal(navigations.length, 1);
+  pathname = '/perfiles'; tab = nodes(bar().type(bar().props)).find(node => node.props?.accessibilityLabel === 'Personas'); tab.props.onPress(); assert.equal(navigations.length, 1);
 });
 
 test('installed Expo router history removes confirmation and Android back resolves to the profiles anchor', () => {
@@ -440,7 +440,7 @@ test('installed Expo router history removes confirmation and Android back resolv
   } };
   const exports = {};
   const source = fs.readFileSync(path.join(expoRoot, 'build/global-state/getNavigationAction.js'), 'utf8');
-  new Function('require', 'exports', source)(id => {
+  new Function('require', 'exports', source)(id => { if (id === '@/constants/carer-people-copy') return load('constants/carer-people-copy.ts');
     if (id === './stateUtils') return require(path.join(expoRoot, 'build/global-state/stateUtils.js'));
     return { './store': { store: { assertIsReady() {}, navigationRef: { current: { getRootState: () => root } },
       linking: { getStateFromPath, config }, getRouteInfo: () => ({}), redirects: [] } },
@@ -553,7 +553,7 @@ test('activities screen shows the intentional empty state only after loading, no
   nodes(screen()).find(node => node.props?.label === 'Reintentar').props.onPress(); assert.equal(retries, 1);
   state = { status: 'not-found' };
   assert.ok(!nodes(screen()).some(node => node.props?.label === 'Reintentar'));
-  nodes(screen()).find(node => node.props?.label === 'Volver a Mis perfiles').props.onPress();
+  nodes(screen()).find(node => node.props?.label === 'Volver a Personas').props.onPress();
   assert.equal(navigations.pop(), '/perfiles');
   for (const copy of ['Hoy', '0 de 0', '%']) assert.ok(!textOf(screen()).includes(copy));
 });

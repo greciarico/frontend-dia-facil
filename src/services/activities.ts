@@ -6,7 +6,7 @@ import type { PrivateRequestOptions } from './private-http';
 export class CreateActivityError extends Error {
   constructor(readonly kind: 'validation' | 'not-found' | 'icon' | 'pictogram' | 'conflict' | 'unavailable' | 'uncertain' | 'access') {
     super(kind === 'validation' ? 'Revisa el nombre, la hora, el ícono y los pasos.'
-      : kind === 'not-found' ? 'Este perfil ya no está disponible.'
+      : kind === 'not-found' ? 'No pudimos encontrar los datos de esta persona.'
       : kind === 'icon' ? 'Selecciona un ícono del catálogo.'
       : kind === 'pictogram' ? 'Cambia el pictograma no válido o deja el paso sin imagen.'
       : kind === 'conflict' ? 'No pudimos completar la creación. Inténtalo de nuevo.'
@@ -39,7 +39,7 @@ export async function createActivity(id: number, input: ActivityInput, signal?: 
 
 export class ActivitiesError extends Error {
   constructor(readonly kind: 'not-found' | 'network' | 'invalid-response') {
-    super(kind === 'not-found' ? 'No pudimos encontrar este perfil.'
+    super(kind === 'not-found' ? 'No pudimos encontrar los datos de esta persona.'
       : 'No pudimos cargar las actividades. Inténtalo de nuevo.');
   }
 }

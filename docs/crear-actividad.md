@@ -39,7 +39,7 @@ con texto ampliado/ancho estrecho; foco inicial y cierre de TalkBack conservados
 
 Sin actividades se conserva ScrollView del empty state y botón grande. Con datos
 se usa una FlatList independiente con tarjetas de icono 3D, nombre y hora, sin
-fechas/progreso/completado/detalle. Conserva el orden recibido (backend ID asc).
+fechas/progreso/completado/detalle. Conserva el orden recibido del backend por hora programada e ID ascendentes.
 No se utilizan pictogramas de pasos como iconos de actividad.
 CreateActivityButton ofrece floating=true: FAB de 56 derivado de tokens, plus
 vectorial, label Nueva actividad y colores de acción de ambos temas. Queda fuera

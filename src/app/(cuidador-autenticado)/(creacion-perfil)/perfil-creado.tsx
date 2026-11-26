@@ -26,7 +26,7 @@ export default function ProfileCreatedScreen() {
       <AccountAvatar name={created.nombre} avatarId={profileAvatar(created.avatar).local} size={layout.profiles.confirmationAvatarSize} />
     </View>
     <Text accessibilityRole="header" style={[accountStyles.title, { color: colors.text.primary }]}>¡Listo!</Text>
-    <Text style={[accountStyles.body, styles.copy, { color: colors.text.secondary }]}>Hemos creado el perfil de <Text style={{ color: colors.action.primary, fontFamily: typography.family.bold }}>{created.nombre}</Text>.{ '\n' }Ahora puedes empezar a configurar su agenda</Text>
+    <Text style={[accountStyles.body, styles.copy, { color: colors.text.secondary }]}>Agregaste a <Text style={{ color: colors.action.primary, fontFamily: typography.family.bold }}>{created.nombre}</Text>.{ '\n' }Ahora puedes configurar su agenda.</Text>
     <View style={styles.action}><ContinueButton label="Comenzar" onPress={() => router.replace(profileHref(created.idPerfilUsuario), { withAnchor: true })} /></View>
   </ProfileFlowLayout>;
 }
