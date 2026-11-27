@@ -96,6 +96,7 @@ reanudaci?n y check diario ya reportadas como correctas.
 
 - [Mi agenda, detalle, ejecuci?n y consulta](docs/mi-agenda.md).
 - [Creaci?n real y cierre de actividades](docs/crear-actividad.md).
+- [Rutina y seguimiento diario e histórico del cuidador](docs/actividades-vacias-increment.md#presentación-de-rutina-y-seguimiento-df-11).
 - [Pictogramas ARASAAC](docs/pictogramas-arasaac.md).
 - [Vinculaci?n/restauraci?n Usuario](docs/usuario-vinculacion.md) y [E1 cuidador](docs/vincular-dispositivo.md).
 - [Design system](docs/design-system.md) y [teclado](docs/keyboard-forms.md).
