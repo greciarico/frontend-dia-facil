@@ -125,7 +125,7 @@ test('unavailable profile during renewal does not initiate reconciliation or sho
 
 const nodes = tree => !tree || typeof tree !== 'object' ? [] : Array.isArray(tree) ? tree.flatMap(nodes) : [tree, ...nodes(tree.props?.children)];
 const textOf = tree => Array.isArray(tree) ? tree.map(textOf).join('') : tree && typeof tree === 'object' ? textOf(tree.props?.children) : tree == null ? '' : String(tree);
-test('screen uses exactly server code for local QR and clipboard, confirms renewal and leaves device management disabled', async () => {
+test('screen uses exactly server code for local QR and clipboard, confirms renewal and opens device management', async () => {
   const tokens = load('theme/tokens.ts'); const navigation = load('utils/profile-navigation.ts');
   let state = { status: 'ready', data: data(), remainingSeconds: 0 }; let focus; let hardwareBack; let copied; let renewed; const nav = [];
   let delayCopy = false; let resolveCopy; let screenFocused = true;
@@ -133,7 +133,7 @@ test('screen uses exactly server code for local QR and clipboard, confirms renew
   const screen = load('app/(cuidador-autenticado)/(principal)/perfiles/[idPerfilUsuario]/vincular-dispositivo.tsx', {
     react: { useState: initial => { const i = slot++; if (!(i in values)) values[i] = initial; return [values[i], v => { values[i] = v; }]; },
       useRef: initial => refs[slot++] ||= { current: initial }, useCallback: fn => fn, useEffect: fn => effects.push(fn) },
-    'expo-router': { Stack: { Screen: 'Screen' }, router: { dismissTo: v => nav.push(v) }, useFocusEffect: fn => { focus = fn; }, useIsFocused: () => screenFocused, useLocalSearchParams: () => ({ idPerfilUsuario: '12' }) },
+    'expo-router': { Stack: { Screen: 'Screen' }, router: { dismissTo: v => nav.push(v), push: v => nav.push(v) }, useFocusEffect: fn => { focus = fn; }, useIsFocused: () => screenFocused, useLocalSearchParams: () => ({ idPerfilUsuario: '12' }) },
     'react-native': { StyleSheet: { create: v => v }, Text: 'Text', View: 'View', ScrollView: 'ScrollView', Pressable: 'Pressable', ActivityIndicator: 'Spinner',
       useWindowDimensions: () => ({ width: 390 }), BackHandler: { addEventListener: (name, fn) => { hardwareBack = fn; return { remove() {} }; } } },
     'expo-clipboard': { setStringAsync: async code => { copied = code; return delayCopy ? new Promise(resolve => { resolveCopy = resolve; }) : true; } }, 'react-native-qrcode-svg': { default: 'QR', __esModule: true },
@@ -147,7 +147,8 @@ test('screen uses exactly server code for local QR and clipboard, confirms renew
   const render = () => { slot = 0; effects.length = 0; const tree = screen(); effects.forEach(fn => fn()); return nodes(tree); };
   let tree = render(); const blur = focus();
   assert.equal(tree.find(n => n.type === 'QR').props.value, data().codigoVinculacion);
-  assert.ok(tree.find(n => n.props?.accessibilityLabel === 'Dispositivos vinculados (2)').props.accessibilityState.disabled);
+  tree.find(n => n.props?.accessibilityLabel === 'Dispositivos vinculados (2)').props.onPress();
+  assert.deepEqual(nav.pop(), { pathname: '/perfiles/[idPerfilUsuario]/dispositivos-vinculados', params: { idPerfilUsuario: '12', nombre: 'Persona real' } });
   await tree.find(n => n.props?.accessibilityLabel === 'Copiar código de vinculación').props.onPress(); await tick(); assert.equal(copied, data().codigoVinculacion);
   tree = render(); assert.ok(tree.some(n => n.type === 'Text' && textOf(n).includes('Código copiado.')));
   tree.find(n => n.props?.accessibilityLabel === 'Renovar código de vinculación').props.onPress(); tree = render();

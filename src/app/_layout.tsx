@@ -10,6 +10,7 @@ import { spacing, typography } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';
 import { SessionProvider, useSession } from '@/context/session';
 import { DeviceAccessProvider, useDeviceAccess } from '@/context/device-access';
+import { DeviceRevocationScreen } from '@/components/user/device-revocation-screen';
 import { CarerPushProvider } from '@/context/carer-push';
 
 void SplashScreen.preventAutoHideAsync().catch(() => undefined);
@@ -33,8 +34,8 @@ function AppLayout() {
     if ((loaded && !booting) || error) void SplashScreen.hideAsync().catch(() => undefined);
   }, [loaded, error, booting]);
   useEffect(() => {
-    if (loaded && device.status === 'unlinked' && session.status === 'anonymous') router.replace('/');
-  }, [loaded, session.status, device.status]);
+    if (loaded && device.status === 'unlinked' && session.status === 'anonymous') router.replace(device.remoteExit ? '/usuario' : '/');
+  }, [loaded, session.status, device.status, device.remoteExit]);
   if (!loaded && !error) return null;
   if (error) {
     return (
@@ -57,7 +58,7 @@ function AppLayout() {
       heavy: { ...navigation.fonts.heavy, fontFamily: typography.family.bold },
     } }}>
       <StatusBar style={theme.scheme === 'dark' ? 'light' : 'dark'} />
-      <CarerPushProvider>
+      {device.status === 'revoking' ? <DeviceRevocationScreen /> : <CarerPushProvider>
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.colors.background.primary } }}>
         <Stack.Screen name="index" />
         <Stack.Protected guard={device.status === 'pending' || device.status === 'unlinked' && session.status === 'anonymous' || device.status === 'linked' && device.stage === 'confirmation'}>
@@ -73,7 +74,7 @@ function AppLayout() {
           <Stack.Screen name="cuidador" />
         </Stack.Protected>
       </Stack>
-      </CarerPushProvider>
+      </CarerPushProvider>}
     </ThemeProvider>
   );
 }

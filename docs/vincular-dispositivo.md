@@ -9,7 +9,7 @@ Contrato: [vinculacion-http.md](../../backend_dia_facil/docs/vinculacion-http.md
 - Pantalla: QR local con `react-native-qrcode-svg` ya instalado; negro sobre blanco con margen para escaneo también en dark. Misma cadena del servidor en QR y copia.
 - `expo-clipboard ~57.0.2`: versión del catálogo bundledNativeModules de Expo 57, disponible en Expo Go; solo escritura al pulsar Copiar. No se lee el portapapeles ni se piden permisos de cámara.
 - Ilustración introductoria SVG local mantenible (no es un QR funcional). No había un asset propio equivalente al prototipo.
-- Dispositivos vinculados muestra el conteo, con estado accesible deshabilitado hasta E2. Renovar confirma que el código anterior solo deja de servir para **nuevas** vinculaciones.
+- «Dispositivos vinculados (N)» muestra el conteo activo y abre el listado del perfil. El modal destructivo confirma la desvinculación individual y el contador se recarga al volver. La ruta dinámica usa el ID del perfil una sola vez. Renovar confirma que el código anterior solo deja de servir para **nuevas** vinculaciones.
 - Códigos únicamente en memoria, sin parámetros de navegación, logs, analytics ni almacenamiento persistente.
 
 ## Cooldown y presentación
@@ -32,7 +32,7 @@ Por separado se corrigió código de E1: el cleanup de foco solo invalida operac
 
 ## Prueba manual Android / Expo Go
 
-E3 ya incorpora vinculación real desde el rol usuario: consultar [el flujo y la prueba actual](usuario-vinculacion.md). Antes de probar esta entrega se requiere la transición explícita de códigos legacy y activación backend; no se ejecutaron sobre la BD local. El punto 7 siguiente conserva el alcance histórico de E1; E2 continúa pendiente.
+E3 ya incorpora vinculación real desde el rol usuario: consultar [el flujo y la prueba actual](usuario-vinculacion.md). En instalaciones que todavía tengan códigos legacy, consultar la transición de E3 antes de activar el backend.
 
 1. Sesión válida → Mis perfiles → perfil propio → Vincular dispositivo.
 2. Verificar nombre, igualdad código/QR (contenido literal) y copiar/pegar voluntariamente en otra app. Pantalla light/dark y texto ampliado.
@@ -40,8 +40,7 @@ E3 ya incorpora vinculación real desde el rol usuario: consultar [el flujo y la
 4. Dos instalaciones con la misma vista: renovar en una; la segunda recibe 409 al intentar con el anterior y consulta el código actual.
 5. Cortar la conexión durante renovación: no reaparece código anterior sin consulta exitosa. Reintentar consulta, no renueva otra vez.
 6. Volver a primer plano recarga; Atrás visual/físico regresa al hub. Salir/cerrar sesión durante petición no publica datos tardíos.
-7. Gestión E2 todavía no disponible. Vinculación Usuario E3 sí está implementada;
-   probar su flujo con [la matriz actual](usuario-vinculacion.md).
+7. Abrir el listado, cancelar una confirmación y después confirmar la retirada. Verificar que la tarjeta desaparece y que el contador se actualiza al volver. Consultar [la validación de DF-12](usuario-vinculacion.md#df-12--desvinculación-remota).
 8. Tras renovar, verificar espera, deshabilitación y habilitación al terminar; salir y regresar y volver de segundo plano conserva el cooldown real. Una fecha/hora del teléfono incorrecta no debe permitir renovar antes.
 9. Salir durante copia y regresar: una respuesta tardía no debe mostrar feedback nuevo ni dejar el botón bloqueado. Abrir/cancelar el modal y comprobar X/Atrás, texto ampliado y light/dark.
 

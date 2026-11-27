@@ -21,7 +21,7 @@ import { borders, layout, motion, radii, sizes, spacing, typography } from '@/th
 type Phase = 'welcome' | 'connect' | 'scan' | 'loading' | 'invalid' | 'technical';
 export default function UserConnectionScreen() {
   const state = useDeviceAccess(); const { colors } = useAppTheme();
-  const [phase, setPhase] = useState<Phase>(() => state.status === 'pending' ? 'connect' : 'welcome');
+  const [phase, setPhase] = useState<Phase>(() => state.status === 'pending' || state.remoteExit ? 'connect' : 'welcome');
   const [code, setCode] = useState(''); const [error, setError] = useState('');
   const [manualExpanded, setManualExpanded] = useState(false);
   const pending = useRef(false); const active = useRef(false);
