@@ -114,7 +114,7 @@ canónico devuelto se valida y guarda antes de confirmar. La pérdida de una
 respuesta no ocasiona POST automático ni elimina las pruebas. La garantía de
 reutilización requiere conservar SecureStore; reinstalar sin secretos constituye
 una nueva instalación. La salida local no invalida una copia del secreto anterior
-en backend; la revocación futura pertenece al cuidador/E2.
+en backend; la revocación remota corresponde al cuidador mediante [DF-12](vincular-dispositivo.md).
 
 ## Evidencia física y escenarios pendientes
 

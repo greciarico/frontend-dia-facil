@@ -1,5 +1,5 @@
 import { AppText as Text } from '@/components/app-text';
-import { Stack, router, useFocusEffect, useIsFocused, useLocalSearchParams } from 'expo-router';
+import { type Href, Stack, router, useFocusEffect, useIsFocused, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, BackHandler, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
@@ -84,13 +84,13 @@ export default function DeviceLinkScreen() {
       </View>
       {copyFeedback?.code === data.codigoVinculacion && <Text accessibilityLiveRegion="polite" style={[accountStyles.small, styles.centered, { color: colors.text.secondary }]}>{copyFeedback.message}</Text>}
       {state.status === 'ready' && !!state.notice && <Text accessibilityLiveRegion="polite" style={[accountStyles.small, styles.centered, { color: colors.text.secondary }]}>{state.notice}</Text>}
-      <View accessible accessibilityRole="button" accessibilityLabel={`Dispositivos vinculados (${data.dispositivosActivos})`}
-        accessibilityState={{ disabled: true }} accessibilityHint="Disponible próximamente."
+      <Pressable accessibilityRole="button" accessibilityLabel={`Dispositivos vinculados (${data.dispositivosActivos})`}
+        onPress={() => router.push({ pathname: '/perfiles/[idPerfilUsuario]/dispositivos-vinculados', params: { idPerfilUsuario: String(id), nombre: data.nombrePerfil } } as Href)}
         style={[styles.action, { borderColor: colors.border.decorative, backgroundColor: colors.surface.default }]}>
         <AreaIcon name="shield" color={colors.action.primary} />
         <Text style={[styles.actionText, { color: colors.action.primary }]}>Dispositivos vinculados ({data.dispositivosActivos})</Text>
-        <AreaIcon name="chevron" color={colors.text.disabled} />
-      </View>
+        <AreaIcon name="chevron" color={colors.action.primary} />
+      </Pressable>
       <Pressable onPress={() => setConfirm(data)} disabled={cooldown > 0} accessibilityRole="button" accessibilityLabel="Renovar código de vinculación"
         accessibilityState={{ disabled: cooldown > 0 }} accessibilityHint={cooldown > 0 ? `Renovar nuevamente en ${cooldown} s` : undefined}
         style={[styles.action, { borderColor: colors.border.decorative, backgroundColor: colors.profiles.information }]}>

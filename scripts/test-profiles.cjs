@@ -32,6 +32,7 @@ const profileNavigation = load('utils/profile-navigation.ts');
 const activityUtils = load('utils/activities.ts');
 const tokens = load('theme/tokens.ts');
 const styling = { '@/context/device-access': { DeviceAccessProvider: 'DeviceProvider', useDeviceAccess: () => ({ status: 'unlinked', stage: 'ready' }) },
+  '@/components/user/device-revocation-screen': { DeviceRevocationScreen: 'DeviceRevocationScreen' },
   '@/context/carer-push': { CarerPushProvider: 'PushProvider' },
   '@/components/user/device-access-boundary': { DeviceAccessBoundary: 'DeviceBoundary' }, '@/theme/tokens': tokens, '@/theme/use-theme': { useAppTheme: () => tokens.themes.light },
   '@/utils/profile-navigation': profileNavigation,
@@ -173,7 +174,7 @@ test('root routes only ready sessions to profiles and preserves immediate OTP/on
 });
 
 test('private route group only becomes available after restoration or onboarding finishes', () => {
-  let snapshot;
+  let snapshot; let deviceStatus = 'unlinked';
   const Stack = { Screen: 'Screen', Protected: 'Protected' };
   const navigationTheme = { colors: {}, fonts: { regular: {}, medium: {}, bold: {}, heavy: {} } };
   const layout = load('app/_layout.tsx', { ...styling,
@@ -181,6 +182,7 @@ test('private route group only becomes available after restoration or onboarding
     'expo-router': { Stack, ThemeProvider: 'Theme', DarkTheme: navigationTheme, DefaultTheme: navigationTheme, router: {} },
     'expo-splash-screen': { preventAutoHideAsync: async () => {}, hideAsync: async () => {} },
     'expo-status-bar': { StatusBar: 'StatusBar' }, 'react-native-safe-area-context': { SafeAreaView: 'SafeAreaView' },
+    '@/context/device-access': { DeviceAccessProvider: 'DeviceProvider', useDeviceAccess: () => ({ status: deviceStatus }) },
     '@/context/session': { SessionProvider: 'Provider', useSession: () => snapshot } }).default;
   for (const [status, stage, allowed] of [['anonymous', 'ready', false], ['booting', 'ready', false],
     ['authenticated', 'otp', false], ['authenticated', 'onboarding', false], ['authenticated', 'ready', true]]) {
@@ -190,6 +192,11 @@ test('private route group only becomes available after restoration or onboarding
     const privateGroup = groups.find(node => nodes(node.props.children).some(child => child.props?.name === '(cuidador-autenticado)'));
     assert.equal(privateGroup.props.guard, allowed);
   }
+  deviceStatus = 'revoking';
+  const inner = layout().props.children.props.children;
+  const tree = nodes(inner.type(inner.props));
+  assert.equal(tree.filter(node => node.type === 'DeviceRevocationScreen').length, 1);
+  assert.ok(!tree.some(node => node.type === Stack || node.type === 'Protected'));
 });
 
 test('new profile names trim edges, allow arbitrary human names and reject empty or over 60', () => {
@@ -422,7 +429,7 @@ test('installed Expo router history removes confirmation and Android back resolv
   const area = manifest.children.find(route => route.route === '(cuidador-autenticado)').children.find(route => route.route === '(principal)');
   const profileNode = area.children.find(route => route.route === 'perfiles/[idPerfilUsuario]');
   assert.equal(area.initialRouteName, 'perfiles'); assert.equal(profileNode.initialRouteName, 'index');
-  assert.deepEqual(profileNode.children.map(route => route.route).sort(), ['actividades', 'ajustes', 'editar-actividad', 'index', 'nueva-actividad', 'vincular-dispositivo']);
+  assert.deepEqual(profileNode.children.map(route => route.route).sort(), ['actividades', 'ajustes', 'dispositivos-vinculados', 'editar-actividad', 'index', 'nueva-actividad', 'vincular-dispositivo']);
   const childRouter = StackRouter({ initialRouteName: principal.unstable_settings.anchor });
   const childOptions = { routeNames: ['perfiles', 'perfiles/[idPerfilUsuario]'], routeParamList: {}, routeGetIdList: {} };
   const parentRouter = StackRouter({ initialRouteName: '(principal)' });

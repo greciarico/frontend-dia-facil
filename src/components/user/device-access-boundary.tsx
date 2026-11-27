@@ -7,7 +7,7 @@ import { useAppTheme } from '@/theme/use-theme';
 
 export function DeviceAccessBoundary() {
   const state = useDeviceAccess(); const { colors } = useAppTheme();
-  return <ConnectionLayout title={state.status === 'booting' ? 'Conectando con tu agenda' : 'No pudimos comprobar tu conexión'}>
+  return <ConnectionLayout onboarding={state.status === 'booting' ? undefined : 'error'} title={state.status === 'booting' ? 'Conectando con tu agenda' : 'No pudimos comprobar tu conexión'}>
     {state.status === 'booting' ? <ActivityIndicator color={colors.action.primary} accessibilityLabel="Comprobando conexión" /> : <>
       <Text accessibilityRole="alert" style={[userConnectionStyles.copy, { color: colors.text.secondary }]}>{state.message}</Text>
       <ContinueButton label="Reintentar" onPress={() => void deviceAccess.restore()} />

@@ -8,6 +8,66 @@ function load(file,modules={}) {
 const avatars=load('constants/carer-avatars.ts');const profiles=load('utils/profiles.ts',{'@/constants/carer-avatars':avatars});
 const utils=load('utils/user-link.ts',{'./profiles':profiles});
 const {DeviceAccessManager,DeviceFailure}=load('services/device-access-manager.ts',{'@/utils/user-link':utils});
+test('DF-12 preserves the session on a temporary failure and blocks access on confirmed revocation', async () => {
+ const f = fixture({ stored: JSON.stringify({ version: 2, active: TOKEN, proofs: [TOKEN], paused: false }), remote: linked });
+ await f.manager.restore();
+ f.deps.current = async () => { throw new DeviceFailure('network'); };
+ await f.manager.restore();
+ assert.equal(await f.manager.token(), TOKEN);
+ f.deps.current = async () => { throw new DeviceFailure('revoked'); };
+ await f.manager.restore();
+ assert.equal(f.manager.getSnapshot().status, 'revoking');
+ await assert.rejects(f.manager.token());
+ const revision = f.manager.revision();
+ f.manager.revoked();
+ assert.equal(f.manager.revision(), revision);
+ await f.manager.finishRevocation();
+ assert.equal(f.stored(), null);
+ assert.equal(f.manager.getSnapshot().remoteExit, true);
+});
+
+test('DF-12 checks on foreground, reschedules on successful traffic and backs off', async t => {
+ t.mock.timers.enable({ apis: ['setTimeout'] });
+ const f = fixture({ stored: JSON.stringify({ version: 2, active: TOKEN, proofs: [], paused: false }), remote: linked });
+ f.manager.setForeground(true);
+ await f.manager.restore();
+ assert.deepEqual(f.events, ['GET']);
+ t.mock.timers.tick(9_000);
+ f.manager.confirmed();
+ t.mock.timers.tick(9_000);
+ assert.deepEqual(f.events, ['GET']);
+ f.deps.current = async () => { f.events.push('GET'); throw new DeviceFailure('network'); };
+ t.mock.timers.tick(1_000);
+ await f.manager.restore();
+ assert.equal(f.events.length, 2);
+ t.mock.timers.tick(19_999);
+ assert.equal(f.events.length, 2);
+ t.mock.timers.tick(1);
+ await f.manager.restore();
+ assert.equal(f.events.length, 3);
+ f.manager.setForeground(false);
+ t.mock.timers.tick(120_000);
+ assert.equal(f.events.length, 3);
+ f.manager.setForeground(true);
+ await f.manager.restore();
+ assert.equal(f.events.length, 4);
+ f.manager.setForeground(false);
+});
+
+test('DF-12 reports unreadable and malformed storage without sending a request', async () => {
+ for (const [stage, read] of [
+   ['storage-read', async () => { throw new Error('private'); }],
+   ['storage-format', async () => '{"version":99}'],
+ ]) {
+   const diagnostics = [];
+   const f = fixture({ deps: { read, diagnostic: value => diagnostics.push(value) } });
+   await f.manager.restore();
+   assert.equal(f.manager.getSnapshot().status, 'error');
+   assert.deepEqual(f.events, []);
+   assert.deepEqual(diagnostics, [stage]);
+ }
+});
+
 const TOKEN='du_'+'D'.repeat(43),CODE='DF-7KQ9W6H2M8V3X5RA';
 const linked={estado:'VINCULADO',perfil:{idPerfilUsuario:12,nombre:'Persona real',avatar:null}};const pending={estado:'PENDIENTE',perfil:null};
 const tick=()=>new Promise(resolve=>setImmediate(resolve));

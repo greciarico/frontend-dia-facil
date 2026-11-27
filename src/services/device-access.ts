@@ -11,14 +11,27 @@ function failure(error: unknown): never {
     const code = error.response?.data?.codigo;
     if (error.response?.status === 404 && ['ACTIVIDAD_NO_ENCONTRADA', 'EJECUCION_NO_ENCONTRADA'].includes(code)) throw new DeviceFailure('not-found', code);
     if (error.response?.status === 409 && ['DIA_AGENDA_CAMBIADO', 'GUIA_INICIAL_REQUERIDA', 'RECORRIDO_NO_PERMITIDO', 'GUIA_NO_DISPONIBLE'].includes(code)) throw new DeviceFailure('guide-conflict', code);
-    if (error.response?.status === 401) throw new DeviceFailure('invalid-access');
+    if (error.response?.status === 401) throw new DeviceFailure(code === 'DISPOSITIVO_DESVINCULADO' ? 'revoked' : 'invalid-access');
     if (error.response?.status === 422 && error.response.data?.codigo === 'CODIGO_VINCULACION_INVALIDO') throw new DeviceFailure('invalid-code');
     if (error.response?.status === 429) throw new DeviceFailure('rate');
   }
   throw new DeviceFailure('network');
 }
+function deviceLabel() {
+  const brand = Device.brand?.trim();
+  const model = Device.modelName?.trim();
+  return brand && model?.toLowerCase().startsWith(brand.toLowerCase()) ? model : [brand, model].filter(Boolean).join(' ');
+}
+const linkStatusPath = '/api/dispositivos/vinculacion';
+const knownProblems = new Set(['VINCULACION_NO_VALIDA', 'DISPOSITIVO_DESVINCULADO', 'SERVICIO_NO_DISPONIBLE', 'ACCESO_DENEGADO', 'ERROR_INTERNO']);
+
+function diagnose(stage: string, fields: Record<string, string | number | undefined> = {}) {
+  if (typeof __DEV__ !== 'undefined' && __DEV__)
+    console.info('[DF-12][restauración]', { stage, ...fields });
+}
 const config = (token: string) => ({ headers: { Authorization: `Bearer ${token}` } });
 export const deviceAccess = new DeviceAccessManager({
+  diagnostic: stage => diagnose(stage),
   read: () => readAccess(deviceStorageKey), write: value => writeAccess(deviceStorageKey, value),
   prepare: async () => {
     try {
@@ -28,13 +41,32 @@ export const deviceAccess = new DeviceAccessManager({
     } catch (error) { return failure(error); }
   },
   current: async token => {
-    try { return parseUserLink((await getHttpClient().get('/api/dispositivos/vinculacion', config(token))).data); }
-    catch (error) { return failure(error); }
+    const start = Date.now();
+    let stage = 'api-config';
+    let origin: string | undefined;
+    let status: number | undefined;
+    try {
+      const client = getHttpClient();
+      if (typeof __DEV__ !== 'undefined' && __DEV__) origin = new URL(client.defaults.baseURL ?? getApiUrl()).origin;
+      stage = 'http';
+      const response = await client.get(linkStatusPath, config(token));
+      status = response.status;
+      stage = 'response-format';
+      return parseUserLink(response.data);
+    } catch (error) {
+      const http = isAxiosError(error) ? error : undefined;
+      const problem = http?.response?.data?.codigo;
+      diagnose(stage, { origin, path: linkStatusPath, status: http?.response?.status ?? status,
+        problem: typeof problem === 'string' && knownProblems.has(problem) ? problem : undefined,
+        transport: stage === 'http' && !http?.response ? (http?.code === 'ECONNABORTED' || http?.code === 'ETIMEDOUT' ? 'timeout' : 'network') : undefined,
+        durationMs: Date.now() - start });
+      return failure(error);
+    }
   },
   bind: async (token, codigoVinculacion, credencialesPrevias) => {
     try { const data = (await getHttpClient().post('/api/dispositivos/vincular', {
       credencialesPrevias,
-      codigoVinculacion, nombreDispositivo: (Device.modelName || 'Dispositivo móvil').slice(0, 80),
+      codigoVinculacion, nombreDispositivo: (deviceLabel() || 'Dispositivo móvil').slice(0, 80),
     }, config(token))).data;
       if (data.credencialDispositivo != null && !validDeviceToken(data.credencialDispositivo)) throw new Error();
       return { ...parseUserLink(data), credencialDispositivo: data.credencialDispositivo ?? undefined };
@@ -57,9 +89,16 @@ export function createUserHttpClient() {
     revisions.set(request, revision);
     request.baseURL = getApiUrl(); request.headers.set('Authorization', `Bearer ${token}`); return request;
   });
-  client.interceptors.response.use(response => response, async error => {
+  client.interceptors.response.use(response => {
+    if (revisions.get(response.config) !== deviceAccess.revision()) throw new DeviceFailure('canceled');
+    deviceAccess.confirmed();
+    return response;
+  }, async error => {
     if (isAxiosError(error) && error.response?.status === 401 && error.config
-      && revisions.get(error.config) === deviceAccess.revision()) await deviceAccess.invalidate();
+      && revisions.get(error.config) === deviceAccess.revision()) {
+      if (error.response.data?.codigo === 'DISPOSITIVO_DESVINCULADO') deviceAccess.revoked();
+      else await deviceAccess.invalidate();
+    }
     if (isAxiosError(error) && error.config?.url?.startsWith('/api/usuario/solicitudes-ayuda')) {
       if (revisions.get(error.config) !== deviceAccess.revision()) throw new DeviceFailure('canceled');
       const code = error.response?.data?.codigo;

@@ -5,12 +5,13 @@ import { useSession } from './session';
 
 export function DeviceAccessProvider({ children }: { children: ReactNode }) {
   const device = useDeviceAccess(); const caregiver = useSession();
-  useEffect(() => { void deviceAccess.restore();
+  useEffect(() => {
+    deviceAccess.setForeground(AppState.currentState === 'active');
+    if (AppState.currentState !== 'active') void deviceAccess.restore();
     const listener = AppState.addEventListener('change', state => {
-      if (state !== 'active') return;
-      if (deviceAccess.getSnapshot().status !== 'unlinked') void deviceAccess.restore();
+      deviceAccess.setForeground(state === 'active');
     });
-    return () => listener.remove();
+    return () => { listener.remove(); deviceAccess.setForeground(false); };
   }, []);
   useEffect(() => { if (device.status === 'unlinked' && caregiver.status === 'booting') void caregiver.manager.restore(); },
     [device.status, caregiver.status, caregiver.manager]);
