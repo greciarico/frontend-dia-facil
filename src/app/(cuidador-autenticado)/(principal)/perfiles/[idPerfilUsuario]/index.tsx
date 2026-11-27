@@ -1,3 +1,4 @@
+import { carerPeopleCopy } from '@/constants/carer-people-copy';
 import { AppText as Text } from '@/components/app-text';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
@@ -32,10 +33,10 @@ export default function ProfileHomeScreen() {
       <ProfileActions id={state.profile.idPerfilUsuario} onCreateActivities={id => router.push(activitiesHref(id))} onConfigureAccessibility={id => router.push(accessibilityHref(id))} onLinkDevice={id => router.push(deviceLinkHref(id))} />
     </ScrollView> : <View style={styles.feedback}>
       <Text accessibilityRole="alert" style={[accountStyles.body, { color: colors.text.secondary }]}>
-        {state.status === 'not-found' ? 'No pudimos encontrar este perfil.' : 'No pudimos cargar el perfil. Revisa tu conexión e inténtalo de nuevo.'}
+        {state.status === 'not-found' ? 'No pudimos encontrar los datos de esta persona.' : 'No pudimos cargar el perfil. Revisa tu conexión e inténtalo de nuevo.'}
       </Text>
       {state.status === 'error' && <ContinueButton label="Reintentar" onPress={() => void reload()} />}
-      <ContinueButton label="Volver a Mis perfiles" onPress={back} />
+      <ContinueButton label={carerPeopleCopy.back} onPress={back} />
     </View>}
   </>;
 }

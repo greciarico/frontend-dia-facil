@@ -10,13 +10,13 @@ function load(file, modules = {}) {
   const defaults = {
     'react/jsx-runtime': { jsx, jsxs: jsx, Fragment: 'Fragment' },
     'react-native': { StyleSheet: { create: value => value }, Text: 'Text', View: 'View',
-      Pressable: 'Pressable', FlatList: 'List', ScrollView: 'ScrollView', ActivityIndicator: 'Spinner', useWindowDimensions: () => ({ fontScale: 1 }) },
+      Pressable: 'Pressable', FlatList: 'List', ScrollView: 'ScrollView', ActivityIndicator: 'Spinner', AccessibilityInfo: { announceForAccessibility() {} }, useWindowDimensions: () => ({ fontScale: 1 }), ...modules.nativeOverrides },
     'expo-image': { Image: 'Image' },
     ...modules,
   };
   new Function('require', 'exports', ts.transpileModule(fs.readFileSync(path.join(__dirname, '../src', file), 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
-  }).outputText)(id => {if(id==='@/components/app-text-input')return {AppTextInput:'Input'};if(id==='@/context/carer-accessibility')return {useCarerAccessibilityFocusListeners:()=>({})};
+  }).outputText)(id => { if (id === '@/constants/carer-people-copy') return load('constants/carer-people-copy.ts');if(id==='@/components/app-text-input')return {AppTextInput:'Input'};if(id==='@/context/carer-accessibility')return {useCarerAccessibilityFocusListeners:()=>({})};
     if (id.startsWith('@/assets/') || id.includes('Nunito_')) return id;
     if(id==='@/components/app-text')return {AppText:'Text'};
     if(id==='@/theme/profile-appearance')return {useEffectiveFontScale:()=>1};
@@ -91,25 +91,25 @@ test('screen distinguishes loading, recoverable error, empty and real profiles w
   const navigations = [];
   const screen = load('app/(cuidador-autenticado)/(principal)/perfiles.tsx', { ...styling, 'expo-router': { router: { push: value => navigations.push(value) } },
     '@/hooks/use-profiles': { useProfiles: () => ({ state, reload: () => retried++ }) } }).default;
-  assert.ok(textOf(screen()).includes('Cargando perfiles'));
+  assert.ok(textOf(screen()).includes('Cargando personas'));
   state = { status: 'error' };
   const error = screen(); assert.ok(!textOf(error).includes('Aún no tienes'));
   nodes(error).find(node => node.type === 'Button').props.onPress(); assert.equal(retried, 1);
   state = { status: 'ready', data: response() };
   assert.ok(textOf(screen()).includes('Aún no tienes'));
-  assert.equal(nodes(screen()).find(node => node.type === 'CreateButton').props.first, true);
+  assert.ok(nodes(screen()).some(node => node.type === 'CreateButton'));
   nodes(screen()).find(node => node.type === 'CreateButton').props.onCreateProfile();
   state = { status: 'ready', data: { perfiles: [profile()], maximoPerfilesActivos: 2 } };
   assert.equal(nodes(screen()).filter(node => node.type === 'Card').length, 1);
   assert.ok(nodes(screen()).some(node => node.type === 'CreateButton'));
   nodes(screen()).find(node => node.type === 'CreateButton').props.onCreateProfile();
   assert.deepEqual(navigations, ['/crear-perfil', '/crear-perfil']);
-  assert.ok(textOf(screen()).includes('hasta 2 perfiles'));
+  assert.ok(textOf(screen()).includes('hasta 2 personas'));
   assert.ok(!textOf(screen()).includes('actividades hoy'));
   assert.equal(nodes(screen()).find(node => node.type === 'Card').props.details, undefined);
   state = { status: 'ready', data: { perfiles: [profile(1), profile(2)], maximoPerfilesActivos: 2 } };
   assert.ok(!nodes(screen()).some(node => node.type === 'CreateButton'));
-  assert.ok(textOf(screen()).includes('Has alcanzado el límite'));
+  assert.ok(textOf(screen()).includes('Ya alcanzaste el límite'));
 });
 
 function hookFixture() {
@@ -142,7 +142,7 @@ test('focused loader coalesces requests, retries errors and ignores late respons
 
 test('optional creation callback enables the button; profile access and future modules remain unavailable', () => {
   const create = load('components/carer/create-profile-button.tsx', styling).CreateProfileButton;
-  assert.equal(nodes(create({ first: true })).find(node => node.type === 'Button').props.disabled, true);
+  assert.equal(nodes(create({})).find(node => node.type === 'Button').props.disabled, true);
   assert.equal(nodes(create({})).find(node => node.type === 'Button').props.disabled, true);
   const navigate = () => {};
   assert.equal(nodes(create({ onCreateProfile: navigate })).find(node => node.type === 'Button').props.disabled, false);
@@ -265,7 +265,7 @@ test('uncertain creation cannot submit again; late completion after leaving neve
   f.requests[0].reject(new f.errors.CreateProfileError('uncertain')); await new Promise(r => setImmediate(r));
   assert.ok(textOf(f.render()).includes('No pudimos confirmar'));
   f.submit(); assert.equal(f.requests.length, 1);
-  nodes(f.render()).find(node => node.type === 'Button' && node.props.label === 'Revisar Mis perfiles').props.onPress();
+  nodes(f.render()).find(node => node.type === 'Button' && node.props.label === 'Revisar Personas').props.onPress();
   assert.deepEqual(f.navigations, ['/perfiles']); f.cleanup();
   const late = creationScreenFixture(); late.enter('Persona'); late.submit(); late.cleanup();
   assert.ok(late.requests[0].args[2].aborted);
@@ -342,7 +342,7 @@ test('detail screen renders real data only after GET, handles recovery/404 and h
   nodes(screen()).find(node => node.type === 'Actions').props.onCreateActivities(12);
   assert.deepEqual(navigations.pop(), profileNavigation.activitiesHref(12));
   state = { status: 'error' }; nodes(screen()).find(node => node.type === 'Button' && node.props.label === 'Reintentar').props.onPress(); assert.equal(retries, 1);
-  state = { status: 'not-found' }; assert.ok(textOf(screen()).includes('No pudimos encontrar este perfil.'));
+  state = { status: 'not-found' }; assert.ok(textOf(screen()).includes('No pudimos encontrar los datos de esta persona.'));
   assert.ok(!nodes(screen()).some(node => node.type === 'Button' && node.props.label === 'Reintentar'));
   nodes(screen()).find(node => node.type === 'Button').props.onPress(); assert.deepEqual(navigations, ['/perfiles']);
 });
@@ -388,9 +388,9 @@ test('bottom navigation keeps Perfiles selected inside detail and still allows r
     './account-avatar': { AccountAvatar: 'Avatar' },
     '@/components/bottom-navigation': load('components/bottom-navigation.tsx',styling),
   }).AreaNavigation;
-  let tab = nodes(bar().type(bar().props)).find(node => node.props?.accessibilityLabel === 'Perfiles');
+  let tab = nodes(bar().type(bar().props)).find(node => node.props?.accessibilityLabel === 'Personas');
   assert.equal(tab.props.accessibilityState.selected, true); tab.props.onPress(); assert.deepEqual(navigations, ['/perfiles']);
-  pathname = '/perfiles'; tab = nodes(bar().type(bar().props)).find(node => node.props?.accessibilityLabel === 'Perfiles'); tab.props.onPress(); assert.equal(navigations.length, 1);
+  pathname = '/perfiles'; tab = nodes(bar().type(bar().props)).find(node => node.props?.accessibilityLabel === 'Personas'); tab.props.onPress(); assert.equal(navigations.length, 1);
 });
 
 test('installed Expo router history removes confirmation and Android back resolves to the profiles anchor', () => {
@@ -422,7 +422,7 @@ test('installed Expo router history removes confirmation and Android back resolv
   const area = manifest.children.find(route => route.route === '(cuidador-autenticado)').children.find(route => route.route === '(principal)');
   const profileNode = area.children.find(route => route.route === 'perfiles/[idPerfilUsuario]');
   assert.equal(area.initialRouteName, 'perfiles'); assert.equal(profileNode.initialRouteName, 'index');
-  assert.deepEqual(profileNode.children.map(route => route.route).sort(), ['actividades', 'ajustes', 'index', 'nueva-actividad', 'vincular-dispositivo']);
+  assert.deepEqual(profileNode.children.map(route => route.route).sort(), ['actividades', 'ajustes', 'editar-actividad', 'index', 'nueva-actividad', 'vincular-dispositivo']);
   const childRouter = StackRouter({ initialRouteName: principal.unstable_settings.anchor });
   const childOptions = { routeNames: ['perfiles', 'perfiles/[idPerfilUsuario]'], routeParamList: {}, routeGetIdList: {} };
   const parentRouter = StackRouter({ initialRouteName: '(principal)' });
@@ -440,7 +440,7 @@ test('installed Expo router history removes confirmation and Android back resolv
   } };
   const exports = {};
   const source = fs.readFileSync(path.join(expoRoot, 'build/global-state/getNavigationAction.js'), 'utf8');
-  new Function('require', 'exports', source)(id => {
+  new Function('require', 'exports', source)(id => { if (id === '@/constants/carer-people-copy') return load('constants/carer-people-copy.ts');
     if (id === './stateUtils') return require(path.join(expoRoot, 'build/global-state/stateUtils.js'));
     return { './store': { store: { assertIsReady() {}, navigationRef: { current: { getRootState: () => root } },
       linking: { getStateFromPath, config }, getRouteInfo: () => ({}), redirects: [] } },
@@ -493,7 +493,7 @@ test('activity contract distinguishes empty and real summaries, rejects invalid 
 
 test('activities service uses private GET with cancellation and never converts failure into an empty list', async () => {
   let called; let response = { status: 200, data: { actividades: [] } }; let failure;
-  const api = load('services/activities.ts', { './private-http': { PrivateHttpError: HttpError,
+  const api = load('services/activities.ts', { '@/utils/activity-draft': load('utils/activity-draft.ts'), './private-http': { PrivateHttpError: HttpError,
     getAuthenticatedHttpClient: () => ({ get: async (...args) => { called = args; if (failure) throw failure; return response; } }) },
     '@/utils/activities': activityUtils });
   const signal = new AbortController().signal;
@@ -510,18 +510,47 @@ test('activities service uses private GET with cancellation and never converts f
 });
 
 test('activities screen shows the intentional empty state only after loading, not on failures or existing data', () => {
-  let state = { status: 'loading' }; let retries = 0; const navigations = [];
-  const screen = load('app/(cuidador-autenticado)/(principal)/perfiles/[idPerfilUsuario]/actividades.tsx', { ...styling,
+  let state = { status: 'loading' }; let retries = 0; const navigations = []; const announcements = [];
+  const slots = []; let hookIndex = 0; let initialRoutine = true;
+  const render = load('app/(cuidador-autenticado)/(principal)/perfiles/[idPerfilUsuario]/actividades.tsx', { ...styling,
+    react: { useState: () => { const index = hookIndex++; return [slots[index], value => { slots[index] = value; }]; }, useEffect() {} },
+    '@/hooks/use-follow-up': { useFollowUp: () => ({ initialRoutine }) },
+    '@/components/carer/activity-follow-up': { ActivityFollowUp: 'ActivityFollowUp' },
+    '@/components/carer/delete-activity-dialog': { DeleteActivityDialog: 'DeleteActivityDialog' },
+    '@/components/carer/activity-actions-menu': { ActivityActionsMenu: 'ActivityActionsMenu' },
     'expo-router': { Stack: { Screen: 'Screen' }, router: { dismissTo: href => navigations.push(href), push: href => navigations.push(href) }, useLocalSearchParams: () => ({ idPerfilUsuario: '12' }) },
     '@/components/carer/area-header': { AreaHeader: 'Header' }, '@/components/carer/profile-avatar': { ProfileAvatar: 'Avatar' },
-    '@/components/carer/activities-empty-illustration': { ActivitiesEmptyIllustration: 'Illustration' },
+    '@/components/carer/activity-empty-state': load('components/carer/activity-empty-state.tsx', {
+      ...styling, './activities-empty-illustration': { ActivitiesEmptyIllustration: 'Illustration' },
+    }),
+    nativeOverrides: { AccessibilityInfo: { announceForAccessibility: message => announcements.push(message) } },
     '@/components/carer/activity-summary-card': { ActivitySummaryCard: 'ActivityCard' },
     '@/components/carer/create-activity-button': { CreateActivityButton: 'CreateActivity', activityFabSize: 56 },
-    '@/hooks/use-profile-activities': { useProfileActivities: id => { assert.equal(id, 12); return { state, reload: () => retries++ }; } },
+    '@/utils/activities': activityUtils,
+    '@/hooks/use-profile-activities': { useProfileActivities: id => {
+      assert.equal(id, 12);
+      return { state, reload: () => retries++, confirmRemoval: activityId => {
+        state = { ...state, data: { actividades: state.data.actividades.filter(activity => activity.idActividad !== activityId) } };
+      } };
+    } },
   }).default;
+  const expandEmptyState = node => {
+    if (Array.isArray(node)) return node.map(expandEmptyState);
+    if (!node?.props) return node;
+    if (typeof node.type === 'function' && node.type.name === 'ActivityEmptyState') return expandEmptyState(node.type(node.props));
+    return { ...node, props: { ...node.props, children: expandEmptyState(node.props.children) } };
+  };
+  const screen = () => { hookIndex = 0; return expandEmptyState(render()); };
+  initialRoutine = undefined;
+  assert.equal(nodes(screen()).filter(node => node.props?.accessibilityRole === 'tab').length, 2);
+  assert.ok(nodes(screen()).filter(node => node.props?.accessibilityRole === 'tab').every(node => !node.props.accessibilityState.selected));
+  initialRoutine = false;
+  assert.ok(nodes(screen()).some(node => node.type === 'ActivityFollowUp'));
+  initialRoutine = true;
   assert.ok(textOf(screen()).includes('Cargando actividades'));
   assert.ok(!textOf(screen()).includes('Aún no hay')); assert.ok(!nodes(screen()).some(node => node.type === 'CreateActivity'));
   state = { status: 'ready', profile: profile(12), data: { actividades: [] } };
+  assert.ok(!textOf(screen()).includes('0 de 10 actividades'));
   assert.ok(textOf(screen()).includes('Aún no hay actividades'));
   assert.ok(textOf(screen()).includes('Agrega las actividades que formarán su rutina diaria'));
   assert.equal(nodes(screen()).find(node => node.type === 'CreateActivity').props.id, 12);
@@ -548,12 +577,44 @@ test('activities screen shows the intentional empty state only after loading, no
   assert.equal(many.props.data.length,12);assert.equal(many.props.data[11].idActividad,12);
   assert.equal(many.props.renderItem({item:many.props.data[11],index:11}).props.index,11);
   assert.equal(nodes(screen()).filter(node=>node.type==='CreateActivity').length,1);
+  assert.ok(textOf(screen()).includes('12 de 10 actividades'));
+  assert.ok(textOf(screen()).includes('Alcanzaste el máximo de 10 actividades.'));
+  assert.equal(nodes(screen()).find(node => node.type === 'CreateActivity').props.onCreateActivity, undefined);
+  for (const count of [3, 6, 10]) {
+    state = { ...state, data: { actividades: many.props.data.slice(0, count) } };
+    assert.ok(textOf(screen()).includes(`${count} de 10 actividades`));
+    assert.equal(typeof nodes(screen()).find(node => node.type === 'CreateActivity').props.onCreateActivity,
+      count === 10 ? 'undefined' : 'function');
+  }
+  const row = many.props.renderItem({ item: many.props.data[11], index: 11 });
+  assert.ok(!nodes(screen()).some(node => node.type === 'ActivityActionsMenu'));
+  row.props.onActions({ x: 10, y: 20 });
+  const menu = nodes(screen()).find(node => node.type === 'ActivityActionsMenu');
+  menu.props.onEdit();
+  assert.deepEqual(navigations.pop(), { pathname: '/perfiles/[idPerfilUsuario]/editar-actividad',
+    params: { idPerfilUsuario: '12', idActividad: '12' } });
+  assert.ok(!nodes(screen()).some(node => node.type === 'ActivityActionsMenu'));
+  row.props.onActions({ x: 10, y: 20 });
+  nodes(screen()).find(node => node.type === 'ActivityActionsMenu').props.onDelete();
+  const deletion = nodes(screen()).find(node => node.type === 'DeleteActivityDialog');
+  assert.equal(deletion.props.person, 'Persona real');
+  assert.ok(textOf(screen()).includes('10 de 10 actividades'));
+  deletion.props.onClose();
+  assert.ok(textOf(screen()).includes('10 de 10 actividades'));
+  const currentList = nodes(screen()).find(node => node.type === 'List');
+  currentList.props.renderItem({ item: currentList.props.data[0], index: 0 }).props.onActions({ x: 10, y: 20 });
+  nodes(screen()).find(node => node.type === 'ActivityActionsMenu').props.onDelete();
+  nodes(screen()).find(node => node.type === 'DeleteActivityDialog').props.onRemoved('Actividad eliminada.');
+  assert.ok(textOf(screen()).includes('9 de 10 actividades'));
+  assert.ok(!textOf(screen()).includes('Actividad eliminada.'));
+  assert.deepEqual(announcements, ['Actividad eliminada.']);
+  assert.equal(typeof nodes(screen()).find(node => node.type === 'CreateActivity').props.onCreateActivity, 'function');
   state = { status: 'error' };
   assert.ok(!textOf(screen()).includes('Aún no hay'));
   nodes(screen()).find(node => node.props?.label === 'Reintentar').props.onPress(); assert.equal(retries, 1);
   state = { status: 'not-found' };
   assert.ok(!nodes(screen()).some(node => node.props?.label === 'Reintentar'));
-  nodes(screen()).find(node => node.props?.label === 'Volver a Mis perfiles').props.onPress();
+  nodes(screen()).find(node => node.props?.label === 'Volver a Personas').props.onPress();
   assert.equal(navigations.pop(), '/perfiles');
   for (const copy of ['Hoy', '0 de 0', '%']) assert.ok(!textOf(screen()).includes(copy));
 });

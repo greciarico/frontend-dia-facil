@@ -1,3 +1,4 @@
+import { carerPeopleCopy } from '@/constants/carer-people-copy';
 import type { ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -11,7 +12,7 @@ export function ProfileFlowLayout({ children, onBack }: { children: ReactNode; o
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.content}>
-          {onBack && <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel="Volver a Mis perfiles" style={styles.back}>
+          {onBack && <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel={carerPeopleCopy.back} style={styles.back}>
             <AreaIcon name="back" color={colors.text.primary} />
           </Pressable>}
           {children}

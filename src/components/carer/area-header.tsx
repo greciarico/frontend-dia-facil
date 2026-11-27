@@ -1,3 +1,4 @@
+import { carerPeopleCopy } from '@/constants/carer-people-copy';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { AppText } from '@/components/app-text';
@@ -6,7 +7,7 @@ import { useAppTheme } from '@/theme/use-theme';
 import { AreaIcon } from './area-icon';
 import { NotificationBell } from './notification-bell';
 
-export function AreaHeader({ title, onBack, showNotifications = true, backLabel = 'Volver a Mis perfiles', rightContent }: {
+export function AreaHeader({ title, onBack, showNotifications = true, backLabel = carerPeopleCopy.back, rightContent }: {
   title: ReactNode; onBack?: () => void; showNotifications?: boolean; backLabel?: string; rightContent?: ReactNode;
 }) {
   const { colors } = useAppTheme();

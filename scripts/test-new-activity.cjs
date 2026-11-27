@@ -19,7 +19,7 @@ function load(file, modules = {}, timers = {}) {
   new Function('require', 'exports', 'setTimeout', 'clearTimeout', ts.transpileModule(
     fs.readFileSync(path.join(__dirname, '../src', file), 'utf8'), {
       compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
-    }).outputText)(id => {if(id==='@/components/app-text-input')return {AppTextInput:'Input'};if(id==='@/context/carer-accessibility')return {useCarerAccessibilityFocusListeners:()=>({})};if(id==='@/components/app-text')return {AppText:'Text'};if(id==='@/theme/profile-appearance')return defaults[id]||{useProfileAppearance:()=>null,useEffectiveFontScale:()=>defaults['react-native']?.useWindowDimensions?.().fontScale??1}; assert.ok(id in defaults, `Missing adapter ${id}`); return defaults[id]; }, exports,
+    }).outputText)(id => { if (id === '@/constants/carer-people-copy') return load('constants/carer-people-copy.ts');if(id==='@/components/app-text-input')return {AppTextInput:'Input'};if(id==='@/context/carer-accessibility')return {useCarerAccessibilityFocusListeners:()=>({})};if(id==='@/components/app-text')return {AppText:'Text'};if(id==='@/theme/profile-appearance')return defaults[id]||{useProfileAppearance:()=>null,useEffectiveFontScale:()=>defaults['react-native']?.useWindowDimensions?.().fontScale??1}; assert.ok(id in defaults, `Missing adapter ${id}`); return defaults[id]; }, exports,
     timers.setTimeout || setTimeout, timers.clearTimeout || clearTimeout);
   return exports;
 }
@@ -259,11 +259,11 @@ test('new screen loads real profile, routes back to activities and keeps invalid
     Keyboard: { dismiss() {} },
     KeyboardAvoidingView: 'Keyboard', ScrollView: 'Scroll', TextInput: 'Input', Platform: { OS: 'android' },
     BackHandler: { addEventListener: (_event, callback) => { hardware = callback; return { remove() {} }; } } };
-  const Screen = load('app/(cuidador-autenticado)/(principal)/perfiles/[idPerfilUsuario]/nueva-actividad.tsx', { ...styling,
+  const adapters = { ...styling,
     'react-native': native,
     'react-native-gesture-handler': { GestureHandlerRootView: 'GestureRoot' },
     react: { useCallback: fn => fn, useRef: initial => {const i=cursor++;if(!(i in values))values[i]={current:initial};return values[i];},
-      useState: initial => { const i = cursor++; const store=values; if (!(i in store)) store[i] = initial;
+      useState: initial => { const i = cursor++; const store=values; if (!(i in store)) store[i] = typeof initial === 'function' ? initial() : initial;
       return [store[i], value => { store[i] = value; }]; },
       useReducer: (reducer, initial) => { const i = cursor++; const store=values;if (!(i in store)) store[i] = initial;
         return [store[i], action => { store[i] = reducer(store[i], action); }]; } },
@@ -282,21 +282,26 @@ test('new screen loads real profile, routes back to activities and keeps invalid
     '@/components/carer/activity-steps-editor': { ActivityStepsEditor: 'Steps' },
     '@/components/carer/area-header': { AreaHeader: 'Header' }, '@/components/carer/continue-button': { ContinueButton: 'Button' },
     '@/components/carer/profile-avatar': { ProfileAvatar: 'Avatar' },
-    '@/hooks/use-profile-detail': { useProfileDetail: id => { assert.equal(id, 12); return { state, reload: () => retried++ }; } },
+    '@/utils/activities': load('utils/activities.ts'),
+    '@/hooks/use-profile-activities': { useProfileActivities: id => { assert.equal(id, 12); return { state: state.status === 'ready' ? {data:{actividades:[]}, ...state} : state, reload: () => retried++ }; } },
     '@/hooks/use-activity-icons': { useActivityIcons: () => ({ catalogue: { status: 'ready', icons: [bread] }, suggestions: { status: 'ready', icons: [] } }) },
     '@/hooks/use-activity-template': { useActivityTemplate: () => ({ state: { status: 'ready', template: null }, retry() {} }) },
-  }).default;
+  };
+  const editUtils = load('utils/activity-edit.ts', {'./activities': load('utils/activities.ts'), './activity-draft': draftUtils});
+  const forms = load('components/carer/activity-definition-form.tsx', {...adapters, '@/utils/activity-edit': editUtils});
+  const Screen = load('app/(cuidador-autenticado)/(principal)/perfiles/[idPerfilUsuario]/nueva-actividad.tsx',
+    {...adapters, '@/components/carer/activity-definition-form': forms}).default;
   const screen=()=>{cursor=0;values=parentValues;return Screen();};
   assert.ok(!nodes(screen()).some(node => node.type === 'Input'));
   state = { status: 'error' }; nodes(screen()).find(node => node.props?.label === 'Reintentar').props.onPress(); assert.equal(retried, 1);
   state = { status: 'not-found' }; assert.ok(text(screen()).includes('No pudimos encontrar'));
   state = { status: 'ready', profile: { idPerfilUsuario: 12, nombre: 'Persona real', avatar: null } };
-  let tree = screen(); hardware(); assert.deepEqual(navigations.pop(), navigation.activitiesHref(12));
+  let tree = screen(); hardware(); assert.deepEqual(navigations.pop(), navigation.activitiesHref(12, 'rutina'));
   nodes(tree).find(node => node.type === 'Screen').props.options.header().props.onBack();
-  assert.deepEqual(navigations.pop(), navigation.activitiesHref(12));
+  assert.deepEqual(navigations.pop(), navigation.activitiesHref(12, 'rutina'));
   const form = nodes(tree).find(node => typeof node.type === 'function').type;
   const formProps=nodes(tree).find(node=>node.type===form).props;
-  const render = () => { cursor = 0;values=formValues;return form(formProps); };
+  const render = () => { cursor = 0; values = formValues; return forms.ActivityDefinitionForm(form(formProps).props); };
   const headings = nodes(render()).filter(node => node.type === 'SectionHeading');
   assert.deepEqual(headings.map(node => [node.props.icon, node.props.title]), [['pencil', 'Nombre de la actividad'], ['clock', 'Hora'], ['imagePlus', 'Elige un ícono']]);
   const iconHeading = headings[2];
@@ -326,6 +331,17 @@ test('new screen loads real profile, routes back to activities and keeps invalid
   nodes(tree).find(node=>node.type==='Actions').props.onCancel();
   assert.equal(nodes(render()).find(node=>node.type==='Input').props.value,'Leer');
   assert.equal(nodes(render()).find(node=>node.type==='Steps').props.draft.steps[0].descripcion,'Mi paso');
+  creation.error = { kind: 'limit', message: 'Alcanzaste el máximo de 10 actividades.' };
+  tree = render();
+  assert.ok(nodes(tree).some(node => node.props?.accessibilityRole === 'alert' && node.props.children === creation.error.message));
+  assert.equal(nodes(tree).find(node => node.props?.label === 'Crear actividad').props.disabled, true);
+  assert.equal(nodes(tree).find(node => node.type === 'Input').props.value, 'Leer');
+  assert.equal(nodes(tree).find(node => node.type === 'Steps').props.draft.steps[0].descripcion, 'Mi paso');
+  const available = state;
+  state = { ...state, data: { actividades: Array(10).fill({}) } };
+  assert.ok(text(screen()).includes(creation.error.message));
+  assert.ok(!nodes(screen()).some(node => node.type === form));
+  state = available;
   completed();assert.equal(navigations.length,0);
   tree=screen();let modal=nodes(tree).find(node=>node.type==='CreatedModal');
   assert.equal(modal.props.profileName,'Persona real');
@@ -339,8 +355,33 @@ test('new screen loads real profile, routes back to activities and keeps invalid
   assert.equal(nodes(tree).find(node=>node.type==='Steps').props.draft.steps.length,0);
   completed();modal=nodes(screen()).find(node=>node.type==='CreatedModal');
   modal.props.onViewActivities();modal.props.onViewActivities();
-  assert.equal(navigations.length,1);assert.deepEqual(navigations.pop(),navigation.activitiesHref(12));
+  assert.equal(navigations.length,1);assert.deepEqual(navigations.pop(),navigation.activitiesHref(12, 'rutina'));
   assert.ok(!nodes(screen()).some(node=>node.type==='CreatedModal'||node.type===form));
+
+  const initial = editUtils.parseEditableActivity({
+    idActividad: 7, revision: 2, nombre: 'Rutina guardada', hora: '18:15', codigoIcono: 'bread',
+    estadoHoy: 'EN_PROGRESO', pasos: Array.from({ length: 8 }, (_, index) => ({
+      idPasoActividad: index + 1, descripcion: 'Paso ' + (index + 1),
+      pictograma: index ? null : { idPictograma: 11, nombre: 'Imagen anterior' },
+    })),
+  }, 7);
+  const editingValues = [];
+  let editInput;
+  const renderEdit = () => {
+    cursor = 0; values = editingValues;
+    return forms.ActivityDefinitionForm({ initial, busy: false, actions: input => { editInput = input; } });
+  };
+  tree = renderEdit();
+  assert.equal(nodes(tree).find(node => node.type === 'Input').props.value, 'Rutina guardada');
+  assert.equal(nodes(tree).find(node => node.type === 'Time').props.value, 1095);
+  assert.equal(nodes(tree).find(node => node.type === 'Selector').props.value.codigo, 'bread');
+  assert.equal(nodes(tree).find(node => node.type === 'Steps').props.draft.personalized, true);
+  assert.equal(editInput, null);
+  nodes(tree).find(node => node.type === 'Steps').props.dispatch({ type: 'removeMany', keys: ['saved-8'] });
+  renderEdit();
+  assert.equal(editInput.pasos.length, 7);
+  assert.equal(editInput.pasos[0].conservarPictogramaDePaso, 1);
+  assert.equal(initial.pasos.length, 8);
 });
 
 const template = (id = 4, descriptions = ['Lávate las manos', 'Prepara la mesa']) => ({ idPlantillaActividad: id, nombre: 'Desayunar',
@@ -555,6 +596,22 @@ test('step editor requires confirmation to replace/remove, provides accessible o
   assert.equal(actions.slice(beforeDelete).filter(a => a.type === 'removeMany').length, 1);
   assert.equal(actions.slice(beforeDelete).filter(a => a.type === 'remove').length, 0);
   assert.equal(state.steps.length, 0); assert.ok(button('Agregar paso'));
+  const counter = () => nodes(render()).find(n => n.type === 'Heading').props.trailing.props.children;
+  assert.equal(counter(), '0 de 7 pasos');
+  suggestion = { status: 'ready', template: template(13, Array(8).fill('Paso sugerido')) };
+  assert.equal(button('Usar pasos sugeridos'), undefined);
+  assert.equal(counter(), '0 de 7 pasos');
+  assert.ok(text(render()).includes('La sugerencia supera el máximo de 7 pasos.'));
+  state = draftUtils.stepsDraftReducer(state, { type: 'apply', template: template(14, Array(7).fill('Paso sugerido')) });
+  assert.equal(counter(), '7 de 7 pasos');
+  assert.equal(button('Agregar paso').props.disabled, true);
+  assert.ok(text(render()).includes('Alcanzaste el máximo de 7 pasos.'));
+  select(1);
+  assert.equal(counter(), '7 de 7 pasos');
+  button('Eliminar paso').props.onPress(); button('Eliminar').props.onPress();
+  assert.equal(counter(), '6 de 7 pasos');
+  assert.equal(button('Agregar paso').props.disabled, false);
+  assert.ok(!text(render()).includes('Alcanzaste el máximo de 7 pasos.'));
   state = draftUtils.stepsDraftReducer(state, { type: 'apply', template: template(12) });
   const create = button('Crear actividad'); assert.equal(create.props.disabled, true); assert.equal(create.props.onPress, undefined);
   list = nodes(render()).find(n => n.type === 'DragList'); list.props.onDragBegin(0);
@@ -859,34 +916,54 @@ test('dialog retains default presentation and accessible focus/back, with option
   assert.equal(closed, 5);
 });
 
-test('creation serializes only final definition data, requires one step, and accepts many steps without a product maximum', () => {
+test('creation serializes only final definition data, requires one step, and accepts seven steps and rejects eight', () => {
   const step = { key: 'temporary-99', orden: 20, descripcion: 'Texto final', pictograma: pictogramFixture(), selected: true };
   assert.deepEqual(createUtils.createActivityInput(' Desayuno ', 7 * 60, bread, [step]), {
     nombre: 'Desayuno', hora: '07:00', codigoIcono: 'bread', pasos: [{ descripcion: 'Texto final', idArasaac: 123 }],
   });
   assert.equal(createUtils.createActivityInput('A', 0, bread, [{ ...step, pictograma: null }]).hora, '00:00');
-  assert.equal(createUtils.createActivityInput('A', 1439, bread, Array(1000).fill(step)).pasos.length, 1000);
+  assert.equal(createUtils.createActivityInput('A', 1439, bread, Array(7).fill(step)).pasos.length, 7);
+  assert.throws(() => createUtils.createActivityInput('A', 0, bread, Array(8).fill(step)), /máximo 7 pasos/);
   for (const args of [['',0,bread,[step]],['A',null,bread,[step]],['A',1440,bread,[step]],['A',0,null,[step]],
     ['A',0,bread,[]],['A',0,bread,[{...step,descripcion:' '}]],['A',0,bread,[{...step,pictograma:{idPictograma:2,nombre:'Legacy'}}]]]) {
     assert.ok(createUtils.activityInputError(...args)); assert.throws(() => createUtils.createActivityInput(...args));
   }
 });
 
+test('step capacity protects both template paths and reopens after removal', () => {
+  const { initialStepsDraft, stepsDraftReducer: reduce } = draftUtils;
+  const step = { orden: 1, descripcion: 'Paso', pictograma: null };
+  const template = { idPlantillaActividad: 1, nombre: 'Rutina', pasos: Array(7).fill(step) };
+  const full = reduce(initialStepsDraft, { type: 'suggest', template });
+  assert.equal(full.steps.length, 7);
+  const longTemplate = { ...template, pasos: [...template.pasos, step] };
+  assert.equal(reduce(initialStepsDraft, { type: 'suggest', template: longTemplate }), initialStepsDraft);
+  assert.equal(reduce(full, { type: 'apply', template: longTemplate }), full);
+  const add = { type: 'save', description: 'Paso nuevo' };
+  assert.equal(reduce(full, add), full);
+  const key = full.steps[0].key;
+  assert.equal(reduce(full, { ...add, key }).steps.length, 7);
+  assert.equal(reduce(full, { type: 'move', key, direction: 1 }).steps.length, 7);
+  assert.equal(reduce(reduce(full, { type: 'removeMany', keys: [key] }), add).steps.length, 7);
+});
+
 test('creation service posts once, validates 201, and treats transport/5xx/malformed success as uncertain', async () => {
   class HttpError extends Error { constructor(status,codigo){super('safe');this.status=status;this.codigo=codigo;} }
   const input=createUtils.createActivityInput('A',0,bread,[{key:'one',orden:1,descripcion:'Paso',pictograma:null}]);
   let calls=[];let failure;let response={status:201,data:{idActividad:27,nombre:'A',hora:'00:00',codigoIcono:'bread'}};
-  const api=load('services/activities.ts',{'./private-http':{PrivateHttpError:HttpError,getAuthenticatedHttpClient:()=>({
+  const api=load('services/activities.ts',{'@/utils/activity-draft':draftUtils,'./private-http':{PrivateHttpError:HttpError,getAuthenticatedHttpClient:()=>({
     post:async(...args)=>{calls.push(args);if(failure)throw failure;return response;}})},'@/utils/activities':load('utils/activities.ts')});
   const signal=new AbortController().signal;
   assert.equal((await api.createActivity(12,input,signal)).idActividad,27);
   assert.deepEqual(calls[0],['/api/perfiles/12/actividades',input,{signal,authReplaySafe:true}]);
   for(const [status,codigo,kind] of [[400,'SOLICITUD_INVALIDA','validation'],[400,'ICONO_NO_ENCONTRADO','icon'],
-    [400,'PICTOGRAMA_INVALIDO','pictogram'],[404,'PERFIL_NO_ENCONTRADO','not-found'],[409,'CONFLICTO_CREACION','conflict'],
+    [400,'PICTOGRAMA_INVALIDO','pictogram'],[404,'PERFIL_NO_ENCONTRADO','not-found'],[409,'CONFLICTO_CREACION','conflict'],[409,'LIMITE_ACTIVIDADES_ALCANZADO','limit'],
     [503,'PICTOGRAMAS_NO_DISPONIBLES','unavailable'],[500,'ERROR_INTERNO','uncertain'],[401,'SESION_INVALIDA','access']]) {
     failure=new HttpError(status,codigo);const before=calls.length;
     await assert.rejects(api.createActivity(12,input),e=>e.kind===kind);assert.equal(calls.length,before+1);
   }
+  failure = Object.assign(new HttpError(400, 'SOLICITUD_INVALIDA'), {fields:['pasos']});
+  await assert.rejects(api.createActivity(12,input), e => e.kind === 'step-count' && e.message === 'Agrega entre 1 y 7 pasos.');
   failure=new Error('private body');await assert.rejects(api.createActivity(12,input),e=>e.kind==='uncertain'&&!e.message.includes('private'));
   failure=undefined;response={status:201,data:{}};await assert.rejects(api.createActivity(12,input),e=>e.kind==='uncertain');
   response={status:200,data:{}};await assert.rejects(api.createActivity(12,input),e=>e.kind==='uncertain');
@@ -919,7 +996,7 @@ test('activity cards show real name/time and local icon fallback without complet
   const surfaces=load('utils/activity-icon-surface.ts',{'@/theme/tokens':tokens});
   const component=load('components/carer/activity-summary-card.tsx',{...styling,
     './account-layout':{accountStyles:{body:{textAlign:'center'},small:{}}},
-    react:{useState:initial=>[initial,()=>{}]},'@/constants/activity-icons':{resolveActivityIcon:code=>code==='bread'?'local-bread':undefined},
+    react:{useRef:initial=>({current:initial}),useState:initial=>[initial,()=>{}]},'@/constants/activity-icons':{resolveActivityIcon:code=>code==='bread'?'local-bread':undefined},
     '@/utils/activity-draft':draftUtils,'./area-icon':{AreaIcon:'Icon'},
     '@/utils/activity-icon-surface':surfaces,
   }).ActivitySummaryCard;

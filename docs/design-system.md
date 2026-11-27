@@ -437,3 +437,6 @@ la presentación aprobada. Detalle Hora/Fecha, navegación y acciones de modal
 consideran el factor de perfil junto al fontScale nativo para adaptar su layout.
 
 Ver [arquitectura, voz y matriz de validación](accesibilidad-perfil.md).
+
+
+El contador de pasos de Nueva actividad usa AppText y el morado semántico. La barra discreta de capacidad usa morado sobre lavanda y es decorativa para lectores de pantalla.

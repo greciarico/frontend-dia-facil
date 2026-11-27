@@ -108,3 +108,6 @@ usan etiquetas bold 20 para contraste AA de texto grande con el rojo de Figma;
 el resto de las acciones de formulario conserva texto 16. No cambia callbacks,
 campos, tarjetas, selector ni estado del borrador.
 
+
+
+DF-07 muestra el contador y una barra decorativa de capacidad. A siete pasos, «Agregar paso» se deshabilita hasta eliminar uno. La edición y el reordenamiento siguen disponibles.

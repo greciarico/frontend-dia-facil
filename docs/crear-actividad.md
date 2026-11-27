@@ -5,7 +5,7 @@ El formulario conserva su diseño y estado local; pasos sugeridos/manuales,
 selección múltiple, modales, ARASAAC y drag siguen siendo el borrador de B.
 
 Crear requiere nombre válido, hora, icono y al menos un paso válido, sin modal o
-drag activo. No se impone un máximo funcional de pasos. Sin sugerencias también
+drag activo. DF-07 admite de uno a siete pasos al guardar, tanto sugeridos como manuales. Los círculos solo seleccionan para eliminar. Sin sugerencias también
 puede crearse. El payload copia solo definición final, idArasaac opcional y el
 orden del array; nunca claves locales, nombres/URL del proveedor, selección o
 identidad de plantilla. Una selección legacy no se pierde silenciosamente: hay
@@ -39,7 +39,7 @@ con texto ampliado/ancho estrecho; foco inicial y cierre de TalkBack conservados
 
 Sin actividades se conserva ScrollView del empty state y botón grande. Con datos
 se usa una FlatList independiente con tarjetas de icono 3D, nombre y hora, sin
-fechas/progreso/completado/detalle. Conserva el orden recibido (backend ID asc).
+fechas/progreso/completado/detalle. Conserva el orden recibido del backend por hora programada e ID ascendentes.
 No se utilizan pictogramas de pasos como iconos de actividad.
 CreateActivityButton ofrece floating=true: FAB de 56 derivado de tokens, plus
 vectorial, label Nueva actividad y colores de acción de ambos temas. Queda fuera
@@ -85,3 +85,7 @@ temas; tarjeta/texto conservan sus tokens semánticos. FlatList pasa el índice 
 ActivitySummaryCard, sin usar ID, persistir color ni cambiar orden. La futura
 agenda puede reutilizar directamente esa función sin implementar ese módulo ahora.
 Validación del ajuste: 103 pruebas frontend, TypeScript y lint correctos.
+
+## Capacidad de la rutina (DF-08)
+
+Nueva actividad comprueba la capacidad al entrar y al elegir «Crear otra». Si otra sesión llena la rutina mientras el formulario está abierto, el rechazo por límite conserva el borrador y bloquea otro envío.

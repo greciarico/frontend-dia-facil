@@ -1,3 +1,6 @@
+export const maximumActiveActivities = 10;
+export const activeActivityLimitMessage = `Alcanzaste el máximo de ${maximumActiveActivities} actividades.`;
+
 export type ActivitySummary = { idActividad: number; nombre: string; hora: string; codigoIcono: string | null };
 export type ProfileActivities = { actividades: ActivitySummary[] };
 

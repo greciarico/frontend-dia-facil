@@ -1,4 +1,4 @@
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Circle, Path } from 'react-native-svg';
 import { sizes } from '@/theme/tokens';
 
 const paths = {
@@ -39,8 +39,14 @@ const paths = {
   drag: 'M9 5h.01M15 5h.01M9 12h.01M15 12h.01M9 19h.01M15 19h.01',
   trash: 'M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7',
 } as const;
-export function AreaIcon({ name, color, size = sizes.icon }: { name: keyof typeof paths; color: string; size?: number }) {
-  return <Svg width={size} height={size} viewBox="0 0 24 24" accessible={false}>
+export function AreaIcon({ name, color, size = sizes.icon, backdrop }: {
+  name: keyof typeof paths; color: string; size?: number; backdrop?: { size: number; color: string };
+}) {
+  const canvasSize = backdrop?.size ?? size;
+  const viewSize = 24 * canvasSize / size;
+  const origin = (24 - viewSize) / 2;
+  return <Svg width={canvasSize} height={canvasSize} viewBox={`${origin} ${origin} ${viewSize} ${viewSize}`} accessible={false}>
+    {backdrop && <Circle cx={12} cy={12} r={viewSize / 2} fill={backdrop.color} />}
     {name === 'contrast' && <Path d="M12 2a10 10 0 0 0 0 20Z" fill={color} />}
     <Path d={paths[name]} fill="none" stroke={color} strokeWidth={sizes.stroke} strokeLinecap="round" strokeLinejoin="round" />
   </Svg>;

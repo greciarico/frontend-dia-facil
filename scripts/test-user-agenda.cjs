@@ -20,6 +20,14 @@ test('agenda contract preserves all real states, validates dates/time/zone and r
  assert.equal(utils.parseUserAgenda({...response(),actividades:[{...response().actividades[0],codigoIcono:'unknown-icon'}]}).actividades[0].codigoIcono,'unknown-icon');
 });
 
+test('agenda keeps the whole day when kept executions take the total above ten', () => {
+ const raw = response();
+ raw.actividades = Array.from({ length: 12 }, (_, i) => ({
+   ...raw.actividades[0], idActividad: i + 1, estado: i < 10 ? 'PENDIENTE' : 'COMPLETADA',
+ }));
+ assert.deepEqual(utils.parseUserAgenda(raw).actividades, raw.actividades);
+});
+
 test('agenda transport only calls the Usuario private endpoint, passes cancellation and never substitutes errors with an empty agenda',async()=>{
  const calls=[];let fail=false;
  const api=load('services/user-agenda.ts',{'./device-access':{createUserHttpClient:()=>({get:async(...args)=>{calls.push(args);if(fail)throw new Error('network');return {data:response()};}})},'@/utils/user-agenda':utils,'@/utils/user-activity':detailUtils});
@@ -37,7 +45,7 @@ test('user navigation enables Agenda and Apoyo with the current route selected',
 });
 
 test('agenda card status is informative, with safe missing-icon fallback and no completion callback or checkbox',()=>{
- const card=load('components/carer/activity-summary-card.tsx',{...styling,'react':{useState:v=>[v,()=>{}]},'expo-image':{Image:'Image'},
+ const card=load('components/carer/activity-summary-card.tsx',{...styling,'react':{useRef:v=>({current:v}),useState:v=>[v,()=>{}]},'expo-image':{Image:'Image'},
   '@/constants/activity-icons':{resolveActivityIcon:()=>null},'@/utils/activity-draft':{formatActivityTime:()=> '7:00 a.m.'},
   '@/utils/activity-icon-surface':{getActivityIconSurface:()=> 'surface'},'./account-layout':{accountStyles:{}},'./area-icon':{AreaIcon:'Icon'}}).ActivitySummaryCard;
  for(const status of ['pendiente','en progreso','completada']){
@@ -97,7 +105,7 @@ test('agenda palette cycles by position; integrated cards use family tokens and 
  const families=[tokens.colors.yellow,tokens.colors.green,tokens.colors.orange,tokens.colors.blue,tokens.colors.purple];
  let theme=tokens.themes.light;
  const card=load('components/carer/activity-summary-card.tsx',{...styling,'@/theme/use-theme':{useAppTheme:()=>theme},
-  react:{useState:v=>[v,()=>{}]},'expo-image':{Image:'Image'},'@/constants/activity-icons':{resolveActivityIcon:()=> 'local-3d'},
+  react:{useRef:v=>({current:v}),useState:v=>[v,()=>{}]},'expo-image':{Image:'Image'},'@/constants/activity-icons':{resolveActivityIcon:()=> 'local-3d'},
   '@/utils/activity-draft':{formatActivityTime:()=> '7:00 a.m.'},'@/utils/activity-icon-surface':surfaces,
   './account-layout':{accountStyles:{}},'./area-icon':{AreaIcon:'Icon'}}).ActivitySummaryCard;
  for(let index=0;index<10;index++){

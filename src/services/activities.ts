@@ -1,12 +1,15 @@
 import { getAuthenticatedHttpClient, PrivateHttpError } from './private-http';
-import { parseActivities } from '@/utils/activities';
+import { maximumActivitySteps } from '@/utils/activity-draft';
+import { activeActivityLimitMessage, parseActivities } from '@/utils/activities';
 import type { ActivityInput } from '@/utils/create-activity';
 import type { PrivateRequestOptions } from './private-http';
 
 export class CreateActivityError extends Error {
-  constructor(readonly kind: 'validation' | 'not-found' | 'icon' | 'pictogram' | 'conflict' | 'unavailable' | 'uncertain' | 'access') {
-    super(kind === 'validation' ? 'Revisa el nombre, la hora, el ícono y los pasos.'
-      : kind === 'not-found' ? 'Este perfil ya no está disponible.'
+  constructor(readonly kind: 'limit' | 'validation' | 'step-count' | 'not-found' | 'icon' | 'pictogram' | 'conflict' | 'unavailable' | 'uncertain' | 'access') {
+    super(kind === 'limit' ? activeActivityLimitMessage
+      : kind === 'validation' ? 'Revisa el nombre, la hora, el ícono y los pasos.'
+      : kind === 'step-count' ? `Agrega entre 1 y ${maximumActivitySteps} pasos.`
+      : kind === 'not-found' ? 'No pudimos encontrar los datos de esta persona.'
       : kind === 'icon' ? 'Selecciona un ícono del catálogo.'
       : kind === 'pictogram' ? 'Cambia el pictograma no válido o deja el paso sin imagen.'
       : kind === 'conflict' ? 'No pudimos completar la creación. Inténtalo de nuevo.'
@@ -26,9 +29,10 @@ export async function createActivity(id: number, input: ActivityInput, signal?: 
     if (error instanceof CreateActivityError) throw error;
     if (error instanceof PrivateHttpError) {
       if (error.status === 404 && error.codigo === 'PERFIL_NO_ENCONTRADO') throw new CreateActivityError('not-found');
-      if (error.status === 400 && error.codigo === 'SOLICITUD_INVALIDA') throw new CreateActivityError('validation');
+      if (error.status === 400 && error.codigo === 'SOLICITUD_INVALIDA') throw new CreateActivityError(error.fields?.includes('pasos') ? 'step-count' : 'validation');
       if (error.status === 400 && error.codigo === 'ICONO_NO_ENCONTRADO') throw new CreateActivityError('icon');
       if (error.status === 400 && error.codigo === 'PICTOGRAMA_INVALIDO') throw new CreateActivityError('pictogram');
+      if (error.status === 409 && error.codigo === 'LIMITE_ACTIVIDADES_ALCANZADO') throw new CreateActivityError('limit');
       if (error.status === 409 && error.codigo === 'CONFLICTO_CREACION') throw new CreateActivityError('conflict');
       if (error.status === 503 && error.codigo === 'PICTOGRAMAS_NO_DISPONIBLES') throw new CreateActivityError('unavailable');
       if (error.status === 401 || error.status === 403) throw new CreateActivityError('access');
@@ -39,14 +43,15 @@ export async function createActivity(id: number, input: ActivityInput, signal?: 
 
 export class ActivitiesError extends Error {
   constructor(readonly kind: 'not-found' | 'network' | 'invalid-response') {
-    super(kind === 'not-found' ? 'No pudimos encontrar este perfil.'
+    super(kind === 'not-found' ? 'No pudimos encontrar los datos de esta persona.'
       : 'No pudimos cargar las actividades. Inténtalo de nuevo.');
   }
 }
 
-export async function getActivities(id: number, signal?: AbortSignal) {
+export async function getActivities(id: number, signal?: AbortSignal, expectedRevision?: number) {
   try {
-    const response = await getAuthenticatedHttpClient().get(`/api/perfiles/${id}/actividades`, { signal });
+    const options: PrivateRequestOptions = expectedRevision === undefined ? { signal } : { signal, expectedRevision };
+    const response = await getAuthenticatedHttpClient().get(`/api/perfiles/${id}/actividades`, options);
     if (response.status !== 200) throw new ActivitiesError('invalid-response');
     try { return parseActivities(response.data); }
     catch { throw new ActivitiesError('invalid-response'); }

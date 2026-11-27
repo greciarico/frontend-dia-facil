@@ -34,7 +34,7 @@ test('detail uses the existing private client with only the activity ID and canc
 
 test('only the agenda card becomes one accessible button; its state circle has no independent action',()=>{
  const surfaces=load('utils/activity-icon-surface.ts',{'@/theme/tokens':tokens});let opens=0;
- const card=load('components/carer/activity-summary-card.tsx',{...styling,react:{useState:v=>[v,()=>{}]},'expo-image':{Image:'Image'},'@/constants/activity-icons':{resolveActivityIcon:()=>null},
+ const card=load('components/carer/activity-summary-card.tsx',{...styling,react:{useRef:v=>({current:v}),useState:v=>[v,()=>{}]},'expo-image':{Image:'Image'},'@/constants/activity-icons':{resolveActivityIcon:()=>null},
  '@/utils/activity-draft':{formatActivityTime:()=> '7:00 a.m.'},'@/utils/activity-icon-surface':surfaces,'./account-layout':{accountStyles:{}},'./area-icon':{AreaIcon:'Icon'}}).ActivitySummaryCard;
  const tree=card({activity:response().actividad,index:0,status:'pendiente',appearance:'agenda',onPress:()=>opens++});
  assert.equal(tree.type,'Pressable');assert.equal(tree.props.accessibilityRole,'button');assert.equal(tree.props.accessibilityLabel,'Actividad real, 7:00 a.m., pendiente');

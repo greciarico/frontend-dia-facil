@@ -16,7 +16,7 @@ export function useProfileActivities(id: number | undefined) {
   const active = useRef(false);
   const pending = useRef<AbortController | null>(null);
   const [result, setResult] = useState<Result>();
-  const load = useCallback(async () => {
+  const load = useCallback(async (preserve = false) => {
     if (!id || !owner || !active.current || pending.current) return;
     const controller = new AbortController(); pending.current = controller;
     const revision = manager.revision();
@@ -24,7 +24,7 @@ export function useProfileActivities(id: number | undefined) {
       && manager.revision() === revision && manager.getSnapshot().status === 'authenticated'
       && manager.getSnapshot().caregiver?.idCuidador === owner;
     const publish = (state: ActivitiesState) => { if (current()) setResult({ id, owner, revision, state }); };
-    publish({ status: 'loading' });
+    if (!preserve) publish({ status: 'loading' });
     try {
       const profile = await getProfile(id, controller.signal);
       if (!current()) return;
@@ -32,6 +32,7 @@ export function useProfileActivities(id: number | undefined) {
       publish({ status: 'ready', profile, data });
     } catch (error) {
       const unavailable = (error instanceof ProfileDetailError || error instanceof ActivitiesError) && error.kind === 'not-found';
+      if (preserve && !unavailable) return;
       publish({ status: unavailable ? 'not-found' : 'error' });
     } finally { if (pending.current === controller) pending.current = null; }
   }, [id, owner, manager]);
@@ -41,5 +42,15 @@ export function useProfileActivities(id: number | undefined) {
   }, [load]));
   const state: ActivitiesState = !id ? { status: 'not-found' }
     : result?.id === id && result.owner === owner && result.revision === manager.revision() ? result.state : { status: 'loading' };
-  return { state, reload: load };
+  function confirmRemoval(activityId: number) {
+    pending.current?.abort();
+    pending.current = null;
+    if (!active.current || !id || !owner) return;
+    const revision = manager.revision();
+    setResult(previous => previous?.id === id && previous.owner === owner && previous.revision === revision
+      && previous.state.status === 'ready' ? { ...previous, state: { ...previous.state,
+        data: { actividades: previous.state.data.actividades.filter(activity => activity.idActividad !== activityId) } } } : previous);
+    void load(true);
+  }
+  return { state, reload: load, confirmRemoval };
 }

@@ -1,3 +1,4 @@
+import { carerPeopleCopy } from '@/constants/carer-people-copy';
 import { AppTextInput as TextInput } from '@/components/app-text-input';
 import { AppText as Text } from '@/components/app-text';
 import { Redirect, router, useFocusEffect } from 'expo-router';
@@ -69,7 +70,7 @@ export default function CreateProfileScreen() {
         <AreaIcon name="camera" color={colors.text.disabled} />
       </Pressable>
     </View>
-    <Text accessibilityRole="header" style={[accountStyles.title, { color: colors.text.primary }]}>¿Cómo se llama?</Text>
+    <Text accessibilityRole="header" style={[accountStyles.title, { color: colors.text.primary }]}>Nueva persona</Text>
     <Text style={[accountStyles.small, styles.description, { color: colors.text.secondary }]}>Escribe el nombre de la persona que usará la agenda</Text>
     <TextInput ref={input} value={name} onChangeText={value => { setName(value); setFieldError(undefined); setFailure(undefined); }}
       editable={!blocked} autoCapitalize="words" autoCorrect={false} autoComplete="name" textContentType="name"
@@ -79,12 +80,12 @@ export default function CreateProfileScreen() {
       style={[styles.input, { color: colors.text.primary, backgroundColor: colors.surface.default, borderColor: fieldError ? colors.status.error : colors.border.control }]} />
     {fieldError && <Text accessibilityRole="alert" style={[accountStyles.small, { color: colors.status.error }]}>{fieldError}</Text>}
     <Text style={[styles.section, { color: colors.text.primary }]}>Imagen o avatar de perfil</Text>
-    <Text style={[accountStyles.small, { color: colors.text.secondary }]}>Selecciona un avatar para identificar su perfil. Podrás añadir una foto más adelante.</Text>
+    <Text style={[accountStyles.small, { color: colors.text.secondary }]}>Selecciona un avatar para reconocer su perfil.</Text>
     <View style={styles.selector}><AvatarSelector value={avatar} onChange={value => { setAvatar(value); setFailure(undefined); }} disabled={blocked} name={name}
       title="Elige un avatar" resetLabel="Usar la inicial del nombre" /></View>
-    <View style={styles.action}><ContinueButton label="Continuar" onPress={() => void submit()} disabled={blocked || !!validateProfileName(name)} loading={loading} loadingLabel="Creando perfil…" /></View>
+    <View style={styles.action}><ContinueButton label="Continuar" onPress={() => void submit()} disabled={blocked || !!validateProfileName(name)} loading={loading} loadingLabel="Guardando…" /></View>
     {failure && <Text accessibilityRole="alert" style={[accountStyles.small, styles.error, { color: colors.status.error }]}>{failure.message}</Text>}
-    {(failure?.kind === 'limit' || failure?.kind === 'uncertain') && <ContinueButton label="Revisar Mis perfiles" onPress={back} />}
+    {(failure?.kind === 'limit' || failure?.kind === 'uncertain') && <ContinueButton label={carerPeopleCopy.review} onPress={back} />}
   </ProfileFlowLayout>;
 }
 const styles = StyleSheet.create({

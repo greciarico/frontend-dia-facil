@@ -107,7 +107,7 @@ export default function DeviceLinkScreen() {
           {state.status === 'renewing' ? 'Renovando código…' : 'Consultando código…'}</Text>
       </> : <>
         <Text accessibilityRole="alert" style={[accountStyles.body, styles.centered, { color: colors.text.secondary }]}>
-          {state.status === 'not-found' ? 'Este perfil no está disponible.' : 'No pudimos consultar el código actual. Revisa tu conexión e inténtalo de nuevo.'}</Text>
+          {state.status === 'not-found' ? 'No pudimos encontrar los datos de esta persona.' : 'No pudimos consultar el código actual. Revisa tu conexión e inténtalo de nuevo.'}</Text>
         {state.status === 'error' && <ContinueButton label="Reintentar" onPress={() => void reload()} />}
         <ContinueButton label="Volver al perfil" onPress={back} />
       </>}

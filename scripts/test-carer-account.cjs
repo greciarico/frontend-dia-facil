@@ -4,7 +4,7 @@ function load(file, modules = {}) {
   const out = {};
   new Function('require', 'exports', ts.transpileModule(fs.readFileSync(path.join(__dirname, '../src', file), 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
-  }).outputText)(id => { assert.ok(id in modules, 'Missing adapter ' + id); return modules[id]; }, out);
+  }).outputText)(id => { if (id === '@/constants/carer-people-copy') return load('constants/carer-people-copy.ts'); assert.ok(id in modules, 'Missing adapter ' + id); return modules[id]; }, out);
   return out;
 }
 const tokens = load('theme/tokens.ts'), utils = load('utils/accessibility.ts');

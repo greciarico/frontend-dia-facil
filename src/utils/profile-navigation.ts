@@ -12,8 +12,8 @@ export function isProfilesDestination(pathname: string) {
   return pathname === '/perfiles' || pathname.startsWith('/perfiles/');
 }
 
-export function activitiesHref(id: number) {
-  return { pathname: '/perfiles/[idPerfilUsuario]/actividades' as const, params: { idPerfilUsuario: String(id) } };
+export function activitiesHref(id: number, tab?: 'rutina') {
+  return { pathname: '/perfiles/[idPerfilUsuario]/actividades' as const, params: { idPerfilUsuario: String(id), ...(tab ? { tab } : {}) } };
 }
 
 export function newActivityHref(id: number) {
