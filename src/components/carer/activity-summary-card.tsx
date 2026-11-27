@@ -1,6 +1,6 @@
 import { AppText as Text } from '@/components/app-text';
 import { Image } from 'expo-image';
-import { useRef, useState } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { resolveActivityIcon } from '@/constants/activity-icons';
 import type { ActivitySummary } from '@/utils/activities';
@@ -11,10 +11,11 @@ import { useAppTheme } from '@/theme/use-theme';
 import { accountStyles } from './account-layout';
 import { AreaIcon } from './area-icon';
 
-export function ActivitySummaryCard({ activity, index, status, appearance = 'summary', onPress, onActions, actionsOpen = false }: {
+export function ActivitySummaryCard({ activity, index, status, appearance = 'summary', onPress, onActions, actionsOpen = false, followUp }: {
   activity: ActivitySummary; index: number; status?: 'pendiente' | 'en progreso' | 'completada'; appearance?: 'summary' | 'agenda'; onPress?: () => void;
   onActions?: (anchor: { x: number; y: number; width: number; height: number; trigger: View }) => void;
   actionsOpen?: boolean;
+  followUp?: { label: string; content: ReactNode; indicator: ReactNode };
 }) {
   const trigger = useRef<View>(null);
   const { colors, scheme, highContrast } = useAppTheme();
@@ -28,7 +29,7 @@ export function ActivitySummaryCard({ activity, index, status, appearance = 'sum
   const [hour, minute] = activity.hora.split(':').map(Number);
   const time = formatActivityTime(hour * 60 + minute);
   const Container = onPress ? Pressable : View;
-  return <Container accessible={!onActions} accessibilityLabel={onActions ? undefined : `${activity.nombre}, ${time}${status ? `, ${status}` : ''}`}
+  return <Container accessible={!onActions} accessibilityLabel={onActions ? undefined : `${activity.nombre}, ${time}${status ? `, ${status}` : ''}${followUp ? `, ${followUp.label}` : ''}`}
     accessibilityRole={onPress ? 'button' : undefined} accessibilityHint={onPress ? 'Ver detalle de la actividad.' : undefined} onPress={onPress}
     style={[styles.card, agenda && styles.agendaCard, { backgroundColor: familySurface ? family!.light : colors.surface.default,
       borderColor: border, shadowColor: colors.shadow }]}>
@@ -43,6 +44,7 @@ export function ActivitySummaryCard({ activity, index, status, appearance = 'sum
       <Text style={[accountStyles.body, styles.name, { color: colors.text.primary }]}>{activity.nombre}</Text>
       <Text style={[accountStyles.small, styles.left, agenda && styles.agendaTime, { color: colors.text.secondary }]}>{time}</Text>
       {status === 'en progreso' && <Text style={[accountStyles.small, styles.left, { color: colors.text.secondary }]}>En progreso</Text>}
+      {followUp?.content}
     </View>
     {onActions && <Pressable ref={trigger} style={styles.actions} accessibilityRole="button"
       accessibilityLabel={`Acciones de ${activity.nombre}`} accessibilityState={{ expanded: actionsOpen }} onPress={() => {
@@ -52,6 +54,7 @@ export function ActivitySummaryCard({ activity, index, status, appearance = 'sum
       {({ pressed }) => <AreaIcon name="more" color={colors.action.primary}
         backdrop={pressed || actionsOpen ? { size: actionCircleSize, color: colors.welcome.intro } : undefined} />}
     </Pressable>}
+    {followUp && <View style={styles.followUpIndicator}>{followUp.indicator}</View>}
     {status && <View accessible={false} importantForAccessibility="no-hide-descendants" style={[styles.state, agenda && styles.agendaState, {
       borderColor: status === 'completada' ? stateColor : highContrast ? colors.border.control : agenda ? colors.text.disabled : colors.border.control,
       backgroundColor: status === 'completada' ? highContrast || agenda ? stateColor : colors.status.successSurface : 'transparent',
@@ -62,6 +65,7 @@ const actionCircleSize = sizes.touchTarget - spacing.md;
 
 const styles = StyleSheet.create({
   actions: { width: sizes.touchTarget, height: sizes.touchTarget, alignSelf: 'flex-start', alignItems: 'center', justifyContent: 'center' },
+  followUpIndicator: { flexShrink: 0 },
   state: { width: sizes.icon, height: sizes.icon, borderRadius: sizes.icon / 2, borderWidth: borders.selected, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   card: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, padding: spacing.lg, borderRadius: radii.card, borderWidth: borders.default,
     shadowOffset: { width: 0, height: shadows.card.offsetY }, shadowOpacity: shadows.card.opacity, shadowRadius: shadows.card.radius, elevation: shadows.card.elevation },

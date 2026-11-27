@@ -78,4 +78,10 @@ aplican migraciones; se conservan cambios anteriores del workspace.
 
 ## Capacidad de la rutina (DF-08)
 
-El listado muestra el total activo antes de las tarjetas, incluido el estado vacío. A partir de diez se deshabilita el botón flotante. Las rutinas que ya superaban diez muestran todas sus actividades. El contador representa capacidad, independiente del progreso diario.
+La pestaña Rutina muestra el total activo antes de las tarjetas cuando hay actividades. A partir de diez se deshabilita el botón flotante. Las rutinas que ya superaban diez muestran todas sus actividades. El contador representa capacidad, independiente del progreso diario.
+
+## Presentación de Rutina y Seguimiento (DF-11)
+
+Ambas pestañas comparten la composición del estado vacío y sus estilos Nunito. «Ir a rutina» usa el botón primario y cambia de pestaña. Los estados vacíos de una fecha conservan el selector y su mensaje según la cobertura histórica.
+
+El resumen diario conserva el porcentaje y el total completado. El desglose utiliza tarjetas informativas para los tres estados y se redistribuye con el texto ampliado. Después de una eliminación confirmada, se actualizan el listado y el cupo de Rutina. El resultado se anuncia mediante el lector de pantalla sin mostrar una notificación visual.

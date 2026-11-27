@@ -33,9 +33,9 @@ export default function NewActivityScreen() {
     if (!confirmed || successHandled.current) return;
     successHandled.current = true;
     if (another) { void reload(); setSuccess(null); }
-    else { setSuccess({ ...confirmed, leaving: true }); router.dismissTo(activitiesHref(confirmed.id)); }
+    else { setSuccess({ ...confirmed, leaving: true }); router.dismissTo(activitiesHref(confirmed.id, 'rutina')); }
   };
-  const back = useCallback(() => router.dismissTo(id ? activitiesHref(id) : '/perfiles'), [id]);
+  const back = useCallback(() => router.dismissTo(id ? activitiesHref(id, 'rutina') : '/perfiles'), [id]);
   useFocusEffect(useCallback(() => {
     const listener = BackHandler.addEventListener('hardwareBackPress', () => { back(); return true; });
     return () => listener.remove();
@@ -83,7 +83,7 @@ function ActivityForm({ id, onCreated }: { id: number; onCreated: () => void }) 
         {creation.error && <>
           <Text accessibilityRole="alert" style={[accountStyles.small, { color: atLimit ? colors.text.secondary : colors.status.error }]}>{creation.error.message}</Text>
           {(creation.error.kind === 'uncertain' || creation.error.kind === 'not-found') && <ContinueButton variant="secondary"
-            label="Ver actividades" onPress={() => router.dismissTo(activitiesHref(id))} />}
+            label="Ver actividades" onPress={() => router.dismissTo(activitiesHref(id, 'rutina'))} />}
         </>}
         <ContinueButton label="Crear actividad" loadingLabel="Creando actividad…" loading={creation.sending}
           disabled={!input || atLimit || creation.error?.kind === 'not-found'}

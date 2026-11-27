@@ -296,9 +296,9 @@ test('new screen loads real profile, routes back to activities and keeps invalid
   state = { status: 'error' }; nodes(screen()).find(node => node.props?.label === 'Reintentar').props.onPress(); assert.equal(retried, 1);
   state = { status: 'not-found' }; assert.ok(text(screen()).includes('No pudimos encontrar'));
   state = { status: 'ready', profile: { idPerfilUsuario: 12, nombre: 'Persona real', avatar: null } };
-  let tree = screen(); hardware(); assert.deepEqual(navigations.pop(), navigation.activitiesHref(12));
+  let tree = screen(); hardware(); assert.deepEqual(navigations.pop(), navigation.activitiesHref(12, 'rutina'));
   nodes(tree).find(node => node.type === 'Screen').props.options.header().props.onBack();
-  assert.deepEqual(navigations.pop(), navigation.activitiesHref(12));
+  assert.deepEqual(navigations.pop(), navigation.activitiesHref(12, 'rutina'));
   const form = nodes(tree).find(node => typeof node.type === 'function').type;
   const formProps=nodes(tree).find(node=>node.type===form).props;
   const render = () => { cursor = 0; values = formValues; return forms.ActivityDefinitionForm(form(formProps).props); };
@@ -355,7 +355,7 @@ test('new screen loads real profile, routes back to activities and keeps invalid
   assert.equal(nodes(tree).find(node=>node.type==='Steps').props.draft.steps.length,0);
   completed();modal=nodes(screen()).find(node=>node.type==='CreatedModal');
   modal.props.onViewActivities();modal.props.onViewActivities();
-  assert.equal(navigations.length,1);assert.deepEqual(navigations.pop(),navigation.activitiesHref(12));
+  assert.equal(navigations.length,1);assert.deepEqual(navigations.pop(),navigation.activitiesHref(12, 'rutina'));
   assert.ok(!nodes(screen()).some(node=>node.type==='CreatedModal'||node.type===form));
 
   const initial = editUtils.parseEditableActivity({

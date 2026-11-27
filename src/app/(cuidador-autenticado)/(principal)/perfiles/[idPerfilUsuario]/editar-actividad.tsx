@@ -28,7 +28,7 @@ export default function EditActivityScreen() {
   const params = useLocalSearchParams<{ idPerfilUsuario?: string; idActividad?: string }>();
   const profile = validProfileId(params.idPerfilUsuario);
   const id = validProfileId(params.idActividad);
-  const back = () => router.dismissTo(profile ? activitiesHref(profile) : '/perfiles');
+  const back = () => router.dismissTo(profile ? activitiesHref(profile, 'rutina') : '/perfiles');
   return <>
     <Stack.Screen options={{ title: 'Editar actividad', header: () =>
       <AreaHeader title="Editar actividad" onBack={back} backLabel="Volver a las actividades" showNotifications={false} /> }} />

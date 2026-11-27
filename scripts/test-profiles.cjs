@@ -10,7 +10,7 @@ function load(file, modules = {}) {
   const defaults = {
     'react/jsx-runtime': { jsx, jsxs: jsx, Fragment: 'Fragment' },
     'react-native': { StyleSheet: { create: value => value }, Text: 'Text', View: 'View',
-      Pressable: 'Pressable', FlatList: 'List', ScrollView: 'ScrollView', ActivityIndicator: 'Spinner', useWindowDimensions: () => ({ fontScale: 1 }) },
+      Pressable: 'Pressable', FlatList: 'List', ScrollView: 'ScrollView', ActivityIndicator: 'Spinner', AccessibilityInfo: { announceForAccessibility() {} }, useWindowDimensions: () => ({ fontScale: 1 }), ...modules.nativeOverrides },
     'expo-image': { Image: 'Image' },
     ...modules,
   };
@@ -510,15 +510,20 @@ test('activities service uses private GET with cancellation and never converts f
 });
 
 test('activities screen shows the intentional empty state only after loading, not on failures or existing data', () => {
-  let state = { status: 'loading' }; let retries = 0; const navigations = [];
-  const slots = []; let hookIndex = 0;
+  let state = { status: 'loading' }; let retries = 0; const navigations = []; const announcements = [];
+  const slots = []; let hookIndex = 0; let initialRoutine = true;
   const render = load('app/(cuidador-autenticado)/(principal)/perfiles/[idPerfilUsuario]/actividades.tsx', { ...styling,
-    react: { useState: () => { const index = hookIndex++; return [slots[index], value => { slots[index] = value; }]; } },
+    react: { useState: () => { const index = hookIndex++; return [slots[index], value => { slots[index] = value; }]; }, useEffect() {} },
+    '@/hooks/use-follow-up': { useFollowUp: () => ({ initialRoutine }) },
+    '@/components/carer/activity-follow-up': { ActivityFollowUp: 'ActivityFollowUp' },
     '@/components/carer/delete-activity-dialog': { DeleteActivityDialog: 'DeleteActivityDialog' },
     '@/components/carer/activity-actions-menu': { ActivityActionsMenu: 'ActivityActionsMenu' },
     'expo-router': { Stack: { Screen: 'Screen' }, router: { dismissTo: href => navigations.push(href), push: href => navigations.push(href) }, useLocalSearchParams: () => ({ idPerfilUsuario: '12' }) },
     '@/components/carer/area-header': { AreaHeader: 'Header' }, '@/components/carer/profile-avatar': { ProfileAvatar: 'Avatar' },
-    '@/components/carer/activities-empty-illustration': { ActivitiesEmptyIllustration: 'Illustration' },
+    '@/components/carer/activity-empty-state': load('components/carer/activity-empty-state.tsx', {
+      ...styling, './activities-empty-illustration': { ActivitiesEmptyIllustration: 'Illustration' },
+    }),
+    nativeOverrides: { AccessibilityInfo: { announceForAccessibility: message => announcements.push(message) } },
     '@/components/carer/activity-summary-card': { ActivitySummaryCard: 'ActivityCard' },
     '@/components/carer/create-activity-button': { CreateActivityButton: 'CreateActivity', activityFabSize: 56 },
     '@/utils/activities': activityUtils,
@@ -529,11 +534,23 @@ test('activities screen shows the intentional empty state only after loading, no
       } };
     } },
   }).default;
-  const screen = () => { hookIndex = 0; return render(); };
+  const expandEmptyState = node => {
+    if (Array.isArray(node)) return node.map(expandEmptyState);
+    if (!node?.props) return node;
+    if (typeof node.type === 'function' && node.type.name === 'ActivityEmptyState') return expandEmptyState(node.type(node.props));
+    return { ...node, props: { ...node.props, children: expandEmptyState(node.props.children) } };
+  };
+  const screen = () => { hookIndex = 0; return expandEmptyState(render()); };
+  initialRoutine = undefined;
+  assert.equal(nodes(screen()).filter(node => node.props?.accessibilityRole === 'tab').length, 2);
+  assert.ok(nodes(screen()).filter(node => node.props?.accessibilityRole === 'tab').every(node => !node.props.accessibilityState.selected));
+  initialRoutine = false;
+  assert.ok(nodes(screen()).some(node => node.type === 'ActivityFollowUp'));
+  initialRoutine = true;
   assert.ok(textOf(screen()).includes('Cargando actividades'));
   assert.ok(!textOf(screen()).includes('Aún no hay')); assert.ok(!nodes(screen()).some(node => node.type === 'CreateActivity'));
   state = { status: 'ready', profile: profile(12), data: { actividades: [] } };
-  assert.ok(textOf(screen()).includes('0 de 10 actividades'));
+  assert.ok(!textOf(screen()).includes('0 de 10 actividades'));
   assert.ok(textOf(screen()).includes('Aún no hay actividades'));
   assert.ok(textOf(screen()).includes('Agrega las actividades que formarán su rutina diaria'));
   assert.equal(nodes(screen()).find(node => node.type === 'CreateActivity').props.id, 12);
@@ -589,7 +606,8 @@ test('activities screen shows the intentional empty state only after loading, no
   nodes(screen()).find(node => node.type === 'ActivityActionsMenu').props.onDelete();
   nodes(screen()).find(node => node.type === 'DeleteActivityDialog').props.onRemoved('Actividad eliminada.');
   assert.ok(textOf(screen()).includes('9 de 10 actividades'));
-  assert.ok(textOf(screen()).includes('Actividad eliminada.'));
+  assert.ok(!textOf(screen()).includes('Actividad eliminada.'));
+  assert.deepEqual(announcements, ['Actividad eliminada.']);
   assert.equal(typeof nodes(screen()).find(node => node.type === 'CreateActivity').props.onCreateActivity, 'function');
   state = { status: 'error' };
   assert.ok(!textOf(screen()).includes('Aún no hay'));
