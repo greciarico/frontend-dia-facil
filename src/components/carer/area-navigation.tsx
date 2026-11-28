@@ -11,10 +11,13 @@ import { AreaIcon } from './area-icon';
 export function AreaNavigation() {
   const pathname = usePathname();
   const { caregiver } = useSession();
+  const supportSelected = pathname === '/apoyo-cuidador' || pathname === '/guias-rapidas' || pathname === '/comprender-mejor'
+    || pathname === '/consejos-y-recomendaciones';
   return <BottomNavigation items={carerDestinations.map(item => ({
     id: item.id, label: item.label,
     selected: item.href === pathname || item.id === 'profiles' && isProfilesDestination(pathname)
-      || item.id === 'account' && pathname.startsWith('/mi-perfil/'),
+      || item.id === 'account' && pathname.startsWith('/mi-perfil/')
+      || item.id === 'support' && supportSelected,
     onPress: item.href ? () => { if (item.href && item.href !== pathname) router.dismissTo(item.href); } : undefined,
     icon: color => item.icon === 'account' ? <View importantForAccessibility="no-hide-descendants"><AccountAvatar
       name={caregiver?.nombre || ''} avatarId={caregiver?.avatarId || null} size={sizes.icon} /></View>

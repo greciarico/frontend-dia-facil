@@ -150,7 +150,7 @@ test('optional creation callback enables the button; profile access and future m
     '@/components/carer/profile-avatar': { ProfileAvatar: 'Avatar' } }).ProfileCard;
   assert.equal(card({ profile: profile(), surface: 'token' }).props.disabled, true);
   const navigation = load('constants/carer-navigation.ts').carerDestinations;
-  assert.deepEqual(navigation.filter(item => item.href).map(item => item.href), ['/perfiles', '/notificaciones', '/mi-perfil']);
+  assert.deepEqual(navigation.filter(item => item.href).map(item => item.href), ['/perfiles', '/apoyo-cuidador', '/notificaciones', '/mi-perfil']);
 });
 
 test('root routes only ready sessions to profiles and preserves immediate OTP/onboarding and restoration UI', () => {
@@ -159,6 +159,7 @@ test('root routes only ready sessions to profiles and preserves immediate OTP/on
     'expo-router': { Redirect: 'Redirect', router: {} }, react: { useState: initial => [initial, () => {}] },
     'react-native-safe-area-context': {}, 'react-native-svg': {},
     '@/components/welcome/role-card': {}, '@/components/session-boundary': { SessionBoundary: 'Boundary' },
+    '@/components/user/connection-help': { ConnectionHelp: 'ConnectionHelp' },
     '@/context/session': { useSession: () => snapshot } }).default;
   for (const [stage, destination] of [['ready', '/perfiles']]) {
     snapshot = { status: 'authenticated', stage }; assert.equal(screen().props.href, destination);
@@ -393,6 +394,286 @@ test('bottom navigation keeps Perfiles selected inside detail and still allows r
   pathname = '/perfiles'; tab = nodes(bar().type(bar().props)).find(node => node.props?.accessibilityLabel === 'Personas'); tab.props.onPress(); assert.equal(navigations.length, 1);
 });
 
+test('caregiver Apoyo tab selects only its isolated route and returns through the principal anchor', () => {
+  let pathname = '/apoyo-cuidador'; const navigations = [];
+  const bar = load('components/carer/area-navigation.tsx', { ...styling,
+    'expo-router': { usePathname: () => pathname, router: { dismissTo: value => navigations.push(value) } },
+    '@/constants/carer-navigation': load('constants/carer-navigation.ts'),
+    '@/context/session': { useSession: () => ({ caregiver: { nombre: 'Cuidador', avatarId: null } }) },
+    './account-avatar': { AccountAvatar: 'Avatar' },
+    '@/components/bottom-navigation': load('components/bottom-navigation.tsx', styling),
+  }).AreaNavigation;
+  const render = () => bar().type(bar().props);
+  let tab = nodes(render()).find(node => node.props?.accessibilityLabel === 'Apoyo');
+  assert.equal(tab.props.accessibilityState.selected, true); tab.props.onPress(); assert.deepEqual(navigations, []);
+  pathname = '/perfiles'; tab = nodes(render()).find(node => node.props?.accessibilityLabel === 'Apoyo');
+  assert.equal(tab.props.accessibilityState.selected, false); tab.props.onPress(); assert.deepEqual(navigations, ['/apoyo-cuidador']);
+});
+
+test('caregiver Apoyo screen keeps its three educational cards interactive', () => {
+  const flatten = value => Object.assign({}, ...[value].flat(Infinity).filter(item => item !== undefined && item !== null && item !== false));
+  const styleOf = node => flatten(typeof node.props.style === 'function' ? node.props.style({ pressed: false }) : node.props.style);
+  const navigations = [];
+  const Screen = load('app/(cuidador-autenticado)/(principal)/apoyo-cuidador.tsx', { ...styling,
+    'expo-router': { router: { dismissTo: value => navigations.push(value), push: value => navigations.push(value) } },
+    '@/components/carer/area-header': { AreaHeader: 'Header' },
+    '@/components/carer/account-avatar': { AccountAvatar: 'Avatar' },
+    '@/context/session': { useSession: () => ({ caregiver: { nombre: 'Ana', avatarId: null } }) },
+  }).default;
+  const tree = Screen(), all = nodes(tree), texts = all.map(node => node.props?.children).filter(value => typeof value === 'string');
+  for (const copy of ['Aquí puedes encontrar ayuda y recursos para usar la app', 'Guías rápidas',
+    'Aprende a usar la app paso a paso', '¿Cómo usar la App?', 'Aprende a crear actividades y más',
+    'Comprender mejor', 'Información sobre rutinas', 'Para cuidadores', 'Recursos útiles para apoyar mejor',
+    'Consejos y recomendaciones', 'Ideas para acompañar de forma positiva', 'Cada pequeño paso cuenta',
+    'Acompañar con paciencia también es avanzar']) assert.ok(texts.includes(copy), copy);
+  assert.ok(!texts.includes('¡Lo estás haciendo muy bien!'));
+  assert.ok(!texts.includes('Cada rutina completada es un gran paso'));
+  const header = all.find(node => node.type === 'Header');
+  assert.equal(header.props.title, 'Apoyo'); assert.equal(header.props.showNotifications, false);
+  assert.equal(header.props.backLabel, 'Volver a Personas'); header.props.onBack(); assert.deepEqual(navigations, ['/perfiles']);
+  assert.ok(nodes(header.props.rightContent).some(node => node.type === 'Avatar'));
+  assert.deepEqual(all.filter(node => node.type === 'Image').map(node => node.props.source),
+    ['@/assets/illustrations/carer-account.png']);
+  const headingViews = all.filter(node => node.type === 'View' && flatten(node.props.style).flexDirection === 'row'
+    && flatten(node.props.style).gap === tokens.spacing.md
+    && nodes(node).some(child => child.type === 'Text' && ['Guías rápidas', 'Para cuidadores'].includes(child.props.children)));
+  assert.equal(headingViews.length, 2);
+  const headingIcons = headingViews.flatMap(view => nodes(view).filter(child => child.type === 'Icon'));
+  assert.deepEqual(headingIcons.map(child => child.props.name), ['bookOpen', 'profiles']);
+  assert.ok(headingIcons.every(child => child.props.color === tokens.themes.light.colors.action.primary));
+  for (const headingView of headingViews) {
+    assert.equal(flatten(headingView.props.style).backgroundColor, undefined);
+    assert.equal(flatten(headingView.props.style).borderWidth, undefined);
+  }
+  const interactive = all.filter(node => node.type === 'Pressable'); assert.equal(interactive.length, 3);
+  navigations.length = 0;
+  for (const [label, hint, route] of [['¿Cómo usar la App?. Aprende a crear actividades y más', 'Abre las guías rápidas', '/guias-rapidas'],
+    ['Comprender mejor. Información sobre rutinas', 'Abre Comprender mejor', '/comprender-mejor'],
+    ['Consejos y recomendaciones. Ideas para acompañar de forma positiva', 'Abre consejos y recomendaciones', '/consejos-y-recomendaciones']]) {
+    const card = interactive.find(node => node.props.accessibilityLabel === label); assert.ok(card, label);
+    assert.equal(card.props.accessibilityHint, hint); card.props.onPress(); assert.equal(navigations.at(-1), route);
+  }
+  const theme = tokens.themes.light.colors, cards = [
+    ['¿Cómo usar la App?. Aprende a crear actividades y más', theme.supportCards.lavender, 'steps'],
+    ['Comprender mejor. Información sobre rutinas', theme.supportCards.green, 'support'],
+    ['Consejos y recomendaciones. Ideas para acompañar de forma positiva', theme.supportCards.blue, 'lightbulb'],
+  ];
+  for (const [label, tone, iconName] of cards) {
+    const card = interactive.find(node => node.props.accessibilityLabel === label); assert.ok(card, label);
+    assert.equal(styleOf(card).backgroundColor, tone.background);
+    assert.equal(styleOf(card).borderColor, tone.border);
+    assert.equal(styleOf(card).borderWidth, tokens.borders.default);
+    assert.equal(styleOf(card).borderRadius, tokens.radii.card);
+    const tile = nodes(card).find(node => node.type === 'View' && flatten(node.props.style).backgroundColor === tone.tile); assert.ok(tile, label);
+    assert.deepEqual(nodes(tile).filter(node => node.type === 'Icon').map(node => node.props.name), [iconName]);
+    assert.ok(nodes(card).some(node => node.type === 'View' && flatten(node.props.style).minWidth === 0));
+  }
+  const chevrons = all.filter(node => node.type === 'Icon' && node.props.name === 'chevron'); assert.equal(chevrons.length, 3);
+  for (const chevron of chevrons) {
+    assert.equal(chevron.props.color, theme.action.primary);
+    assert.equal(chevron.props.size, tokens.sizes.iconSmall);
+  }
+  const motivation = all.find(node => node.type === 'View' && flatten(node.props.style).paddingTop === tokens.spacing.sm); assert.ok(motivation);
+  assert.equal(flatten(motivation.props.style).backgroundColor, undefined);
+  assert.equal(flatten(motivation.props.style).borderWidth, undefined);
+  assert.deepEqual(nodes(motivation).filter(node => node.type === 'Icon').map(node => node.props.name), ['heartHandshake']);
+  assert.equal(nodes(motivation).find(node => node.type === 'Icon').props.color, theme.action.primary);
+  assert.ok(!all.some(node => flatten(node.props.style).backgroundColor === theme.background.yellow));
+});
+
+test('caregiver support icons expose outline book, lightbulb, heart-handshake and vertical chevrons', () => {
+  const { AreaIcon } = load('components/carer/area-icon.tsx', {
+    'react-native-svg': { default: 'Svg', Circle: 'Circle', Path: 'Path' }, '@/theme/tokens': tokens,
+  });
+  const paths = {};
+  for (const name of ['bookOpen', 'lightbulb', 'heartHandshake', 'chevronDown', 'chevronUp']) {
+    const svg = AreaIcon({ name, color: '#6552B7' });
+    const path = nodes(svg).find(node => node.type === 'Path' && node.props.strokeWidth === tokens.sizes.stroke);
+    assert.ok(path, name);
+    assert.equal(path.props.fill, 'none', name);
+    paths[name] = path.props.d;
+  }
+  assert.match(paths.bookOpen, /^M12 6c/);
+  assert.match(paths.bookOpen, /Zm0 0v13/);
+  assert.match(paths.lightbulb, /^M9 18h6/);
+  assert.match(paths.heartHandshake, /^M12 20s-/);
+  assert.match(paths.chevronDown, /^m5 9/);
+  assert.match(paths.chevronUp, /^m5 15/);
+});
+
+test('support guide tones cover six light and dark palette families', () => {
+  const light = tokens.themes.light.colors.supportGuideTones, dark = tokens.themes.dark.colors.supportGuideTones;
+  const tones = ['green', 'blue', 'yellow', 'lavender', 'coral', 'turquoise'];
+  assert.deepEqual(Object.keys(light), tones);
+  assert.deepEqual(Object.keys(dark), tones);
+  for (const tone of tones) {
+    assert.ok(light[tone].icon && light[tone].surface && light[tone].border, tone);
+    assert.ok(dark[tone].icon && dark[tone].surface && dark[tone].border, tone);
+  }
+});
+
+test('caregiver quick guides use verified local instructions only', () => {
+  const guides = load('constants/carer-support-guides.ts').carerSupportGuides;
+  assert.deepEqual(guides.map(guide => guide.title), ['Crear una persona', 'Vincular un dispositivo', 'Crear una actividad',
+    'Agregar pasos y apoyos visuales', 'Gestionar actividades', 'Consultar el progreso', 'Configurar accesibilidad']);
+  assert.deepEqual(guides.map(guide => [guide.icon, guide.tone]), [['profiles', 'lavender'], ['device', 'blue'],
+    ['activities', 'green'], ['imagePlus', 'turquoise'], ['pencil', 'coral'], ['clock', 'yellow'], ['accessibility', 'blue']]);
+  assert.ok(guides.every(guide => guide.summary && guide.steps.length >= 3));
+  assert.ok(!textOf(guides).includes('Lectura de voz') && !textOf(guides).includes('Disponible próximamente'));
+});
+
+test('caregiver quick guides screen reuses the shared chrome and returns to Apoyo', () => {
+  const navigations = [], guides = load('constants/carer-support-guides.ts');
+  const Screen = load('app/(cuidador-autenticado)/(principal)/guias-rapidas.tsx', { ...styling,
+    'expo-router': { router: { dismissTo: value => navigations.push(value) } },
+    '@/components/carer/area-header': { AreaHeader: 'Header' },
+    '@/components/carer/account-avatar': { AccountAvatar: 'Avatar' },
+    '@/context/session': { useSession: () => ({ caregiver: { nombre: 'Ana', avatarId: null } }) },
+    '@/constants/carer-support-guides': guides,
+    '@/components/carer/support-guide-card': { SupportGuideCard: 'Guide' },
+  }).default;
+  const tree = Screen(), all = nodes(tree), theme = tokens.themes.light.colors;
+  assert.ok(textOf(tree).includes('Aprende a usar la app paso a paso. Abre una guía cuando la necesites.'));
+  const header = all.find(node => node.type === 'Header');
+  assert.equal(header.props.title, 'Guías rápidas'); assert.equal(header.props.showNotifications, false);
+  assert.equal(header.props.backLabel, 'Volver a Apoyo'); header.props.onBack(); assert.deepEqual(navigations, ['/apoyo-cuidador']);
+  assert.ok(nodes(header.props.rightContent).some(node => node.type === 'Avatar'));
+  assert.ok(!all.some(node => node.type === 'Image'));
+  const introIcon = all.find(node => node.type === 'Icon'); assert.ok(introIcon);
+  assert.equal(introIcon.props.name, 'bookOpen');
+  assert.equal(introIcon.props.size, tokens.sizes.touchTarget);
+  assert.equal(introIcon.props.color, theme.action.primary);
+  const cards = all.filter(node => node.type === 'Guide');
+  assert.deepEqual(cards.map(node => node.props.guide.title), guides.carerSupportGuides.map(guide => guide.title));
+  assert.ok(cards.every(node => node.props.mode === 'numbered' && node.props.contentLabel === 'Paso a paso'));
+});
+
+test('support guide card keeps toggle, tone and mode-specific content', () => {
+  const flatten = value => Object.assign({}, ...[value].flat(Infinity).filter(Boolean));
+  const theme = tokens.themes.light.colors, guides = load('constants/carer-support-guides.ts').carerSupportGuides, guide = guides[0];
+  let state = false; const setState = next => { state = typeof next === 'function' ? next(state) : next; };
+  const Card = load('components/carer/support-guide-card.tsx', { ...styling,
+    react: { useState: () => [state, setState] } }).SupportGuideCard;
+  const props = { guide, mode: 'numbered', contentLabel: 'Paso a paso' };
+  let tree = Card(props), trigger = nodes(tree).find(node => node.type === 'Pressable');
+  assert.equal(trigger.props.accessibilityRole, 'button'); assert.equal(trigger.props.accessibilityLabel, guide.title);
+  assert.equal(trigger.props.accessibilityState.expanded, false); assert.equal(trigger.props.accessibilityHint, 'Mostrar instrucciones');
+  assert.equal(textOf(tree).includes(guide.steps[0]), false);
+  let icons = nodes(tree).filter(node => node.type === 'Icon').map(node => node.props.name);
+  assert.deepEqual(icons, [guide.icon, 'chevronDown']);
+  let cardStyle = flatten(trigger.props.style({ pressed: false }));
+  assert.equal(cardStyle.backgroundColor, theme.surface.default);
+  assert.equal(cardStyle.borderColor, theme.border.decorative);
+  const tile = nodes(tree).find(node => node.type === 'View'
+    && flatten(node.props.style).backgroundColor === theme.supportGuideTones[guide.tone].surface); assert.ok(tile);
+  const tileIcon = nodes(tile).find(node => node.type === 'Icon');
+  assert.equal(tileIcon.props.name, guide.icon);
+  assert.equal(tileIcon.props.color, theme.supportGuideTones[guide.tone].icon);
+
+  trigger.props.onPress(); tree = Card(props); trigger = nodes(tree).find(node => node.type === 'Pressable');
+  assert.equal(trigger.props.accessibilityState.expanded, true); assert.equal(trigger.props.accessibilityHint, 'Ocultar instrucciones');
+  for (const step of guide.steps) assert.ok(textOf(tree).includes(step), step);
+  icons = nodes(tree).filter(node => node.type === 'Icon').map(node => node.props.name);
+  assert.deepEqual(icons, [guide.icon, 'chevronUp']);
+  cardStyle = flatten(trigger.props.style({ pressed: false }));
+  assert.equal(cardStyle.borderColor, theme.supportGuideTones[guide.tone].border);
+  assert.ok(textOf(tree).includes('Paso a paso'));
+  assert.deepEqual(nodes(tree).filter(node => node.type === 'Text' && [1, 2, 3].includes(node.props.children))
+    .map(node => node.props.children), [1, 2, 3]);
+  trigger.props.onPress(); tree = Card(props);
+  assert.equal(nodes(tree).find(node => node.type === 'Pressable').props.accessibilityState.expanded, false);
+  assert.ok(nodes(tree).filter(node => node.type === 'Icon').some(node => node.props.name === 'chevronDown'));
+
+  state = false;
+  const topic = load('constants/carer-understanding-topics.ts').carerUnderstandingTopics[0];
+  const checkedProps = { guide: topic, mode: 'checked', contentLabel: 'Aspectos importantes' };
+  tree = Card(checkedProps); nodes(tree).find(node => node.type === 'Pressable').props.onPress(); tree = Card(checkedProps);
+  assert.deepEqual(nodes(tree).filter(node => node.type === 'Icon').map(node => node.props.name),
+    [topic.icon, 'chevronUp', 'check', 'check', 'check']);
+  assert.ok(textOf(tree).includes('Aspectos importantes'));
+  assert.ok(!nodes(tree).some(node => node.type === 'Text' && node.props.children === 1));
+  const tone = theme.supportGuideTones[topic.tone];
+  for (const check of nodes(tree).filter(node => node.type === 'Icon' && node.props.name === 'check')) {
+    assert.equal(check.props.color, tone.icon);
+    assert.equal(check.props.backdrop.color, tone.surface);
+  }
+});
+
+test('caregiver understanding topics stay brief, respectful and non-clinical', () => {
+  const topics = load('constants/carer-understanding-topics.ts').carerUnderstandingTopics;
+  assert.deepEqual(topics.map(topic => topic.title), ['Importancia de las rutinas', 'Apoyos visuales y pictogramas',
+    'Anticipación de actividades', 'Desarrollo de la autonomía', 'Adaptación a las necesidades individuales']);
+  assert.deepEqual(topics.map(topic => [topic.icon, topic.tone]), [['clock', 'yellow'], ['imagePlus', 'turquoise'],
+    ['info', 'coral'], ['heartHandshake', 'green'], ['accessibilityPerson', 'lavender']]);
+  assert.ok(topics.every(topic => topic.summary && topic.steps.length === 3));
+  const copy = textOf(topics).toLowerCase();
+  for (const term of ['diagnóstico', 'trastorno', 'siempre', 'todos', 'todas', 'deben', 'curar', 'tratar']) {
+    assert.ok(!copy.includes(term), term);
+  }
+});
+
+test('caregiver understanding screen reuses the shared chrome and returns to Apoyo', () => {
+  const navigations = [], topics = load('constants/carer-understanding-topics.ts');
+  const Screen = load('app/(cuidador-autenticado)/(principal)/comprender-mejor.tsx', { ...styling,
+    'expo-router': { router: { dismissTo: value => navigations.push(value) } },
+    '@/components/carer/area-header': { AreaHeader: 'Header' },
+    '@/components/carer/account-avatar': { AccountAvatar: 'Avatar' },
+    '@/context/session': { useSession: () => ({ caregiver: { nombre: 'Ana', avatarId: null } }) },
+    '@/constants/carer-understanding-topics': topics,
+    '@/components/carer/support-guide-card': { SupportGuideCard: 'Guide' },
+  }).default;
+  const tree = Screen(), all = nodes(tree), theme = tokens.themes.light.colors;
+  assert.ok(textOf(tree).includes('Ideas sencillas para acompañar las rutinas y la comunicación de cada persona.'));
+  const header = all.find(node => node.type === 'Header');
+  assert.equal(header.props.title, 'Comprender mejor'); assert.equal(header.props.showNotifications, false);
+  assert.equal(header.props.backLabel, 'Volver a Apoyo'); header.props.onBack(); assert.deepEqual(navigations, ['/apoyo-cuidador']);
+  assert.ok(nodes(header.props.rightContent).some(node => node.type === 'Avatar'));
+  const introIcon = all.find(node => node.type === 'Icon' && node.props.size === tokens.sizes.touchTarget); assert.ok(introIcon);
+  assert.equal(introIcon.props.name, 'support');
+  assert.equal(introIcon.props.color, theme.action.primary);
+  const cards = all.filter(node => node.type === 'Guide');
+  assert.deepEqual(cards.map(node => node.props.guide.title), topics.carerUnderstandingTopics.map(topic => topic.title));
+  assert.ok(cards.every(node => node.props.mode === 'checked' && node.props.contentLabel === 'Aspectos importantes'));
+});
+
+test('caregiver practical advice stays concrete, respectful and distinct from understanding topics', () => {
+  const advice = load('constants/carer-practical-advice.ts').carerPracticalAdvice;
+  assert.deepEqual(advice.map(item => item.title), ['Acompañar de forma positiva', 'Dar instrucciones claras',
+    'Respetar el ritmo de cada persona', 'Celebrar pequeños logros', 'Evitar sobrecargar la agenda',
+    'Introducir cambios gradualmente', 'Fomentar la independencia']);
+  assert.deepEqual(advice.map(item => [item.icon, item.tone]), [['support', 'lavender'], ['audio', 'blue'],
+    ['clock', 'yellow'], ['sparkles', 'coral'], ['activities', 'green'], ['refresh', 'turquoise'], ['steps', 'blue']]);
+  assert.ok(advice.every(item => item.summary && item.steps.length === 3));
+  const copy = textOf(advice).toLowerCase();
+  for (const term of ['diagnóstico', 'trastorno', 'siempre', 'todos', 'todas', 'deben', 'curar', 'tratar', 'pictograma']) {
+    assert.ok(!copy.includes(term), term);
+  }
+});
+
+test('caregiver advice screen reuses the shared chrome and returns to Apoyo', () => {
+  const navigations = [], advice = load('constants/carer-practical-advice.ts');
+  const Screen = load('app/(cuidador-autenticado)/(principal)/consejos-y-recomendaciones.tsx', { ...styling,
+    'expo-router': { router: { dismissTo: value => navigations.push(value) } },
+    '@/components/carer/area-header': { AreaHeader: 'Header' },
+    '@/components/carer/account-avatar': { AccountAvatar: 'Avatar' },
+    '@/context/session': { useSession: () => ({ caregiver: { nombre: 'Ana', avatarId: null } }) },
+    '@/constants/carer-practical-advice': advice,
+    '@/components/carer/support-guide-card': { SupportGuideCard: 'Guide' },
+  }).default;
+  const tree = Screen(), all = nodes(tree), theme = tokens.themes.light.colors;
+  assert.ok(textOf(tree).includes('Acciones pequeñas que puedes probar en momentos cotidianos.'));
+  const header = all.find(node => node.type === 'Header');
+  assert.equal(header.props.title, 'Consejos y recomendaciones'); assert.equal(header.props.showNotifications, false);
+  assert.equal(header.props.backLabel, 'Volver a Apoyo'); header.props.onBack(); assert.deepEqual(navigations, ['/apoyo-cuidador']);
+  assert.ok(nodes(header.props.rightContent).some(node => node.type === 'Avatar'));
+  const introIcon = all.find(node => node.type === 'Icon' && node.props.size === tokens.sizes.touchTarget); assert.ok(introIcon);
+  assert.equal(introIcon.props.name, 'lightbulb');
+  assert.equal(introIcon.props.color, theme.action.primary);
+  const cards = all.filter(node => node.type === 'Guide');
+  assert.deepEqual(cards.map(node => node.props.guide.title), advice.carerPracticalAdvice.map(item => item.title));
+  assert.ok(cards.every(node => node.props.mode === 'checked' && node.props.contentLabel === 'Consejos prácticos'));
+});
+
 test('installed Expo router history removes confirmation and Android back resolves to the profiles anchor', () => {
   const expoRoot = path.dirname(require.resolve('expo-router/package.json'));
   const { StackRouter } = require(path.join(expoRoot, 'build/react-navigation/routers/StackRouter.js'));
@@ -422,6 +703,20 @@ test('installed Expo router history removes confirmation and Android back resolv
   const area = manifest.children.find(route => route.route === '(cuidador-autenticado)').children.find(route => route.route === '(principal)');
   const profileNode = area.children.find(route => route.route === 'perfiles/[idPerfilUsuario]');
   assert.equal(area.initialRouteName, 'perfiles'); assert.equal(profileNode.initialRouteName, 'index');
+  assert.ok(area.children.some(route => route.route === 'apoyo-cuidador'));
+  assert.ok(area.children.some(route => route.route === 'guias-rapidas'));
+  assert.ok(area.children.some(route => route.route === 'comprender-mejor'));
+  assert.ok(area.children.some(route => route.route === 'consejos-y-recomendaciones'));
+  assert.ok(manifest.children.find(route => route.route === '(usuario-autenticado)').children.some(route => route.route === 'apoyo'));
+  const supportPaths = { screens: { index: '',
+    '(usuario-autenticado)': { screens: { apoyo: 'apoyo' } },
+    '(cuidador-autenticado)': { screens: { 'apoyo-cuidador': 'apoyo-cuidador', 'guias-rapidas': 'guias-rapidas',
+      'comprender-mejor': 'comprender-mejor', 'consejos-y-recomendaciones': 'consejos-y-recomendaciones' } } } };
+  assert.equal(getStateFromPath('/apoyo', supportPaths).routes[0].name, '(usuario-autenticado)');
+  assert.equal(getStateFromPath('/apoyo-cuidador', supportPaths).routes[0].name, '(cuidador-autenticado)');
+  assert.equal(getStateFromPath('/guias-rapidas', supportPaths).routes[0].name, '(cuidador-autenticado)');
+  assert.equal(getStateFromPath('/comprender-mejor', supportPaths).routes[0].name, '(cuidador-autenticado)');
+  assert.equal(getStateFromPath('/consejos-y-recomendaciones', supportPaths).routes[0].name, '(cuidador-autenticado)');
   assert.deepEqual(profileNode.children.map(route => route.route).sort(), ['actividades', 'ajustes', 'editar-actividad', 'index', 'nueva-actividad', 'vincular-dispositivo']);
   const childRouter = StackRouter({ initialRouteName: principal.unstable_settings.anchor });
   const childOptions = { routeNames: ['perfiles', 'perfiles/[idPerfilUsuario]'], routeParamList: {}, routeGetIdList: {} };

@@ -12,6 +12,10 @@ export default function PrincipalLayout() {
   return <CarerAreaLayout title={carerPeopleCopy.title} showHeader={false}><Stack screenListeners={listeners} screenOptions={{ headerShown: true,
     header: () => <AreaHeader title={carerPeopleCopy.title} />, contentStyle: { backgroundColor: colors.background.primary } }}>
     <Stack.Screen name="perfiles" />
+    <Stack.Screen name="apoyo-cuidador" options={{ headerShown: false }} />
+    <Stack.Screen name="guias-rapidas" options={{ headerShown: false }} />
+    <Stack.Screen name="comprender-mejor" options={{ headerShown: false }} />
+    <Stack.Screen name="consejos-y-recomendaciones" options={{ headerShown: false }} />
     <Stack.Screen name="notificaciones" options={{ header: () => <AreaHeader title="Notificaciones" showNotifications={false} /> }} />
     <Stack.Screen name="mi-perfil" options={{ headerShown: false }} />
     <Stack.Screen name="perfiles/[idPerfilUsuario]" options={{ headerShown: false }} />

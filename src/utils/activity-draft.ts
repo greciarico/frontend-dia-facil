@@ -20,7 +20,7 @@ export function parseStepPictogram(value: unknown): StepPictogram {
 }
 export type TemplateStep = { orden: number; descripcion: string; pictograma: StepPictogram };
 export type ActivityTemplate = { idPlantillaActividad: number; nombre: string; pasos: TemplateStep[] };
-export type DraftStep = TemplateStep & { key: string };
+export type DraftStep = TemplateStep & { key: string; manual?: boolean };
 export type StepsDraft = { steps: DraftStep[]; personalized: boolean; source: string | null; nextKey: number; editing: boolean };
 export const initialStepsDraft: StepsDraft = { steps: [], personalized: false, source: null, nextKey: 1, editing: false };
 export const maximumActivitySteps = 7;
@@ -94,7 +94,7 @@ export function stepsDraftReducer(state: StepsDraft, action: DraftAction): Steps
     } else {
       if (steps.length >= maximumActivitySteps) return state;
       steps.push({ key: `step-${state.nextKey}`, descripcion: description, orden: steps.length + 1,
-        pictograma: action.pictograma ? { ...action.pictograma } : null });
+        pictograma: action.pictograma ? { ...action.pictograma } : null, manual: true });
       return { ...state, steps, nextKey: state.nextKey + 1, personalized: true };
     }
   } else {

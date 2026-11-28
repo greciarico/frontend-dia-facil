@@ -111,6 +111,7 @@ test('entry routes use device restoration and confirmation memory before caregiv
   'expo-router':{Redirect:'Redirect'},'react-native-safe-area-context':{},
   '@/components/welcome/role-card':{},'@/context/device-access':{useDeviceAccess:()=>device},
   '@/components/user/device-access-boundary':{DeviceAccessBoundary:'DeviceBoundary'},
+  '@/components/user/connection-help':{ConnectionHelp:'ConnectionHelp'},
   '@/components/session-boundary':{SessionBoundary:'SessionBoundary'},
   '@/context/session':{useSession:()=>({status:'authenticated',stage:'ready'})},
   '@/theme/tokens':tokens,'@/theme/use-theme':{},

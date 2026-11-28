@@ -1,13 +1,14 @@
 import { Image } from 'expo-image';
 import { Redirect, router } from 'expo-router';
 import { useState } from 'react';
-import { AccessibilityInfo, Alert, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { AccessibilityInfo, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { RoleCard } from '@/components/welcome/role-card';
 import { useDeviceAccess } from '@/context/device-access';
 import { DeviceAccessBoundary } from '@/components/user/device-access-boundary';
+import { ConnectionHelp } from '@/components/user/connection-help';
 import { SessionBoundary } from '@/components/session-boundary';
 import { useSession } from '@/context/session';
 import { layout, radii, sizes, spacing, typography } from '@/theme/tokens';
@@ -79,18 +80,20 @@ function WelcomeContent() {
             onContinue={() => router.navigate('/cuidador/paso-1')} />
         </View>
         <View style={styles.footer}>
-          <Pressable accessibilityRole="button" accessibilityLabel="¿Necesitas ayuda?"
-            onPress={() => Alert.alert('¿Cómo quieres usar DiaFacil?',
-              'Elige “Soy usuario” para ver tu agenda y seguir tus actividades. Elige “Soy cuidador” para configurar y acompañar la agenda.',
-              [{ text: 'Entendido' }])}
-            style={({ pressed }) => [styles.help, { backgroundColor: pressed ? colors.welcome.intro : 'transparent' }]}>
-            <Svg width={sizes.icon} height={sizes.icon} viewBox="0 0 24 24" accessible={false}>
-              <Circle cx="12" cy="12" r="10" fill="none" stroke={colors.action.primary} strokeWidth={sizes.stroke} />
-              <Path d="M9 8.5a3 3 0 0 1 6 0c0 2-3 2-3 4M12 16.5v.5" fill="none" stroke={colors.action.primary}
-                strokeWidth={sizes.stroke} strokeLinecap="round" />
-            </Svg>
-            <Text style={[styles.helpText, { color: colors.action.primary }]}>¿Necesitas ayuda?</Text>
-          </Pressable>
+          <ConnectionHelp title="¿Cómo quieres usar DiaFacil?" description={null} understoodLabel="Entendido"
+            choices={[
+              { title: 'Soy usuario', description: 'Consulta tu agenda y sigue tus actividades', icon: 'activities' },
+              { title: 'Soy cuidador', description: 'Configura y acompaña la agenda', icon: 'profiles' },
+            ]}
+            triggerStyle={({ pressed }) => [styles.help, { backgroundColor: pressed ? colors.welcome.intro : 'transparent' }]}
+            triggerContent={<>
+              <Svg width={sizes.icon} height={sizes.icon} viewBox="0 0 24 24" accessible={false}>
+                <Circle cx="12" cy="12" r="10" fill="none" stroke={colors.action.primary} strokeWidth={sizes.stroke} />
+                <Path d="M9 8.5a3 3 0 0 1 6 0c0 2-3 2-3 4M12 16.5v.5" fill="none" stroke={colors.action.primary}
+                  strokeWidth={sizes.stroke} strokeLinecap="round" />
+              </Svg>
+              <Text style={[styles.helpText, { color: colors.action.primary }]}>¿Necesitas ayuda?</Text>
+            </>} />
         </View>
       </View>
     </ScrollView>

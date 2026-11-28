@@ -17,7 +17,7 @@ const MAX_AUTO_PAGES = 5;
 const MAX_SCROLL_ATTEMPTS = 3;
 const SCROLL_RETRY_DELAY_MS = 150;
 
-const filters: { id: NotificationCategory; label: string }[] = [{ id: 'TODAS', label: 'Todas' }, { id: 'AYUDA', label: 'Ayuda' }, { id: 'SISTEMA', label: 'Sistema' }];
+const filters: { id: NotificationCategory; label: string }[] = [{ id: 'TODAS', label: 'Todas' }, { id: 'AYUDA', label: 'Ayuda' }, { id: 'SISTEMA', label: 'Actividades' }];
 export default function NotificationsScreen() {
   const [category, setCategory] = useState<NotificationCategory>('TODAS');
   const query = useCarerNotifications(category), { colors } = useAppTheme();
@@ -125,7 +125,7 @@ export default function NotificationsScreen() {
       renderItem={({ item }) => <NotificationCard item={item} highlighted={highlighted === item.idNotificacion} busy={query.marking.includes(item.idNotificacion)} onPress={() => { if (!item.leida) query.markRead(item.idNotificacion); }} />}
       ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
       ListEmptyComponent={<View style={styles.empty}>{query.loading ? <ActivityIndicator accessibilityLabel="Cargando notificaciones" color={colors.action.primary} />
-        : !query.error && <AppText style={[styles.copy, { color: colors.text.secondary }]}>Todavía no hay notificaciones{category === 'AYUDA' ? ' de ayuda' : category === 'SISTEMA' ? ' del sistema' : ''}.</AppText>}</View>}
+        : !query.error && <AppText style={[styles.copy, { color: colors.text.secondary }]}>Todavía no hay notificaciones{category === 'AYUDA' ? ' de ayuda' : category === 'SISTEMA' ? ' de actividades' : ''}.</AppText>}</View>}
       ListFooterComponent={query.more ? <ActivityIndicator accessibilityLabel="Cargando más notificaciones" color={colors.action.primary} />
         : query.cursor && !query.loading ? <ContinueButton label="Ver más" variant="secondary" onPress={query.loadMore} /> : null} />
   </View>;

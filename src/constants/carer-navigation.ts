@@ -5,7 +5,7 @@ export type CarerDestination = { id: string; label: string; icon: 'profiles' | '
 /** Only implemented modules have a destination. No placeholder routes. */
 export const carerDestinations: CarerDestination[] = [
   { id: 'profiles', label: carerPeopleCopy.navigation, icon: 'profiles', href: '/perfiles' },
-  { id: 'support', label: 'Apoyo', icon: 'support' },
+  { id: 'support', label: 'Apoyo', icon: 'support', href: '/apoyo-cuidador' },
   { id: 'notifications', label: 'Notificación', icon: 'bell', href: '/notificaciones' },
   { id: 'account', label: 'Mi perfil', icon: 'account', href: '/mi-perfil' },
 ];

@@ -9,7 +9,7 @@ function load(file,modules={},frame={}) {
 const tokens=load('theme/tokens.ts');
 function nodes(tree){if(!tree||typeof tree!=='object')return [];if(Array.isArray(tree))return tree.flatMap(nodes);return [tree,...nodes(tree.props?.children)];}
 const styles=value=>Object.assign({},...(Array.isArray(value)?value:[value]).filter(Boolean));
-function fixture(scheme='light') {
+function fixture(scheme='light',props={}) {
  const slots=[];let cursor=0,tree,jobs=[],focusCallback,focusCleanup,focused=true,nextFrame=0,dismissed=0;
  const frames=new Map(),accessibility=[];
  const frame={request:fn=>{const id=++nextFrame;frames.set(id,fn);return id;},cancel:id=>frames.delete(id)};
@@ -26,8 +26,8 @@ function fixture(scheme='light') {
   '@/components/carer/continue-button':{ContinueButton:'Button'},'@/theme/tokens':tokens,'@/theme/use-theme':{useAppTheme:()=>tokens.themes[scheme]},
  },frame).ConnectionHelp;
  let priorFocus;
- const f={frames,accessibility,dismissed:()=>dismissed,
-  render(){cursor=0;jobs=[];tree=screen();
+  const f={frames,accessibility,dismissed:()=>dismissed,
+   render(){cursor=0;jobs=[];tree=screen(props);
    if(focused&&priorFocus!==focusCallback){focusCleanup?.();priorFocus=focusCallback;focusCleanup=focusCallback();}
    if(!focused){focusCleanup?.();focusCleanup=undefined;priorFocus=undefined;}jobs.forEach(fn=>fn());
    const trigger=nodes(tree).find(n=>n.props?.accessibilityLabel==='¿Necesitas ayuda?');trigger.props.ref.current={tag:51};return tree;},
@@ -58,7 +58,25 @@ test('help is enabled, opens locally with exact copy and two noninteractive acce
  assert.deepEqual(sections.map(n=>n.props.accessibilityLabel),['Escanear QR. Apunta la cámara al código QR.','Ingresar código. Escribe el código que aparece debajo del QR.']);
  assert.ok(sections.every(n=>!n.props.onPress));assert.deepEqual(nodes(dialog).filter(n=>n.type==='Icon').map(n=>n.props.name),['camera','keyboard']);
  const button=nodes(dialog).find(n=>n.type==='Button');assert.equal(button.props.label,'Entendido');assert.equal(button.props.size,'modal');
- f.destroy();
+  f.destroy();
+});
+test('welcome help reuses the dialog with custom copy, role icons and its trigger content',()=>{
+ const props={title:'¿Cómo quieres usar DiaFacil?',description:null,understoodLabel:'Entendido',
+  choices:[{title:'Soy usuario',description:'Consulta tu agenda y sigue tus actividades',icon:'activities'},
+   {title:'Soy cuidador',description:'Configura y acompaña la agenda',icon:'profiles'}],
+  triggerStyle:({pressed})=>['welcome',pressed],
+  triggerContent:{type:'WelcomeTriggerContent',props:{}}};
+ const f=fixture('light',props);f.render();
+ assert.equal(f.trigger().type,'Pressable');assert.deepEqual(f.trigger().props.accessibilityState,{expanded:false});
+ assert.equal(nodes(f.trigger()).some(n=>n.type==='WelcomeTriggerContent'),true);
+ assert.deepEqual(f.trigger().props.style({pressed:true}),['welcome',true]);
+ const dialog=f.open();assert.equal(f.dismissed(),1);
+ assert.equal(dialog.props.title,'¿Cómo quieres usar DiaFacil?');assert.equal(dialog.props.description,undefined);
+ assert.deepEqual(nodes(dialog).filter(n=>n.props?.accessible).map(n=>n.props.accessibilityLabel),
+  ['Soy usuario. Consulta tu agenda y sigue tus actividades','Soy cuidador. Configura y acompaña la agenda']);
+ assert.deepEqual(nodes(dialog).filter(n=>n.type==='Icon').map(n=>n.props.name),['activities','profiles']);
+ const button=nodes(dialog).find(n=>n.type==='Button');assert.equal(button.props.label,'Entendido');assert.equal(button.props.size,'modal');
+ dialog.props.onClose();f.render();assert.equal(f.dialog(),undefined);f.flush();assert.equal(f.accessibility.at(-1),51);f.destroy();
 });
 test('Entendido, X, Android back and VoiceOver escape close the same local state and help can reopen',()=>{
  const f=fixture();

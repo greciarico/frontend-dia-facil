@@ -1,4 +1,4 @@
-import { useReducer, useState, type ReactNode } from 'react';
+import { useEffect, useReducer, useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { activityInputError, activityTimeValue } from '@/utils/create-activity';
 import type { EditableActivity, EditActivityInput } from '@/utils/activity-edit';
@@ -17,9 +17,10 @@ import { borders, radii, shadows, sizes, spacing, typography } from '@/theme/tok
 import { useAppTheme } from '@/theme/use-theme';
 import { activityNameError, type ActivityIconOption } from '@/utils/activity-icon-options';
 
-export function ActivityDefinitionForm({ initial, busy, intro, actions }: {
+export function ActivityDefinitionForm({ initial, busy, intro, actions, onManualStepsChange }: {
   initial?: EditableActivity; busy: boolean; intro: ReactNode;
   actions: (input: EditActivityInput | null, error?: string) => ReactNode;
+  onManualStepsChange?: (hasManualSteps: boolean) => void;
 }) {
   const { colors } = useAppTheme();
   const [name, setName] = useState(initial?.nombre ?? '');
@@ -34,6 +35,8 @@ export function ActivityDefinitionForm({ initial, busy, intro, actions }: {
   });
   const [steps, dispatchSteps] = useReducer(stepsDraftReducer, initial ? initialEditDraft(initial) : initialStepsDraft);
   const invalid = activityInputError(name, time, icon, steps.steps, initial !== undefined);
+  const hasManualSteps = steps.steps.some(step => step.manual);
+  useEffect(() => { onManualStepsChange?.(hasManualSteps); }, [hasManualSteps, onManualStepsChange]);
   const template = useActivityTemplate(name);
   const data = useActivityIcons(true, name);
   const selectedIcon = data.catalogue.status === 'ready' && icon ?

@@ -177,8 +177,8 @@ export function ActivityStepsEditor({ draft, dispatch, suggestion, retry, displa
       onConfirm={() => { dispatch({ type: 'removeMany', keys: dialog.keys }); select({ type: 'clear' }); close(); }} />}
     {dialog?.kind === 'apply' && <ActivityDialog title="¿Sustituir tus pasos?" onClose={close}>
       <Text style={[accountStyles.body, { color: colors.text.primary }]}>Se reemplazarán tus pasos personalizados por los sugeridos para “{dialog.displayName}”.</Text>
-      <ContinueButton label="Sustituir pasos" onPress={() => { dispatch({ type: 'apply', template: dialog.template }); select({ type: 'clear' }); close(); }} />
-      <ContinueButton label="Conservar mis pasos" onPress={close} />
+      <ContinueButton label="Sustituir pasos" variant="secondary" onPress={() => { dispatch({ type: 'apply', template: dialog.template }); select({ type: 'clear' }); close(); }} />
+      <ContinueButton label="Conservar mis pasos" variant="primary" appearance="solid-purple" onPress={close} />
     </ActivityDialog>}
   </>;
 }

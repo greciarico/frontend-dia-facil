@@ -148,14 +148,28 @@ test('logout dialog calls the existing manager once, cancellation has no effect 
   actions.props.onConfirm(); actions.props.onConfirm(); assert.equal(calls, 1); actions.props.onCancel(); assert.equal(closed, 1);
   h.unmount(); const before = h.changes(); d.resolve(); await tick(); assert.equal(h.changes(), before);
 });
-test('caregiver navigation preserves Mi perfil, enables Notificacion and leaves caregiver Apoyo disabled', () => {
-  const destinations = load('constants/carer-navigation.ts');
+test('caregiver navigation preserves Mi perfil and enables Notificacion and an isolated Apoyo destination', () => {
+  const destinations = load('constants/carer-navigation.ts'), paths = [];
   const Navigation = load('components/carer/area-navigation.tsx', { ...styling,
-    'expo-router': { usePathname: () => '/mi-perfil/accesibilidad', router: {} }, '@/constants/carer-navigation': destinations,
+    'expo-router': { usePathname: () => '/mi-perfil/accesibilidad', router: { dismissTo: path => paths.push(path) } }, '@/constants/carer-navigation': destinations,
     '@/context/session': { useSession: () => ({ caregiver: {} }) }, '@/utils/profile-navigation': { isProfilesDestination: path => path.startsWith('/perfiles') },
     '@/components/bottom-navigation': { BottomNavigation: 'Navigation' }, './account-avatar': { AccountAvatar: 'Avatar' }, './area-icon': { AreaIcon: 'Icon' } }).AreaNavigation;
   const items = Navigation().props.items; assert.deepEqual(items.filter(i => i.selected).map(i => i.id), ['account']);
-  assert.equal(items.find(i => i.id === 'support').onPress, undefined); assert.equal(typeof items.find(i => i.id === 'notifications').onPress, 'function');
+  assert.equal(destinations.carerDestinations.find(i => i.id === 'support').href, '/apoyo-cuidador');
+  const support = items.find(i => i.id === 'support');
+  assert.equal(typeof support.onPress, 'function'); support.onPress(); assert.deepEqual(paths, ['/apoyo-cuidador']);
+  assert.equal(typeof items.find(i => i.id === 'notifications').onPress, 'function');
+});
+
+test('caregiver support tab stays selected on its educational screens', () => {
+  const destinations = load('constants/carer-navigation.ts'); let pathname = '/guias-rapidas';
+  const Navigation = load('components/carer/area-navigation.tsx', { ...styling,
+    'expo-router': { usePathname: () => pathname, router: {} }, '@/constants/carer-navigation': destinations,
+    '@/context/session': { useSession: () => ({ caregiver: {} }) }, '@/utils/profile-navigation': { isProfilesDestination: path => path.startsWith('/perfiles') },
+    '@/components/bottom-navigation': { BottomNavigation: 'Navigation' }, './account-avatar': { AccountAvatar: 'Avatar' }, './area-icon': { AreaIcon: 'Icon' } }).AreaNavigation;
+  for (pathname of ['/guias-rapidas', '/comprender-mejor', '/consejos-y-recomendaciones']) {
+    assert.deepEqual(Navigation().props.items.filter(i => i.selected).map(i => i.id), ['support']);
+  }
 });
 
 test('Mi perfil notification switch reflects confirmed state and exposes activation, revocation and Android settings separately', () => {

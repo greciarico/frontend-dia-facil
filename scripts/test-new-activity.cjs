@@ -266,7 +266,8 @@ test('new screen loads real profile, routes back to activities and keeps invalid
       useState: initial => { const i = cursor++; const store=values; if (!(i in store)) store[i] = typeof initial === 'function' ? initial() : initial;
       return [store[i], value => { store[i] = value; }]; },
       useReducer: (reducer, initial) => { const i = cursor++; const store=values;if (!(i in store)) store[i] = initial;
-        return [store[i], action => { store[i] = reducer(store[i], action); }]; } },
+        return [store[i], action => { store[i] = reducer(store[i], action); }]; },
+      useEffect: fn => { fn(); } },
     'expo-router': { Stack: { Screen: 'Screen' }, router: { dismissTo: value => navigations.push(value) },
       useLocalSearchParams: () => ({ idPerfilUsuario: '12' }), useFocusEffect: fn => fn() },
     '@/utils/profile-navigation': navigation, '@/utils/activity-icon-options': options,
@@ -384,6 +385,111 @@ test('new screen loads real profile, routes back to activities and keeps invalid
   assert.equal(initial.pasos.length, 8);
 });
 
+test('DF-03 confirms abandoning creation only for manually added steps and never after saving', () => {
+  const state = { status: 'ready', profile: { idPerfilUsuario: 12, nombre: 'Persona real', avatar: null }, data: { actividades: [] } };
+  const target = navigation.activitiesHref(12, 'rutina');
+  const navigations = []; let hardware; let completed;
+  const parentValues = []; let formValues = []; let values = parentValues; let cursor = 0;
+  const creation = { sending: false, error: null, submit() {} };
+  const native = { StyleSheet: { create: x => x }, Text: 'Text', View: 'View', ActivityIndicator: 'Spinner',
+    Keyboard: { dismiss() {} }, KeyboardAvoidingView: 'Keyboard', ScrollView: 'Scroll', TextInput: 'Input',
+    Platform: { OS: 'android' },
+    BackHandler: { addEventListener: (_event, callback) => { hardware = callback; return { remove() {} }; } } };
+  const adapters = { ...styling, 'react-native': native,
+    'react-native-gesture-handler': { GestureHandlerRootView: 'GestureRoot' },
+    react: { useCallback: fn => fn, useRef: initial => { const i = cursor++; if (!(i in values)) values[i] = { current: initial }; return values[i]; },
+      useState: initial => { const i = cursor++; const store = values; if (!(i in store)) store[i] = typeof initial === 'function' ? initial() : initial;
+        return [store[i], value => { store[i] = value; }]; },
+      useReducer: (reducer, initial) => { const i = cursor++; const store = values; if (!(i in store)) store[i] = initial;
+        return [store[i], action => { store[i] = reducer(store[i], action); }]; },
+      useEffect: fn => { fn(); } },
+    'expo-router': { Stack: { Screen: 'Screen' }, router: { dismissTo: value => navigations.push(value) },
+      useLocalSearchParams: () => ({ idPerfilUsuario: '12' }), useFocusEffect: fn => fn() },
+    '@/utils/profile-navigation': navigation, '@/utils/activity-icon-options': options,
+    '@/utils/activity-draft': draftUtils, '@/utils/create-activity': createUtils,
+    '@/hooks/use-create-activity': { useCreateActivity: (id, onCreated) => { assert.equal(id, 12); completed = onCreated; return creation; } },
+    '@/components/carer/activity-dialog': { ActivityDialog: 'Dialog' },
+    '@/components/carer/activity-created-modal': { ActivityCreatedModal: 'CreatedModal' },
+    '@/components/carer/step-dialog-actions': { StepDialogActions: 'Actions' },
+    '@/components/carer/activity-icon-selector': { ActivityIconSelector: 'Selector' },
+    '@/components/carer/activity-section-heading': { ActivitySectionHeading: 'SectionHeading' },
+    '@/components/carer/activity-time-field': { ActivityTimeField: 'Time' },
+    '@/components/carer/activity-steps-editor': { ActivityStepsEditor: 'Steps' },
+    '@/components/carer/area-header': { AreaHeader: 'Header' }, '@/components/carer/continue-button': { ContinueButton: 'Button' },
+    '@/components/carer/profile-avatar': { ProfileAvatar: 'Avatar' },
+    '@/utils/activities': load('utils/activities.ts'),
+    '@/hooks/use-profile-activities': { useProfileActivities: id => { assert.equal(id, 12); return { state, reload() {} }; } },
+    '@/hooks/use-activity-icons': { useActivityIcons: () => ({ catalogue: { status: 'ready', icons: [bread] }, suggestions: { status: 'ready', icons: [] } }) },
+    '@/hooks/use-activity-template': { useActivityTemplate: () => ({ state: { status: 'ready', template: null }, retry() {} }) } };
+  const editUtils = load('utils/activity-edit.ts', { './activities': load('utils/activities.ts'), './activity-draft': draftUtils });
+  const forms = load('components/carer/activity-definition-form.tsx', { ...adapters, '@/utils/activity-edit': editUtils });
+  const Screen = load('app/(cuidador-autenticado)/(principal)/perfiles/[idPerfilUsuario]/nueva-actividad.tsx',
+    { ...adapters, '@/components/carer/activity-definition-form': forms }).default;
+  const screen = () => { cursor = 0; values = parentValues; return Screen(); };
+  const activityForm = nodes(screen()).find(node => typeof node.type === 'function').type;
+  const definitionProps = () => activityForm(nodes(screen()).find(node => node.type === activityForm).props).props;
+  const renderForm = () => { cursor = 0; values = formValues; return forms.ActivityDefinitionForm(definitionProps()); };
+  const steps = () => nodes(renderForm()).find(node => node.type === 'Steps').props;
+  const confirm = tree => nodes(tree).find(node => node.type === 'Dialog');
+  const actions = tree => nodes(tree).find(node => node.type === 'Actions');
+  const nativeDialog = load('components/carer/activity-dialog.tsx', { ...styling,
+    react: { useRef: () => ({ current: null }) }, './area-icon': { AreaIcon: 'Icon' } }).ActivityDialog;
+
+  nodes(screen()).find(node => node.type === 'Screen').props.options.header().props.onBack();
+  assert.deepEqual(navigations.pop(), target);
+  hardware(); assert.deepEqual(navigations.pop(), target);
+  assert.ok(!confirm(screen()));
+
+  steps().dispatch({ type: 'save', description: 'Paso propio', pictograma: null });
+  let draft = steps().draft.steps;
+  assert.equal(draft.length, 1); assert.equal(draft[0].manual, true);
+  const manualKey = draft[0].key;
+  nodes(screen()).find(node => node.type === 'Screen').props.options.header().props.onBack();
+  let tree = screen();
+  let dialog = confirm(tree);
+  assert.ok(dialog); assert.equal(navigations.length, 0);
+  assert.equal(dialog.props.title, '¿Salir sin guardar?');
+  assert.equal(dialog.props.description, 'Si sales ahora, perderás los pasos que has creado y los cambios de esta actividad');
+  assert.equal(dialog.props.closeLabel, 'Seguir editando');
+  assert.equal(actions(tree).props.secondaryLabel, 'Seguir editando');
+  assert.equal(actions(tree).props.label, 'Salir sin guardar');
+  assert.equal(actions(tree).props.destructive, true);
+
+  actions(tree).props.onCancel();
+  assert.ok(!confirm(screen())); assert.equal(navigations.length, 0);
+  assert.equal(steps().draft.steps[0].descripcion, 'Paso propio');
+  for (const method of ['back', 'close', 'escape']) {
+    hardware(); dialog = confirm(screen()); assert.ok(dialog);
+    const native = nativeDialog(dialog.props);
+    if (method === 'back') native.props.onRequestClose();
+    if (method === 'close') nodes(native).find(node => node.props?.accessibilityLabel === 'Seguir editando').props.onPress();
+    if (method === 'escape') nodes(native).find(node => node.props?.accessibilityViewIsModal).props.onAccessibilityEscape();
+    assert.ok(!confirm(screen())); assert.equal(navigations.length, 0);
+  }
+
+  creation.error = { kind: 'uncertain', message: 'Respuesta desconocida' };
+  tree = renderForm();
+  nodes(tree).find(node => node.props?.label === 'Ver actividades').props.onPress();
+  tree = screen();
+  assert.ok(confirm(tree)); assert.equal(navigations.length, 0);
+  confirm(tree).props.onClose();
+  creation.error = null;
+
+  steps().dispatch({ type: 'remove', key: manualKey });
+  assert.equal(steps().draft.steps.length, 0);
+  screen();
+  hardware(); assert.deepEqual(navigations.pop(), target); assert.ok(!confirm(screen()));
+
+  steps().dispatch({ type: 'save', description: 'Otro paso propio', pictograma: null });
+  renderForm(); completed();
+  tree = screen();
+  assert.ok(!confirm(tree));
+  assert.ok(nodes(tree).some(node => node.type === 'CreatedModal'));
+  nodes(tree).find(node => node.type === 'CreatedModal').props.onViewActivities();
+  assert.deepEqual(navigations.pop(), target);
+  assert.ok(!confirm(screen()));
+});
+
 const template = (id = 4, descriptions = ['Lávate las manos', 'Prepara la mesa']) => ({ idPlantillaActividad: id, nombre: 'Desayunar',
   pasos: descriptions.map((descripcion, i) => ({ orden: i + 1, descripcion, pictograma: i ? null : { idPictograma: 9, nombre: 'Lavarse las manos' } })) });
 
@@ -433,6 +539,12 @@ test('every effective customization permanently protects steps, including deleti
   let state = reduce(base, mutations[0]); assert.equal(state.steps[0].descripcion, 'Un texto personalizado');
   assert.deepEqual(state.steps[0].pictograma, base.steps[0].pictograma);
   state = reduce(state, mutations[1]); assert.equal(state.steps.at(-1).pictograma, null);
+  assert.equal(base.steps.some(s => s.manual), false);
+  assert.equal(state.steps.at(-1).manual, true);
+  const editedManual = reduce(state, { type: 'save', key: state.steps.at(-1).key, description: 'Paso propio editado' });
+  assert.equal(editedManual.steps.at(-1).manual, true);
+  assert.equal(reduce(state, { type: 'remove', key: state.steps.at(-1).key }).steps.some(s => s.manual), false);
+  assert.equal(reduce(state, { type: 'apply', template: template(9) }).steps.some(s => s.manual), false);
   assert.equal(reduce(base, { type: 'save', description: ' ' }), base);
   assert.equal(reduce(base, { type: 'save', description: 'a'.repeat(121) }), base);
   assert.equal(reduce(base, { type: 'save', key: base.steps[0].key, description: base.steps[0].descripcion }), base);
@@ -555,6 +667,11 @@ test('step editor requires confirmation to replace/remove, provides accessible o
   suggestion = { status: 'ready', template: template(8, ['Otros pasos']) };
   render(); assert.equal(state.steps[0].descripcion, 'Mi paso'); button('Usar pasos sugeridos').props.onPress();
   assert.equal(slots[0].kind, 'apply'); assert.ok(text(render()).includes('para “Desayuno”'));
+  assert.equal(button('Sustituir pasos').props.variant, 'secondary');
+  assert.equal(button('Conservar mis pasos').props.variant, 'primary');
+  assert.equal(button('Conservar mis pasos').props.appearance, 'solid-purple');
+  assert.equal(button('Sustituir pasos').props.size, undefined);
+  assert.equal(button('Conservar mis pasos').props.size, undefined);
   button('Conservar mis pasos').props.onPress(); assert.equal(state.steps[0].descripcion, 'Mi paso');
   button('Usar pasos sugeridos').props.onPress(); button('Sustituir pasos').props.onPress();
   assert.equal(state.steps[0].descripcion, 'Otros pasos'); assert.equal(state.personalized, true);

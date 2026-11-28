@@ -53,6 +53,7 @@ export const layout = {
   userOnboarding: { illustrationRatio: 1378 / 1141, errorIllustrationWidth: 308 },
 } as const;
 
+export type SupportGuideTone = 'green' | 'blue' | 'yellow' | 'lavender' | 'coral' | 'turquoise';
 export type SemanticColors = {
   background: { primary: string; yellow: string; purple: string };
   surface: { default: string; elevated: string };
@@ -64,6 +65,12 @@ export type SemanticColors = {
   status: { error: string; errorSurface: string; success: string; successSurface: string };
   destructive: { default: string; surface: string; onDefault: string };
   profiles: { information: string; cards: readonly string[] };
+  supportCards: {
+    lavender: { background: string; border: string; tile: string };
+    green: { background: string; border: string; tile: string };
+    blue: { background: string; border: string; tile: string };
+  };
+  supportGuideTones: Record<SupportGuideTone, { icon: string; surface: string; border: string }>;
   onboarding: {
     activities: { icon: string; surface: string };
     accessibility: { icon: string; surface: string };
@@ -89,6 +96,19 @@ export const themes: Record<'light' | 'dark', AppTheme> = {
       guide: { current: colors.purple.default, reached: colors.background.purple, future: colors.purple.stroke },
       status: { error: colors.bug, errorSurface: colors.orange.light, success: derivedColors.light.successText, successSurface: colors.green.hover },
       profiles: { information: colors.purple.light, cards: [colors.purple.light, colors.blue.light, colors.orange.light] },
+      supportCards: {
+        lavender: { background: colors.purple.light, border: colors.purple.stroke, tile: colors.purple.hoverLight },
+        green: { background: colors.green.light, border: colors.green.stroke, tile: colors.green.hover },
+        blue: { background: colors.blue.light, border: colors.blue.stroke, tile: colors.blue.hover },
+      },
+      supportGuideTones: {
+        green: { icon: tint(colors.green.default, colors.text.primary, 0.35), surface: colors.green.light, border: colors.green.stroke },
+        blue: { icon: tint(colors.blue.default, colors.text.primary, 0.25), surface: colors.blue.light, border: colors.blue.stroke },
+        yellow: { icon: tint(colors.yellow.default, colors.text.primary, 0.45), surface: colors.yellow.light, border: colors.yellow.stroke },
+        lavender: { icon: colors.purple.default, surface: colors.purple.light, border: colors.purple.stroke },
+        coral: { icon: tint(colors.orange.default, colors.text.primary, 0.25), surface: colors.orange.light, border: colors.orange.stroke },
+        turquoise: { icon: tint(colors.greenDark.default, colors.text.primary, 0.2), surface: colors.greenDark.light, border: colors.green.stroke },
+      },
       onboarding: {
         activities: { icon: colors.purple.default, surface: colors.purple.hoverLight },
         accessibility: { icon: colors.green.default, surface: colors.green.hover },
@@ -113,6 +133,19 @@ export const themes: Record<'light' | 'dark', AppTheme> = {
       guide: { current: d.primary, reached: d.surface, future: d.decorativeBorder },
       status: { error: d.error, errorSurface: d.errorSurface, success: d.success, successSurface: d.successSurface },
       profiles: { information: d.elevated, cards: [d.elevated, d.surface, d.elevated] },
+      supportCards: {
+        lavender: { background: tint(d.surface, colors.purple.default, 0.1), border: tint(d.decorativeBorder, colors.purple.default, 0.3), tile: tint(d.elevated, colors.purple.default, 0.18) },
+        green: { background: tint(d.surface, colors.green.default, 0.1), border: tint(d.decorativeBorder, colors.green.default, 0.3), tile: tint(d.elevated, colors.green.default, 0.18) },
+        blue: { background: tint(d.surface, colors.blue.default, 0.1), border: tint(d.decorativeBorder, colors.blue.default, 0.3), tile: tint(d.elevated, colors.blue.default, 0.18) },
+      },
+      supportGuideTones: {
+        green: { icon: tint(colors.green.default, colors.background.primary, 0.3), surface: tint(d.surface, colors.green.default, 0.12), border: tint(d.decorativeBorder, colors.green.default, 0.3) },
+        blue: { icon: tint(colors.blue.default, colors.background.primary, 0.3), surface: tint(d.surface, colors.blue.default, 0.12), border: tint(d.decorativeBorder, colors.blue.default, 0.3) },
+        yellow: { icon: tint(colors.yellow.default, colors.background.primary, 0.2), surface: tint(d.surface, colors.yellow.default, 0.1), border: tint(d.decorativeBorder, colors.yellow.default, 0.3) },
+        lavender: { icon: d.primary, surface: tint(d.surface, colors.purple.default, 0.12), border: tint(d.decorativeBorder, colors.purple.default, 0.3) },
+        coral: { icon: tint(colors.orange.default, colors.background.primary, 0.3), surface: tint(d.surface, colors.orange.default, 0.12), border: tint(d.decorativeBorder, colors.orange.default, 0.3) },
+        turquoise: { icon: tint(colors.greenDark.default, colors.background.primary, 0.25), surface: tint(d.surface, colors.greenDark.default, 0.12), border: tint(d.decorativeBorder, colors.greenDark.default, 0.3) },
+      },
       onboarding: {
         activities: { icon: d.primary, surface: d.elevated },
         accessibility: { icon: d.success, surface: d.successSurface },

@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, findNodeHandle, Keyboard, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { AccessibilityInfo, findNodeHandle, Keyboard, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useFocusEffect, useIsFocused } from 'expo-router';
 import { ActivityDialog } from '@/components/carer/activity-dialog';
 import { AreaIcon } from '@/components/carer/area-icon';
@@ -7,8 +7,23 @@ import { ContinueButton } from '@/components/carer/continue-button';
 import { sizes, spacing, typography } from '@/theme/tokens';
 import { useAppTheme } from '@/theme/use-theme';
 
+export type HelpChoice = { title: string; description: string; icon: 'camera' | 'keyboard' | 'activities' | 'profiles' };
+type TriggerStyle = StyleProp<ViewStyle> | ((state: { pressed: boolean }) => StyleProp<ViewStyle>);
+export type ConnectionHelpProps = {
+  title?: string; description?: string | null; choices?: readonly HelpChoice[]; understoodLabel?: string;
+  triggerContent?: ReactNode; triggerStyle?: TriggerStyle;
+};
+const defaultTitle = '¿Necesitas ayuda para conectar tu agenda?';
+const defaultDescription = 'Pídele a tu cuidador que abra tu perfil y te muestre tu código de conexión.';
+const defaultChoices: readonly HelpChoice[] = [
+  { title: 'Escanear QR', description: 'Apunta la cámara al código QR.', icon: 'camera' },
+  { title: 'Ingresar código', description: 'Escribe el código que aparece debajo del QR.', icon: 'keyboard' },
+];
+
 /** Contextual help owns no connection/form state and has no transport or navigation dependency. */
-export function ConnectionHelp() {
+export function ConnectionHelp({ title = defaultTitle, description, choices = defaultChoices,
+  understoodLabel = 'Entendido', triggerContent, triggerStyle }: ConnectionHelpProps) {
+  const descriptionText = description === null ? undefined : description ?? defaultDescription;
   const { colors } = useAppTheme(); const focused = useIsFocused();
   const [open, setOpen] = useState(false); const trigger = useRef<View>(null);
   const active = useRef(false); const restoreFocus = useRef(false); const frame = useRef<number | null>(null);
@@ -28,18 +43,15 @@ export function ConnectionHelp() {
     return () => { if (frame.current !== null) cancelAnimationFrame(frame.current); frame.current = null; };
   }, [open]);
   const close = () => { restoreFocus.current = true; setOpen(false); };
-  const choices = [
-    { title: 'Escanear QR', description: 'Apunta la cámara al código QR.', icon: 'camera' as const },
-    { title: 'Ingresar código', description: 'Escribe el código que aparece debajo del QR.', icon: 'keyboard' as const },
-  ];
+  const openDialog = () => { Keyboard.dismiss(); setOpen(true); };
+  const defaultContent = <><AreaIcon name="help" color={colors.action.primary} />
+    <Text style={[styles.triggerText, { color: colors.action.primary }]}>¿Necesitas ayuda?</Text></>;
   return <>
     <Pressable ref={trigger} accessibilityRole="button" accessibilityLabel="¿Necesitas ayuda?" accessibilityState={{ expanded: open }}
-      onPress={() => { Keyboard.dismiss(); setOpen(true); }} style={styles.trigger}>
-      <AreaIcon name="help" color={colors.action.primary} />
-      <Text style={[styles.triggerText, { color: colors.action.primary }]}>¿Necesitas ayuda?</Text>
+      onPress={openDialog} style={triggerStyle ?? styles.trigger}>
+      {triggerContent ?? defaultContent}
     </Pressable>
-    {open && focused && <ActivityDialog title="¿Necesitas ayuda para conectar tu agenda?"
-      description="Pídele a tu cuidador que abra tu perfil y te muestre tu código de conexión."
+    {open && focused && <ActivityDialog title={title} description={descriptionText}
       onClose={close} showClose closeLabel="Cerrar ayuda" respectSafeArea>
       {choices.map(choice => <View key={choice.icon} accessible accessibilityLabel={`${choice.title}. ${choice.description}`}
         style={styles.choice}>
@@ -49,7 +61,7 @@ export function ConnectionHelp() {
           <Text style={[styles.description, { color: colors.text.secondary }]}>{choice.description}</Text>
         </View>
       </View>)}
-      <ContinueButton size="modal" label="Entendido" onPress={close} />
+      <ContinueButton size="modal" label={understoodLabel} onPress={close} />
     </ActivityDialog>}
   </>;
 }
